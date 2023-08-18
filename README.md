@@ -37,4 +37,5 @@ fn custom_check(s: &str) -> bool {
 }
 
 let result = data.validate(("name", Required));
+let result = data.validate((0, Required));
 ```
