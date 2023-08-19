@@ -49,6 +49,12 @@ impl<Data: PartialEq<u8>> Rule<Data> for IsZero {
 
 struct MyData(u8);
 
+impl Display for MyData {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        todo!()
+    }
+}
+
 impl Validator<IsZero> for MyData {
     type Error = String;
     fn validator(&self, rule: IsZero, list: &MessageList) -> Result<(), Self::Error> {
