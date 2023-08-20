@@ -72,3 +72,15 @@ let result = data.validate(|d|(d.0, Required));
 
 let result = data.validate(|d|(d.name, Required | LengthRange(6,12)));
 ```
+
+result 
+
+```rust
+fn validate(..) -> Result<Self, ValidateError>{
+  todo!()
+}
+
+struct ValidateError {
+  list: HashMap<String, Vec<String>>,
+}
+```
