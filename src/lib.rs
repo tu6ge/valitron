@@ -1,5 +1,8 @@
 use std::{collections::HashMap, error::Error, fmt::Display};
 
+pub mod rule;
+pub mod ser;
+
 pub fn add(left: usize, right: usize) -> usize {
     left + right
 }
@@ -86,6 +89,17 @@ type ResultMessage = Vec<String>;
 const A: u8 = 1 | 2;
 
 struct A {
-  a: u8,
-  b: u8,
+    a: u8,
+    b: u8,
+}
+
+fn error(str: &str) {
+    let a = stringify!(str);
+    println!("{a}");
+}
+
+#[test]
+fn test_error() {
+    //error("abc");
+    let aaa = "bbb";
 }
