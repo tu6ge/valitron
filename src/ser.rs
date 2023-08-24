@@ -15,6 +15,17 @@ pub enum Value {
     Struct(Map),
 }
 
+pub struct ValueMap {
+    value: Value,
+    index: &'static str,
+}
+
+impl ValueMap {
+    pub(crate) fn current(&self) -> Option<&Value> {
+        self.value.get(self.index)
+    }
+}
+
 type Map = BTreeMap<String, Value>;
 
 pub fn to_value<T>(value: T) -> Result<Value, MyErr>
@@ -25,12 +36,15 @@ where
 }
 
 impl Value {
-    pub(crate) fn get(&self, key: &str) -> Option<Value> {
+    pub(crate) fn get(&self, key: &str) -> Option<&Value> {
         if let Self::Struct(map) = self {
-            map.get(key).map(Clone::clone)
+            map.get(key)
         } else {
             None
         }
+    }
+    pub(crate) fn get_clone(&self, key: &str) -> Option<Value> {
+        self.get(key).map(Clone::clone)
     }
     pub fn is_leaf(&self) -> bool {
         match self {

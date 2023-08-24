@@ -120,6 +120,13 @@ let result = data
     ("name2.length", "{field} must not be {value}"),
     ("address.city.required", "city is required"),
   ]);
+
+fn custom_check(value) -> Result<(), String> {
+    if value == "abc" {
+      Err("error msg".into())
+    }
+    Ok(())
+}
 ```
 
 fifth model
