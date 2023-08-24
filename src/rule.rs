@@ -5,9 +5,9 @@ use std::marker::PhantomData;
 use crate::ser::{Value, ValueMap};
 
 /// A Rule trait
-pub trait Rule<T>: 'static {
+pub trait Rule: 'static {
     /// named rule type
-    fn name(&self) -> RuleName<T>;
+    fn name(&self) -> &'static str;
 
     /// default rule error message, when validate fails, return the message to user
     fn message(&self) -> String;
@@ -34,12 +34,12 @@ pub enum Judge {
 /// ```no_run
 /// Rule1.and(Rule2).and(Rule3)
 /// ```
-pub trait RuleExt<T> {
-    fn and<R: Rule<T>>(self, other: R) -> RuleBox<T>;
+pub trait RuleExt {
+    fn and<R: Rule>(self, other: R) -> RuleBox;
 }
 
-impl<T, R: Rule<T>> RuleExt<T> for R {
-    fn and<R2: Rule<T>>(self, other: R2) -> RuleBox<T> {
+impl<R: Rule> RuleExt for R {
+    fn and<R2: Rule>(self, other: R2) -> RuleBox {
         RuleBox {
             list: vec![Box::new(self), Box::new(other)],
             is_bail: false,
@@ -63,13 +63,13 @@ impl<T> From<&'static str> for RuleName<T> {
 }
 
 /// rules collection
-pub struct RuleBox<T = ()> {
-    list: Vec<Box<dyn Rule<T>>>,
+pub struct RuleBox {
+    list: Vec<Box<dyn Rule>>,
     is_bail: bool,
 }
 
-impl<T> RuleBox<T> {
-    pub fn and<R: Rule<T>>(self, other: R) -> Self {
+impl RuleBox {
+    pub fn and<R: Rule>(self, other: R) -> Self {
         let RuleBox { mut list, is_bail } = self;
         list.push(Box::new(other));
         Self { list, is_bail }
@@ -91,28 +91,28 @@ impl<T> RuleBox<T> {
 //     }
 // }
 
-trait IntoRuleBox<T> {
-    fn into_rule_box(self) -> RuleBox<T>;
+trait IntoRuleBox {
+    fn into_rule_box(self) -> RuleBox;
 }
 
-impl IntoRuleBox<()> for RuleBox<()> {
-    fn into_rule_box(self) -> RuleBox<()> {
+impl IntoRuleBox for RuleBox {
+    fn into_rule_box(self) -> RuleBox {
         self
     }
 }
-impl<R, T> IntoRuleBox<T> for R
+impl<R> IntoRuleBox for R
 where
-    R: Rule<T>,
+    R: Rule,
 {
-    fn into_rule_box(self) -> RuleBox<T> {
-        RuleBox::<T> {
+    fn into_rule_box(self) -> RuleBox {
+        RuleBox {
             list: vec![Box::new(self)],
             is_bail: false,
         }
     }
 }
 
-fn register<T, R: IntoRuleBox<T>>(rule: R) {}
+fn register<R: IntoRuleBox>(rule: R) {}
 
 fn hander(val: &ValueMap) -> Result<(), String> {
     Ok(())
@@ -134,9 +134,9 @@ fn test() {
 #[derive(Clone, Debug)]
 struct Required;
 
-impl Rule<()> for Required {
-    fn name(&self) -> RuleName<()> {
-        "required".into()
+impl Rule for Required {
+    fn name(&self) -> &'static str {
+        "required"
     }
     fn message(&self) -> String {
         "this field is required".into()
@@ -150,16 +150,16 @@ impl Rule<()> for Required {
             Value::Struct(_) => true,
         };
 
-        Rule::<()>::after_call(&self, bool)
+        Rule::after_call(&self, bool)
     }
 }
 
 #[derive(Clone, Debug)]
 struct StartWith<T>(T);
 
-impl Rule<()> for StartWith<&'static str> {
-    fn name(&self) -> RuleName<()> {
-        "start_with".into()
+impl Rule for StartWith<&'static str> {
+    fn name(&self) -> &'static str {
+        "start_with"
     }
     fn message(&self) -> String {
         "this field must be start with {}".into()
@@ -171,7 +171,7 @@ impl Rule<()> for StartWith<&'static str> {
             Value::String(s) => s.starts_with(&self.0),
             Value::Struct(_) => false,
         };
-        Rule::<()>::after_call(&self, bool)
+        Rule::after_call(&self, bool)
     }
 }
 
@@ -245,7 +245,7 @@ impl Rule<()> for StartWith<&'static str> {
 //     }
 // }
 
-impl<F> Rule<()> for F
+impl<F> Rule for F
 where
     F: for<'a> FnOnce(&'a ValueMap) -> Result<(), String> + 'static + Clone,
 {
@@ -253,8 +253,8 @@ where
         self(&data)
     }
 
-    fn name(&self) -> RuleName<()> {
-        "custom".into()
+    fn name(&self) -> &'static str {
+        "custom"
     }
     fn message(&self) -> String {
         String::default()
