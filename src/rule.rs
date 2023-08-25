@@ -19,7 +19,7 @@ pub trait Rule<T>: 'static {
 
     /// Rule specific implementation, data is gived type all field's value, and current field index.
     fn call_message(&mut self, data: &ValueMap) -> Result<(), String> {
-        if self.call(data) {
+        if self.call_relate(data) {
             Ok(())
         } else {
             Err(self.message())
@@ -28,9 +28,14 @@ pub trait Rule<T>: 'static {
 
     /// Rule specific implementation, data is gived type all field's value, and current field index.
     /// when the method return true, call_message will return Ok(()), or else return Err(String)
-    fn call(&mut self, data: &ValueMap) -> bool {
-        false
+    fn call_relate(&mut self, data: &ValueMap) -> bool {
+        // TODO unwrap
+        let value = data.current().unwrap();
+        self.call(value)
     }
+
+    /// Rule specific implementation, data is current field's value
+    fn call(&mut self, data: &Value) -> bool;
 }
 
 trait CloneRule<T>: Rule<T> {
@@ -110,14 +115,12 @@ impl<R: Rule<()> + Clone> RuleExt for R {
 
 /// Store validate rule name
 pub struct RuleName<T> {
-    name: &'static str,
     _marker: PhantomData<fn() -> T>,
 }
 
 impl<T> From<&'static str> for RuleName<T> {
-    fn from(name: &'static str) -> Self {
+    fn from(_name: &'static str) -> Self {
         Self {
-            name,
             _marker: PhantomData,
         }
     }
@@ -295,8 +298,7 @@ impl Rule<()> for Required {
         "this field is required".into()
     }
 
-    fn call(&mut self, map: &ValueMap) -> bool {
-        let value = map.current().unwrap();
+    fn call(&mut self, value: &Value) -> bool {
         match value {
             Value::Int8(_) => true,
             Value::String(s) => !s.is_empty(),
@@ -315,8 +317,7 @@ impl Rule<()> for StartWith<&'static str> {
     fn message(&self) -> String {
         "this field must be start with {}".into()
     }
-    fn call(&mut self, map: &ValueMap) -> bool {
-        let value = map.current().unwrap();
+    fn call(&mut self, value: &Value) -> bool {
         match value {
             Value::Int8(_) => false,
             Value::String(s) => s.starts_with(&self.0),
@@ -351,7 +352,7 @@ impl Rule<()> for StartWith<&'static str> {
 //     fn message(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
 //         write!(f, "this field value must be eq {} field value", self.0)
 //     }
-//     fn call(self, value: &Value, all: &Value) -> bool {
+//     fn call_relate(&mut self, value: &ValueMap) -> bool {
 //         let target = all.get(self.0);
 //         let target = match target {
 //             Some(target) if target.is_leaf() => target,
@@ -407,7 +408,10 @@ where
         "relate"
     }
     fn message(&self) -> String {
-        String::default()
+        unreachable!()
+    }
+    fn call(&mut self, data: &Value) -> bool {
+        unreachable!()
     }
 }
 
@@ -416,6 +420,7 @@ where
     F: for<'a> FnOnce(&'a Value) -> Result<(), String> + 'static + Clone,
 {
     fn call_message(&mut self, data: &ValueMap) -> Result<(), String> {
+        // TODO unwrap
         let value = data.current().unwrap();
         self.clone()(value)
     }
@@ -424,6 +429,9 @@ where
         "custom"
     }
     fn message(&self) -> String {
-        String::default()
+        unreachable!()
+    }
+    fn call(&mut self, data: &Value) -> bool {
+        unreachable!()
     }
 }
