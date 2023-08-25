@@ -174,32 +174,39 @@ where
     }
 }
 
-fn register<R: IntoRuleBox>(rule: R) {}
+#[cfg(test)]
+mod test_regster {
+    use super::*;
+    fn register<R: IntoRuleBox>(_rule: R) {}
 
-fn hander(val: &ValueMap) -> Result<(), String> {
-    Ok(())
-}
-fn hander2(val: &Value) -> Result<(), String> {
-    Ok(())
-}
+    fn hander(_val: &ValueMap) -> Result<(), String> {
+        Ok(())
+    }
+    fn hander2(_val: &Value) -> Result<(), String> {
+        Ok(())
+    }
 
-fn test() {
-    register(Required);
-    register(Required.and(StartWith("foo")));
-    register(Required.and(StartWith("foo")).bail());
-    register(Required.and(StartWith("foo")).custom(hander2).bail());
-    register(Required.and(StartWith("foo")).fusion(hander).bail());
-    register(
-        Required
-            .and(StartWith("foo"))
-            .custom(hander2)
-            .fusion(hander)
-            .bail(),
-    );
-    register(custom(hander2));
-    register(fusion(hander));
-    register(fusion(hander).and(StartWith("foo")));
-    // register(|a: &ValueMap| Ok::<_, String>(()));
+    #[test]
+    fn test() {
+        register(Required);
+        register(Required.and(StartWith("foo")));
+        register(Required.and(StartWith("foo")).bail());
+        register(Required.and(StartWith("foo")).custom(hander2).bail());
+        register(Required.and(StartWith("foo")).fusion(hander).bail());
+        register(
+            Required
+                .and(StartWith("foo"))
+                .custom(hander2)
+                .fusion(hander)
+                .bail(),
+        );
+        register(custom(hander2));
+        register(fusion(hander));
+        register(fusion(hander).and(StartWith("foo")));
+        register(fusion(hander).and(StartWith("foo")).bail());
+        register(custom(|_a| Ok(())));
+        register(fusion(|_a| Ok(())));
+    }
 }
 
 #[derive(Clone, Debug)]
