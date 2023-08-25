@@ -67,7 +67,7 @@ impl<T: 'static> Clone for BoxCloneRule<T> {
 pub trait RuleExt {
     fn and<R: Rule<()> + Clone>(self, other: R) -> RuleList;
     fn custom<R2: Rule<Value> + Clone>(self, other: R2) -> RuleList;
-    fn fusion<R2: Rule<ValueMap> + Clone>(self, other: R2) -> RuleList;
+    fn relate<R2: Rule<ValueMap> + Clone>(self, other: R2) -> RuleList;
 }
 
 impl<R: Rule<()> + Clone> RuleExt for R {
@@ -89,11 +89,11 @@ impl<R: Rule<()> + Clone> RuleExt for R {
             is_bail: false,
         }
     }
-    fn fusion<R2: Rule<ValueMap> + Clone>(self, other: R2) -> RuleList {
+    fn relate<R2: Rule<ValueMap> + Clone>(self, other: R2) -> RuleList {
         RuleList {
             list: vec![
                 Endpoint::Rule(BoxCloneRule::new(self)),
-                Endpoint::FusionRule(BoxCloneRule::new(other)),
+                Endpoint::RelateRule(BoxCloneRule::new(other)),
             ],
             is_bail: false,
         }
@@ -118,7 +118,7 @@ impl<T> From<&'static str> for RuleName<T> {
 enum Endpoint {
     Rule(BoxCloneRule<()>),
     HanderRule(BoxCloneRule<Value>),
-    FusionRule(BoxCloneRule<ValueMap>),
+    RelateRule(BoxCloneRule<ValueMap>),
 }
 
 /// rules collection
@@ -138,9 +138,9 @@ impl RuleList {
         self
     }
 
-    pub fn fusion<R: Rule<ValueMap> + Clone>(mut self, other: R) -> Self {
+    pub fn relate<R: Rule<ValueMap> + Clone>(mut self, other: R) -> Self {
         self.list
-            .push(Endpoint::FusionRule(BoxCloneRule::new(other)));
+            .push(Endpoint::RelateRule(BoxCloneRule::new(other)));
         self
     }
 
@@ -158,7 +158,7 @@ impl RuleList {
                 Endpoint::HanderRule(handle) => {
                     let res = handle.call(&data);
                 }
-                Endpoint::FusionRule(handle) => {
+                Endpoint::RelateRule(handle) => {
                     let res = handle.call(&data);
                 }
             }
@@ -213,12 +213,12 @@ where
         is_bail: false,
     }
 }
-pub fn fusion<F>(f: F) -> RuleList
+pub fn relate<F>(f: F) -> RuleList
 where
     F: for<'a> FnOnce(&'a ValueMap) -> Result<(), String> + 'static + Clone,
 {
     RuleList {
-        list: vec![Endpoint::FusionRule(BoxCloneRule::new(f))],
+        list: vec![Endpoint::RelateRule(BoxCloneRule::new(f))],
         is_bail: false,
     }
 }
@@ -255,24 +255,24 @@ mod test_regster {
     fn test() {
         register(Required);
         register(Required.custom(hander2));
-        register(Required.fusion(hander));
+        register(Required.relate(hander));
         register(Required.and(StartWith("foo")));
         register(Required.and(StartWith("foo")).bail());
         register(Required.and(StartWith("foo")).custom(hander2).bail());
-        register(Required.and(StartWith("foo")).fusion(hander).bail());
+        register(Required.and(StartWith("foo")).relate(hander).bail());
         register(
             Required
                 .and(StartWith("foo"))
                 .custom(hander2)
-                .fusion(hander)
+                .relate(hander)
                 .bail(),
         );
         register(custom(hander2));
-        register(fusion(hander));
-        register(fusion(hander).and(StartWith("foo")));
-        register(fusion(hander).and(StartWith("foo")).bail());
+        register(relate(hander));
+        register(relate(hander).and(StartWith("foo")));
+        register(relate(hander).and(StartWith("foo")).bail());
         register(custom(|_a| Ok(())));
-        register(fusion(|_a| Ok(())));
+        register(relate(|_a| Ok(())));
     }
 }
 
