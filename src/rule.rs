@@ -36,6 +36,8 @@ pub enum Judge {
 /// ```
 pub trait RuleExt {
     fn and<R: Rule<()>>(self, other: R) -> RuleBox;
+    fn custom<R2: Rule<Value>>(self, other: R2) -> RuleBox;
+    fn fusion<R2: Rule<ValueMap>>(self, other: R2) -> RuleBox;
 }
 
 impl<R: Rule<()>> RuleExt for R {
@@ -44,6 +46,24 @@ impl<R: Rule<()>> RuleExt for R {
             list: vec![
                 Endpoint::Rule(Box::new(self)),
                 Endpoint::Rule(Box::new(other)),
+            ],
+            is_bail: false,
+        }
+    }
+    fn custom<R2: Rule<Value>>(self, other: R2) -> RuleBox {
+        RuleBox {
+            list: vec![
+                Endpoint::Rule(Box::new(self)),
+                Endpoint::HanderRule(Box::new(other)),
+            ],
+            is_bail: false,
+        }
+    }
+    fn fusion<R2: Rule<ValueMap>>(self, other: R2) -> RuleBox {
+        RuleBox {
+            list: vec![
+                Endpoint::Rule(Box::new(self)),
+                Endpoint::FusionRule(Box::new(other)),
             ],
             is_bail: false,
         }
@@ -100,6 +120,23 @@ impl RuleBox {
         let is_bail = true;
         Self { list, is_bail }
     }
+
+    // fn call(self) {
+    //     let data = ValueMap{
+    //       value: Value::Int8(18),
+    //       index: "abc",
+    //     };
+    //     for endpoint in self.list.iter() {
+    //         match endpoint {
+    //             Endpoint::Rule(rule) => {
+    //               let res = (**rule).call(&data);
+    //               ()
+    //             },
+    //             _ => (),
+    //         }
+    //     }
+    //     "aa";
+    // }
 }
 
 // impl<F> From<F> for RuleBox<ValueMap>
@@ -189,6 +226,8 @@ mod test_regster {
     #[test]
     fn test() {
         register(Required);
+        register(Required.custom(hander2));
+        register(Required.fusion(hander));
         register(Required.and(StartWith("foo")));
         register(Required.and(StartWith("foo")).bail());
         register(Required.and(StartWith("foo")).custom(hander2).bail());
