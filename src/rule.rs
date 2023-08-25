@@ -6,23 +6,31 @@ use crate::ser::{Value, ValueMap};
 
 /// A Rule trait
 pub trait Rule<T>: 'static {
-    /// named rule type
-    fn name(&self) -> RuleName<T>;
+    /// Named rule type
+    fn rule_name(&self) -> RuleName<T> {
+        self.name().into()
+    }
 
-    /// default rule error message, when validate fails, return the message to user
+    /// Named rule type
+    fn name(&self) -> &'static str;
+
+    /// Default rule error message, when validate fails, return the message to user
     fn message(&self) -> String;
 
-    #[doc(hidden)]
-    fn after_call(&self, res: bool) -> Result<(), String> {
-        if res {
+    /// Rule specific implementation, data is gived type all field's value, and current field index.
+    fn call_message(&mut self, data: &ValueMap) -> Result<(), String> {
+        if self.call(data) {
             Ok(())
         } else {
             Err(self.message())
         }
     }
 
-    /// rule specific implementation, data is current field's value, and all_data is all.
-    fn call(&self, data: &ValueMap) -> Result<(), String>;
+    /// Rule specific implementation, data is gived type all field's value, and current field index.
+    /// when the method return true, call_message will return Ok(()), or else return Err(String)
+    fn call(&mut self, data: &ValueMap) -> bool {
+        false
+    }
 }
 
 trait CloneRule<T>: Rule<T> {
@@ -49,8 +57,8 @@ impl<T> BoxCloneRule<T> {
     }
 }
 impl<T: 'static> BoxCloneRule<T> {
-    fn call(&self, map: &ValueMap) -> Result<(), String> {
-        self.0.call(map)
+    fn call_message(&mut self, map: &ValueMap) -> Result<(), String> {
+        self.0.call_message(map)
     }
 }
 
@@ -60,7 +68,7 @@ impl<T: 'static> Clone for BoxCloneRule<T> {
     }
 }
 
-/// rule extension, it contains some rules, such as
+/// Rule extension, it contains some rules, such as
 /// ```no_run
 /// Rule1.and(Rule2).and(Rule3)
 /// ```
@@ -100,7 +108,7 @@ impl<R: Rule<()> + Clone> RuleExt for R {
     }
 }
 
-/// store rule name
+/// Store validate rule name
 pub struct RuleName<T> {
     name: &'static str,
     _marker: PhantomData<fn() -> T>,
@@ -121,7 +129,7 @@ enum Endpoint {
     RelateRule(BoxCloneRule<ValueMap>),
 }
 
-/// rules collection
+/// Rules collection
 pub struct RuleList {
     list: Vec<Endpoint>,
     is_bail: bool,
@@ -149,17 +157,17 @@ impl RuleList {
         self
     }
 
-    fn call(self, data: &ValueMap) {
-        for endpoint in self.list.iter() {
+    fn call(mut self, data: &ValueMap) {
+        for endpoint in self.list.iter_mut() {
             match endpoint {
                 Endpoint::Rule(rule) => {
-                    let res = rule.call(&data);
+                    let res = rule.call_message(&data);
                 }
                 Endpoint::HanderRule(handle) => {
-                    let res = handle.call(&data);
+                    let res = handle.call_message(&data);
                 }
                 Endpoint::RelateRule(handle) => {
-                    let res = handle.call(&data);
+                    let res = handle.call_message(&data);
                 }
             }
         }
@@ -191,7 +199,7 @@ impl RuleList {
 // }
 
 trait IntoRuleList {
-    fn into_rule_box(self) -> RuleList;
+    fn into_list(self) -> RuleList;
 }
 
 // impl IntoRuleBox<ValueMap> for RuleBox<ValueMap> {
@@ -223,7 +231,7 @@ where
     }
 }
 impl IntoRuleList for RuleList {
-    fn into_rule_box(self) -> Self {
+    fn into_list(self) -> Self {
         self
     }
 }
@@ -231,7 +239,7 @@ impl<R> IntoRuleList for R
 where
     R: Rule<()> + Clone,
 {
-    fn into_rule_box(self) -> RuleList {
+    fn into_list(self) -> RuleList {
         RuleList {
             list: vec![Endpoint::Rule(BoxCloneRule::new(self))],
             is_bail: false,
@@ -280,22 +288,20 @@ mod test_regster {
 struct Required;
 
 impl Rule<()> for Required {
-    fn name(&self) -> RuleName<()> {
-        "required".into()
+    fn name(&self) -> &'static str {
+        "required"
     }
     fn message(&self) -> String {
         "this field is required".into()
     }
 
-    fn call(&self, map: &ValueMap) -> Result<(), String> {
+    fn call(&mut self, map: &ValueMap) -> bool {
         let value = map.current().unwrap();
-        let bool = match value {
+        match value {
             Value::Int8(_) => true,
             Value::String(s) => !s.is_empty(),
             Value::Struct(_) => true,
-        };
-
-        Rule::<()>::after_call(self, bool)
+        }
     }
 }
 
@@ -303,20 +309,19 @@ impl Rule<()> for Required {
 struct StartWith<T>(T);
 
 impl Rule<()> for StartWith<&'static str> {
-    fn name(&self) -> RuleName<()> {
-        "start_with".into()
+    fn name(&self) -> &'static str {
+        "start_with"
     }
     fn message(&self) -> String {
         "this field must be start with {}".into()
     }
-    fn call(&self, map: &ValueMap) -> Result<(), String> {
+    fn call(&mut self, map: &ValueMap) -> bool {
         let value = map.current().unwrap();
-        let bool = match value {
+        match value {
             Value::Int8(_) => false,
             Value::String(s) => s.starts_with(&self.0),
             Value::Struct(_) => false,
-        };
-        Rule::<()>::after_call(self, bool)
+        }
     }
 }
 
@@ -394,12 +399,12 @@ impl<F> Rule<ValueMap> for F
 where
     F: for<'a> FnOnce(&'a ValueMap) -> Result<(), String> + 'static + Clone,
 {
-    fn call(&self, data: &ValueMap) -> Result<(), String> {
+    fn call_message(&mut self, data: &ValueMap) -> Result<(), String> {
         self.clone()(&data)
     }
 
-    fn name(&self) -> RuleName<ValueMap> {
-        "custom".into()
+    fn name(&self) -> &'static str {
+        "relate"
     }
     fn message(&self) -> String {
         String::default()
@@ -410,13 +415,13 @@ impl<F> Rule<Value> for F
 where
     F: for<'a> FnOnce(&'a Value) -> Result<(), String> + 'static + Clone,
 {
-    fn call(&self, data: &ValueMap) -> Result<(), String> {
+    fn call_message(&mut self, data: &ValueMap) -> Result<(), String> {
         let value = data.current().unwrap();
         self.clone()(value)
     }
 
-    fn name(&self) -> RuleName<Value> {
-        "custom".into()
+    fn name(&self) -> &'static str {
+        "custom"
     }
     fn message(&self) -> String {
         String::default()
