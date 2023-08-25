@@ -16,8 +16,8 @@ pub enum Value {
 }
 
 pub struct ValueMap {
-    value: Value,
-    index: &'static str,
+    pub value: Value,
+    pub index: &'static str,
 }
 
 impl ValueMap {

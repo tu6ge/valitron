@@ -22,12 +22,42 @@ pub trait Rule<T>: 'static {
     }
 
     /// rule specific implementation, data is current field's value, and all_data is all.
-    fn call(self, data: &ValueMap) -> Result<(), String>;
+    fn call(&self, data: &ValueMap) -> Result<(), String>;
 }
 
-pub enum Judge {
-    Pass,
-    Failed(String),
+trait CloneRule<T>: Rule<T> {
+    fn clone_box(&self) -> Box<dyn CloneRule<T>>;
+}
+
+impl<T, R> CloneRule<T> for R
+where
+    R: Rule<T> + Clone + 'static,
+{
+    fn clone_box(&self) -> Box<dyn CloneRule<T>> {
+        Box::new(self.clone())
+    }
+}
+
+pub struct BoxCloneRule<T>(Box<dyn CloneRule<T>>);
+
+impl<T> BoxCloneRule<T> {
+    fn new<R>(rule: R) -> Self
+    where
+        R: Rule<T> + Clone + 'static,
+    {
+        BoxCloneRule(Box::new(rule))
+    }
+}
+impl<T: 'static> BoxCloneRule<T> {
+    fn call(&self, map: &ValueMap) -> Result<(), String> {
+        self.0.call(map)
+    }
+}
+
+impl<T: 'static> Clone for BoxCloneRule<T> {
+    fn clone(&self) -> Self {
+        Self(self.0.clone_box())
+    }
 }
 
 /// rule extension, it contains some rules, such as
@@ -35,35 +65,35 @@ pub enum Judge {
 /// Rule1.and(Rule2).and(Rule3)
 /// ```
 pub trait RuleExt {
-    fn and<R: Rule<()>>(self, other: R) -> RuleBox;
-    fn custom<R2: Rule<Value>>(self, other: R2) -> RuleBox;
-    fn fusion<R2: Rule<ValueMap>>(self, other: R2) -> RuleBox;
+    fn and<R: Rule<()> + Clone>(self, other: R) -> RuleBox;
+    fn custom<R2: Rule<Value> + Clone>(self, other: R2) -> RuleBox;
+    fn fusion<R2: Rule<ValueMap> + Clone>(self, other: R2) -> RuleBox;
 }
 
-impl<R: Rule<()>> RuleExt for R {
-    fn and<R2: Rule<()>>(self, other: R2) -> RuleBox {
+impl<R: Rule<()> + Clone> RuleExt for R {
+    fn and<R2: Rule<()> + Clone>(self, other: R2) -> RuleBox {
         RuleBox {
             list: vec![
-                Endpoint::Rule(Box::new(self)),
-                Endpoint::Rule(Box::new(other)),
+                Endpoint::Rule(BoxCloneRule::new(self)),
+                Endpoint::Rule(BoxCloneRule::new(other)),
             ],
             is_bail: false,
         }
     }
-    fn custom<R2: Rule<Value>>(self, other: R2) -> RuleBox {
+    fn custom<R2: Rule<Value> + Clone>(self, other: R2) -> RuleBox {
         RuleBox {
             list: vec![
-                Endpoint::Rule(Box::new(self)),
-                Endpoint::HanderRule(Box::new(other)),
+                Endpoint::Rule(BoxCloneRule::new(self)),
+                Endpoint::HanderRule(BoxCloneRule::new(other)),
             ],
             is_bail: false,
         }
     }
-    fn fusion<R2: Rule<ValueMap>>(self, other: R2) -> RuleBox {
+    fn fusion<R2: Rule<ValueMap> + Clone>(self, other: R2) -> RuleBox {
         RuleBox {
             list: vec![
-                Endpoint::Rule(Box::new(self)),
-                Endpoint::FusionRule(Box::new(other)),
+                Endpoint::Rule(BoxCloneRule::new(self)),
+                Endpoint::FusionRule(BoxCloneRule::new(other)),
             ],
             is_bail: false,
         }
@@ -86,9 +116,9 @@ impl<T> From<&'static str> for RuleName<T> {
 }
 
 enum Endpoint {
-    Rule(Box<dyn Rule<()>>),
-    HanderRule(Box<dyn Rule<Value>>),
-    FusionRule(Box<dyn Rule<ValueMap>>),
+    Rule(BoxCloneRule<()>),
+    HanderRule(BoxCloneRule<Value>),
+    FusionRule(BoxCloneRule<ValueMap>),
 }
 
 /// rules collection
@@ -98,45 +128,43 @@ pub struct RuleBox {
 }
 
 impl RuleBox {
-    pub fn and<R: Rule<()>>(self, other: R) -> Self {
-        let RuleBox { mut list, is_bail } = self;
-        list.push(Endpoint::Rule(Box::new(other)));
-        Self { list, is_bail }
+    pub fn and<R: Rule<()> + Clone>(mut self, other: R) -> Self {
+        self.list.push(Endpoint::Rule(BoxCloneRule::new(other)));
+        self
     }
-    pub fn custom<R: Rule<Value>>(self, other: R) -> Self {
-        let RuleBox { mut list, is_bail } = self;
-        list.push(Endpoint::HanderRule(Box::new(other)));
-        Self { list, is_bail }
-    }
-
-    pub fn fusion<R: Rule<ValueMap>>(self, other: R) -> Self {
-        let RuleBox { mut list, is_bail } = self;
-        list.push(Endpoint::FusionRule(Box::new(other)));
-        Self { list, is_bail }
+    pub fn custom<R: Rule<Value> + Clone>(mut self, other: R) -> Self {
+        self.list
+            .push(Endpoint::HanderRule(BoxCloneRule::new(other)));
+        self
     }
 
-    pub fn bail(self) -> Self {
-        let RuleBox { list, .. } = self;
-        let is_bail = true;
-        Self { list, is_bail }
+    pub fn fusion<R: Rule<ValueMap> + Clone>(mut self, other: R) -> Self {
+        self.list
+            .push(Endpoint::FusionRule(BoxCloneRule::new(other)));
+        self
     }
 
-    // fn call(self) {
-    //     let data = ValueMap{
-    //       value: Value::Int8(18),
-    //       index: "abc",
-    //     };
-    //     for endpoint in self.list.iter() {
-    //         match endpoint {
-    //             Endpoint::Rule(rule) => {
-    //               let res = (**rule).call(&data);
-    //               ()
-    //             },
-    //             _ => (),
-    //         }
-    //     }
-    //     "aa";
-    // }
+    pub fn bail(mut self) -> Self {
+        self.is_bail = true;
+        self
+    }
+
+    fn call(self) {
+        let data = ValueMap {
+            value: Value::Int8(18),
+            index: "abc",
+        };
+        for endpoint in self.list.iter() {
+            match endpoint {
+                Endpoint::Rule(rule) => {
+                    let res = rule.call(&data);
+                    ()
+                }
+                _ => (),
+            }
+        }
+        "aa";
+    }
 }
 
 // impl<F> From<F> for RuleBox<ValueMap>
@@ -181,7 +209,7 @@ where
     F: for<'a> FnOnce(&'a Value) -> Result<(), String> + 'static + Clone,
 {
     RuleBox {
-        list: vec![Endpoint::HanderRule(Box::new(f))],
+        list: vec![Endpoint::HanderRule(BoxCloneRule::new(f))],
         is_bail: false,
     }
 }
@@ -190,7 +218,7 @@ where
     F: for<'a> FnOnce(&'a ValueMap) -> Result<(), String> + 'static + Clone,
 {
     RuleBox {
-        list: vec![Endpoint::FusionRule(Box::new(f))],
+        list: vec![Endpoint::FusionRule(BoxCloneRule::new(f))],
         is_bail: false,
     }
 }
@@ -201,11 +229,11 @@ impl IntoRuleBox for RuleBox {
 }
 impl<R> IntoRuleBox for R
 where
-    R: Rule<()>,
+    R: Rule<()> + Clone,
 {
     fn into_rule_box(self) -> RuleBox {
         RuleBox {
-            list: vec![Endpoint::Rule(Box::new(self))],
+            list: vec![Endpoint::Rule(BoxCloneRule::new(self))],
             is_bail: false,
         }
     }
@@ -259,7 +287,7 @@ impl Rule<()> for Required {
         "this field is required".into()
     }
 
-    fn call(self, map: &ValueMap) -> Result<(), String> {
+    fn call(&self, map: &ValueMap) -> Result<(), String> {
         let value = map.current().unwrap();
         let bool = match value {
             Value::Int8(_) => true,
@@ -267,7 +295,7 @@ impl Rule<()> for Required {
             Value::Struct(_) => true,
         };
 
-        Rule::<()>::after_call(&self, bool)
+        Rule::<()>::after_call(self, bool)
     }
 }
 
@@ -281,14 +309,14 @@ impl Rule<()> for StartWith<&'static str> {
     fn message(&self) -> String {
         "this field must be start with {}".into()
     }
-    fn call(self, map: &ValueMap) -> Result<(), String> {
+    fn call(&self, map: &ValueMap) -> Result<(), String> {
         let value = map.current().unwrap();
         let bool = match value {
             Value::Int8(_) => false,
             Value::String(s) => s.starts_with(&self.0),
             Value::Struct(_) => false,
         };
-        Rule::<()>::after_call(&self, bool)
+        Rule::<()>::after_call(self, bool)
     }
 }
 
@@ -366,8 +394,8 @@ impl<F> Rule<ValueMap> for F
 where
     F: for<'a> FnOnce(&'a ValueMap) -> Result<(), String> + 'static + Clone,
 {
-    fn call(self, data: &ValueMap) -> Result<(), String> {
-        self(&data)
+    fn call(&self, data: &ValueMap) -> Result<(), String> {
+        self.clone()(&data)
     }
 
     fn name(&self) -> RuleName<ValueMap> {
@@ -382,9 +410,9 @@ impl<F> Rule<Value> for F
 where
     F: for<'a> FnOnce(&'a Value) -> Result<(), String> + 'static + Clone,
 {
-    fn call(self, data: &ValueMap) -> Result<(), String> {
+    fn call(&self, data: &ValueMap) -> Result<(), String> {
         let value = data.current().unwrap();
-        self(value)
+        self.clone()(value)
     }
 
     fn name(&self) -> RuleName<Value> {
