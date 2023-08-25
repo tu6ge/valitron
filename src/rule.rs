@@ -34,14 +34,17 @@ pub enum Judge {
 /// ```no_run
 /// Rule1.and(Rule2).and(Rule3)
 /// ```
-pub trait RuleExt<T> {
-    fn and<R: Rule<T>>(self, other: R) -> RuleBox<T>;
+pub trait RuleExt {
+    fn and<R: Rule<()>>(self, other: R) -> RuleBox;
 }
 
-impl<T, R: Rule<T>> RuleExt<T> for R {
-    fn and<R2: Rule<T>>(self, other: R2) -> RuleBox<T> {
+impl<R: Rule<()>> RuleExt for R {
+    fn and<R2: Rule<()>>(self, other: R2) -> RuleBox {
         RuleBox {
-            list: vec![Box::new(self), Box::new(other)],
+            list: vec![
+                Endpoint::Rule(Box::new(self)),
+                Endpoint::Rule(Box::new(other)),
+            ],
             is_bail: false,
         }
     }
@@ -62,16 +65,33 @@ impl<T> From<&'static str> for RuleName<T> {
     }
 }
 
+enum Endpoint {
+    Rule(Box<dyn Rule<()>>),
+    HanderRule(Box<dyn Rule<Value>>),
+    FusionRule(Box<dyn Rule<ValueMap>>),
+}
+
 /// rules collection
-pub struct RuleBox<T = ()> {
-    list: Vec<Box<dyn Rule<T>>>,
+pub struct RuleBox {
+    list: Vec<Endpoint>,
     is_bail: bool,
 }
 
-impl<T> RuleBox<T> {
-    pub fn and<R: Rule<T>>(self, other: R) -> Self {
+impl RuleBox {
+    pub fn and<R: Rule<()>>(self, other: R) -> Self {
         let RuleBox { mut list, is_bail } = self;
-        list.push(Box::new(other));
+        list.push(Endpoint::Rule(Box::new(other)));
+        Self { list, is_bail }
+    }
+    pub fn custom<R: Rule<Value>>(self, other: R) -> Self {
+        let RuleBox { mut list, is_bail } = self;
+        list.push(Endpoint::HanderRule(Box::new(other)));
+        Self { list, is_bail }
+    }
+
+    pub fn fusion<R: Rule<ValueMap>>(self, other: R) -> Self {
+        let RuleBox { mut list, is_bail } = self;
+        list.push(Endpoint::FusionRule(Box::new(other)));
         Self { list, is_bail }
     }
 
@@ -82,53 +102,104 @@ impl<T> RuleBox<T> {
     }
 }
 
-// impl<R: Rule<()>> From<R> for RuleBox<()> {
-//     fn from(value: R) -> Self {
+// impl<F> From<F> for RuleBox<ValueMap>
+// where
+//     F: for<'a> FnOnce(&'a ValueMap) -> Result<(), String> + 'static + Clone,
+// {
+//     fn from(value: F) -> Self {
 //         Self {
-//             list: vec![Box::new(value)],
+//             list: vec![Endpoint::HanderRule(Box::new(value))],
+//             is_bail: false,
+//         }
+//     }
+// }
+// impl<F> From<F> for RuleBox<Value>
+// where
+//     F: for<'a> FnOnce(&'a Value) -> Result<(), String> + 'static + Clone,
+// {
+//     fn from(value: F) -> Self {
+//         Self {
+//             list: vec![Endpoint::HanderRule(Box::new(value))],
 //             is_bail: false,
 //         }
 //     }
 // }
 
-trait IntoRuleBox<T> {
-    fn into_rule_box(self) -> RuleBox<T>;
+trait IntoRuleBox {
+    fn into_rule_box(self) -> RuleBox;
 }
 
-impl IntoRuleBox<()> for RuleBox<()> {
-    fn into_rule_box(self) -> RuleBox<()> {
+// impl IntoRuleBox<ValueMap> for RuleBox<ValueMap> {
+//     fn into_rule_box(self) -> RuleBox<ValueMap> {
+//         self
+//     }
+// }
+// impl IntoRuleBox<Value> for RuleBox<Value> {
+//     fn into_rule_box(self) -> RuleBox<Value> {
+//         self
+//     }
+// }
+pub fn custom<F>(f: F) -> RuleBox
+where
+    F: for<'a> FnOnce(&'a Value) -> Result<(), String> + 'static + Clone,
+{
+    RuleBox {
+        list: vec![Endpoint::HanderRule(Box::new(f))],
+        is_bail: false,
+    }
+}
+pub fn fusion<F>(f: F) -> RuleBox
+where
+    F: for<'a> FnOnce(&'a ValueMap) -> Result<(), String> + 'static + Clone,
+{
+    RuleBox {
+        list: vec![Endpoint::FusionRule(Box::new(f))],
+        is_bail: false,
+    }
+}
+impl IntoRuleBox for RuleBox {
+    fn into_rule_box(self) -> Self {
         self
     }
 }
-impl<R, T> IntoRuleBox<T> for R
+impl<R> IntoRuleBox for R
 where
-    R: Rule<T>,
+    R: Rule<()>,
 {
-    fn into_rule_box(self) -> RuleBox<T> {
-        RuleBox::<T> {
-            list: vec![Box::new(self)],
+    fn into_rule_box(self) -> RuleBox {
+        RuleBox {
+            list: vec![Endpoint::Rule(Box::new(self))],
             is_bail: false,
         }
     }
 }
 
-fn register<T, R: IntoRuleBox<T>>(rule: R) {}
+fn register<R: IntoRuleBox>(rule: R) {}
 
 fn hander(val: &ValueMap) -> Result<(), String> {
     Ok(())
 }
-// fn hander2(val: &Value, list: &Value) -> Result<(), String> {
-//     Ok(())
-// }
+fn hander2(val: &Value) -> Result<(), String> {
+    Ok(())
+}
 
 fn test() {
     register(Required);
     register(Required.and(StartWith("foo")));
     register(Required.and(StartWith("foo")).bail());
-    register(Required.and(StartWith("foo")).and(hander).bail());
-    register(hander);
-    //register(hander2);
-    register(|a: &ValueMap| Ok::<_, String>(()));
+    register(Required.and(StartWith("foo")).custom(hander2).bail());
+    register(Required.and(StartWith("foo")).fusion(hander).bail());
+    register(
+        Required
+            .and(StartWith("foo"))
+            .custom(hander2)
+            .fusion(hander)
+            .bail(),
+    );
+    register(custom(hander2));
+    register(fusion(hander));
+    register(fusion(hander).and(StartWith("foo")));
+    // register(|a: &ValueMap| Ok::<_, String>(()));
 }
 
 #[derive(Clone, Debug)]
@@ -245,7 +316,7 @@ impl Rule<()> for StartWith<&'static str> {
 //     }
 // }
 
-impl<F> Rule<()> for F
+impl<F> Rule<ValueMap> for F
 where
     F: for<'a> FnOnce(&'a ValueMap) -> Result<(), String> + 'static + Clone,
 {
@@ -253,7 +324,7 @@ where
         self(&data)
     }
 
-    fn name(&self) -> RuleName<()> {
+    fn name(&self) -> RuleName<ValueMap> {
         "custom".into()
     }
     fn message(&self) -> String {
@@ -261,18 +332,19 @@ where
     }
 }
 
-// impl<F> Rule<(Value, Value)> for F
-// where
-//     F: for<'a> FnOnce(&'a Value, &'a Value) -> Result<(), String> + 'static + Clone,
-// {
-//     fn call(self, data: &ValueMap) -> Result<(), String> {
-//         self(&data, &all_data)
-//     }
+impl<F> Rule<Value> for F
+where
+    F: for<'a> FnOnce(&'a Value) -> Result<(), String> + 'static + Clone,
+{
+    fn call(self, data: &ValueMap) -> Result<(), String> {
+        let value = data.current().unwrap();
+        self(value)
+    }
 
-//     fn name(&self) -> RuleName<(Value, Value)> {
-//         "custom".into()
-//     }
-//     fn message(&self) -> String {
-//         String::default()
-//     }
-// }
+    fn name(&self) -> RuleName<Value> {
+        "custom".into()
+    }
+    fn message(&self) -> String {
+        String::default()
+    }
+}
