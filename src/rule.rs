@@ -15,10 +15,10 @@ pub trait Rule<T>: 'static {
     fn name(&self) -> &'static str;
 
     /// Default rule error message, when validate fails, return the message to user
-    fn message(&self) -> String;
+    fn message(&self) -> Message;
 
     /// Rule specific implementation, data is gived type all field's value, and current field index.
-    fn call_message(&mut self, data: &ValueMap) -> Result<(), String> {
+    fn call_message(&mut self, data: &ValueMap) -> Result<(), Message> {
         if self.call_relate(data) {
             Ok(())
         } else {
@@ -37,6 +37,9 @@ pub trait Rule<T>: 'static {
     /// Rule specific implementation, data is current field's value
     fn call(&mut self, data: &Value) -> bool;
 }
+
+/// Error message returned when validation fails
+pub type Message = String;
 
 trait CloneRule<T>: Rule<T> {
     fn clone_box(&self) -> Box<dyn CloneRule<T>>;
@@ -62,7 +65,7 @@ impl<T> BoxCloneRule<T> {
     }
 }
 impl<T: 'static> BoxCloneRule<T> {
-    fn call_message(&mut self, map: &ValueMap) -> Result<(), String> {
+    fn call_message(&mut self, map: &ValueMap) -> Result<(), Message> {
         self.0.call_message(map)
     }
 }
@@ -217,7 +220,7 @@ trait IntoRuleList {
 // }
 pub fn custom<F>(f: F) -> RuleList
 where
-    F: for<'a> FnOnce(&'a Value) -> Result<(), String> + 'static + Clone,
+    F: for<'a> FnOnce(&'a Value) -> Result<(), Message> + 'static + Clone,
 {
     RuleList {
         list: vec![Endpoint::HanderRule(BoxCloneRule::new(f))],
@@ -226,7 +229,7 @@ where
 }
 pub fn relate<F>(f: F) -> RuleList
 where
-    F: for<'a> FnOnce(&'a ValueMap) -> Result<(), String> + 'static + Clone,
+    F: for<'a> FnOnce(&'a ValueMap) -> Result<(), Message> + 'static + Clone,
 {
     RuleList {
         list: vec![Endpoint::RelateRule(BoxCloneRule::new(f))],
@@ -255,10 +258,10 @@ mod test_regster {
     use super::*;
     fn register<R: IntoRuleList>(rule: R) {}
 
-    fn hander(_val: &ValueMap) -> Result<(), String> {
+    fn hander(_val: &ValueMap) -> Result<(), Message> {
         Ok(())
     }
-    fn hander2(_val: &Value) -> Result<(), String> {
+    fn hander2(_val: &Value) -> Result<(), Message> {
         Ok(())
     }
 
@@ -294,7 +297,7 @@ impl Rule<()> for Required {
     fn name(&self) -> &'static str {
         "required"
     }
-    fn message(&self) -> String {
+    fn message(&self) -> Message {
         "this field is required".into()
     }
 
@@ -314,7 +317,7 @@ impl Rule<()> for StartWith<&'static str> {
     fn name(&self) -> &'static str {
         "start_with"
     }
-    fn message(&self) -> String {
+    fn message(&self) -> Message {
         "this field must be start with {}".into()
     }
     fn call(&mut self, value: &Value) -> bool {
@@ -398,16 +401,16 @@ impl Rule<()> for StartWith<&'static str> {
 
 impl<F> Rule<ValueMap> for F
 where
-    F: for<'a> FnOnce(&'a ValueMap) -> Result<(), String> + 'static + Clone,
+    F: for<'a> FnOnce(&'a ValueMap) -> Result<(), Message> + 'static + Clone,
 {
-    fn call_message(&mut self, data: &ValueMap) -> Result<(), String> {
+    fn call_message(&mut self, data: &ValueMap) -> Result<(), Message> {
         self.clone()(&data)
     }
 
     fn name(&self) -> &'static str {
         "relate"
     }
-    fn message(&self) -> String {
+    fn message(&self) -> Message {
         unreachable!()
     }
     fn call(&mut self, data: &Value) -> bool {
@@ -417,9 +420,9 @@ where
 
 impl<F> Rule<Value> for F
 where
-    F: for<'a> FnOnce(&'a Value) -> Result<(), String> + 'static + Clone,
+    F: for<'a> FnOnce(&'a Value) -> Result<(), Message> + 'static + Clone,
 {
-    fn call_message(&mut self, data: &ValueMap) -> Result<(), String> {
+    fn call_message(&mut self, data: &ValueMap) -> Result<(), Message> {
         // TODO unwrap
         let value = data.current().unwrap();
         self.clone()(value)
@@ -428,7 +431,7 @@ where
     fn name(&self) -> &'static str {
         "custom"
     }
-    fn message(&self) -> String {
+    fn message(&self) -> Message {
         unreachable!()
     }
     fn call(&mut self, data: &Value) -> bool {
