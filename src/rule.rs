@@ -18,7 +18,7 @@ pub trait Rule<T>: 'static {
     fn message(&self) -> Message;
 
     /// Rule specific implementation, data is gived type all field's value, and current field index.
-    fn call_message(&mut self, data: &ValueMap) -> Result<(), Message> {
+    fn call_message(&mut self, data: &mut ValueMap) -> Result<(), Message> {
         if self.call_with_relate(data) {
             Ok(())
         } else {
@@ -28,14 +28,14 @@ pub trait Rule<T>: 'static {
 
     /// Rule specific implementation, data is gived type all field's value, and current field index.
     /// when the method return true, call_message will return Ok(()), or else return Err(String)
-    fn call_with_relate(&mut self, data: &ValueMap) -> bool {
+    fn call_with_relate(&mut self, data: &mut ValueMap) -> bool {
         // TODO unwrap
-        let value = data.current().unwrap();
+        let value = data.current_mut().unwrap();
         self.call(value)
     }
 
     /// Rule specific implementation, data is current field's value
-    fn call(&mut self, data: &Value) -> bool;
+    fn call(&mut self, data: &mut Value) -> bool;
 }
 
 /// Error message returned when validation fails
@@ -65,7 +65,7 @@ impl<T> BoxCloneRule<T> {
     }
 }
 impl<T: 'static> BoxCloneRule<T> {
-    fn call_message(&mut self, map: &ValueMap) -> Result<(), Message> {
+    fn call_message(&mut self, map: &mut ValueMap) -> Result<(), Message> {
         self.0.call_message(map)
     }
 }
@@ -163,17 +163,17 @@ impl RuleList {
         self
     }
 
-    fn call(mut self, data: &ValueMap) {
+    fn call(mut self, data: &mut ValueMap) {
         for endpoint in self.list.iter_mut() {
             match endpoint {
                 Endpoint::Rule(rule) => {
-                    let res = rule.call_message(&data);
+                    let res = rule.call_message(data);
                 }
                 Endpoint::HanderRule(handle) => {
-                    let res = handle.call_message(&data);
+                    let res = handle.call_message(data);
                 }
                 Endpoint::RelateRule(handle) => {
-                    let res = handle.call_message(&data);
+                    let res = handle.call_message(data);
                 }
             }
         }
@@ -220,7 +220,7 @@ trait IntoRuleList {
 // }
 pub fn custom<F>(f: F) -> RuleList
 where
-    F: for<'a> FnOnce(&'a Value) -> Result<(), Message> + 'static + Clone,
+    F: for<'a> FnOnce(&'a mut Value) -> Result<(), Message> + 'static + Clone,
 {
     RuleList {
         list: vec![Endpoint::HanderRule(BoxCloneRule::new(f))],
@@ -229,7 +229,7 @@ where
 }
 pub fn relate<F>(f: F) -> RuleList
 where
-    F: for<'a> FnOnce(&'a ValueMap) -> Result<(), Message> + 'static + Clone,
+    F: for<'a> FnOnce(&'a mut ValueMap) -> Result<(), Message> + 'static + Clone,
 {
     RuleList {
         list: vec![Endpoint::RelateRule(BoxCloneRule::new(f))],
@@ -258,10 +258,10 @@ mod test_regster {
     use super::*;
     fn register<R: IntoRuleList>(rule: R) {}
 
-    fn hander(_val: &ValueMap) -> Result<(), Message> {
+    fn hander(_val: &mut ValueMap) -> Result<(), Message> {
         Ok(())
     }
-    fn hander2(_val: &Value) -> Result<(), Message> {
+    fn hander2(_val: &mut Value) -> Result<(), Message> {
         Ok(())
     }
 
@@ -301,7 +301,7 @@ impl Rule<()> for Required {
         "this field is required".into()
     }
 
-    fn call(&mut self, value: &Value) -> bool {
+    fn call(&mut self, value: &mut Value) -> bool {
         match value {
             Value::Int8(_) => true,
             Value::String(s) => !s.is_empty(),
@@ -320,7 +320,7 @@ impl Rule<()> for StartWith<&'static str> {
     fn message(&self) -> Message {
         "this field must be start with {}".into()
     }
-    fn call(&mut self, value: &Value) -> bool {
+    fn call(&mut self, value: &mut Value) -> bool {
         match value {
             Value::Int8(_) => false,
             Value::String(s) => s.starts_with(&self.0),
@@ -404,10 +404,10 @@ impl Rule<()> for StartWith<&'static str> {
 
 impl<F> Rule<ValueMap> for F
 where
-    F: for<'a> FnOnce(&'a ValueMap) -> Result<(), Message> + 'static + Clone,
+    F: for<'a> FnOnce(&'a mut ValueMap) -> Result<(), Message> + 'static + Clone,
 {
-    fn call_message(&mut self, data: &ValueMap) -> Result<(), Message> {
-        self.clone()(&data)
+    fn call_message(&mut self, data: &mut ValueMap) -> Result<(), Message> {
+        self.clone()(data)
     }
 
     fn name(&self) -> &'static str {
@@ -416,18 +416,18 @@ where
     fn message(&self) -> Message {
         unreachable!()
     }
-    fn call(&mut self, data: &Value) -> bool {
+    fn call(&mut self, _: &mut Value) -> bool {
         unreachable!()
     }
 }
 
 impl<F> Rule<Value> for F
 where
-    F: for<'a> FnOnce(&'a Value) -> Result<(), Message> + 'static + Clone,
+    F: for<'a> FnOnce(&'a mut Value) -> Result<(), Message> + 'static + Clone,
 {
-    fn call_message(&mut self, data: &ValueMap) -> Result<(), Message> {
+    fn call_message(&mut self, data: &mut ValueMap) -> Result<(), Message> {
         // TODO unwrap
-        let value = data.current().unwrap();
+        let value = data.current_mut().unwrap();
         self.clone()(value)
     }
 
@@ -437,7 +437,7 @@ where
     fn message(&self) -> Message {
         unreachable!()
     }
-    fn call(&mut self, data: &Value) -> bool {
+    fn call(&mut self, _: &mut Value) -> bool {
         unreachable!()
     }
 }

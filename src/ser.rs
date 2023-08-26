@@ -24,6 +24,9 @@ impl ValueMap {
     pub(crate) fn current(&self) -> Option<&Value> {
         self.value.get(self.index)
     }
+    pub(crate) fn current_mut(&mut self) -> Option<&mut Value> {
+        self.value.get_mut(self.index)
+    }
     pub(crate) fn get(&self, key: &str) -> Option<&Value> {
         self.value.get(key)
     }
@@ -42,6 +45,13 @@ impl Value {
     pub(crate) fn get(&self, key: &str) -> Option<&Value> {
         if let Self::Struct(map) = self {
             map.get(key)
+        } else {
+            None
+        }
+    }
+    pub(crate) fn get_mut(&mut self, key: &str) -> Option<&mut Value> {
+        if let Self::Struct(map) = self {
+            map.get_mut(key)
         } else {
             None
         }
