@@ -19,7 +19,7 @@ pub trait Rule<T>: 'static {
 
     /// Rule specific implementation, data is gived type all field's value, and current field index.
     fn call_message(&mut self, data: &ValueMap) -> Result<(), Message> {
-        if self.call_relate(data) {
+        if self.call_with_relate(data) {
             Ok(())
         } else {
             Err(self.message())
@@ -28,7 +28,7 @@ pub trait Rule<T>: 'static {
 
     /// Rule specific implementation, data is gived type all field's value, and current field index.
     /// when the method return true, call_message will return Ok(()), or else return Err(String)
-    fn call_relate(&mut self, data: &ValueMap) -> bool {
+    fn call_with_relate(&mut self, data: &ValueMap) -> bool {
         // TODO unwrap
         let value = data.current().unwrap();
         self.call(value)
@@ -348,24 +348,27 @@ impl Rule<()> for StartWith<&'static str> {
 // #[derive(Clone)]
 // struct Confirm(&'static str);
 
-// impl Rule for Confirm {
+// impl Rule<()> for Confirm {
 //     fn name(&self) -> &'static str {
 //         "confirm"
 //     }
-//     fn message(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-//         write!(f, "this field value must be eq {} field value", self.0)
+//     fn message(&self) -> Message {
+//         "this field value must be eq {} field value".into()
 //     }
-//     fn call_relate(&mut self, value: &ValueMap) -> bool {
-//         let target = all.get(self.0);
+//     fn call_with_relate(&mut self, value: &ValueMap) -> bool {
+//         let target = value.get(self.0);
 //         let target = match target {
 //             Some(target) if target.is_leaf() => target,
 //             _ => return false,
 //         };
-//         match (value, target) {
+//         match (value.current().unwrap(), target) {
 //             (Value::Int8(v), Value::Int8(ref t)) if v == t => true,
 //             (Value::String(v), Value::String(ref t)) if v == t => true,
 //             _ => false,
 //         }
+//     }
+//     fn call(&mut self, _value: &Value) -> bool {
+//         unreachable!()
 //     }
 // }
 

@@ -24,6 +24,9 @@ impl ValueMap {
     pub(crate) fn current(&self) -> Option<&Value> {
         self.value.get(self.index)
     }
+    pub(crate) fn get(&self, key: &str) -> Option<&Value> {
+        self.value.get(key)
+    }
 }
 
 type Map = BTreeMap<String, Value>;
