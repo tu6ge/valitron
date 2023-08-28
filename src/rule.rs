@@ -5,41 +5,36 @@ use std::marker::PhantomData;
 use crate::ser::{Value, ValueMap};
 
 /// A Rule trait
-pub trait Rule<T>: 'static {
-    /// Named rule type
-    fn rule_name(&self) -> RuleName<T> {
-        self.name().into()
-    }
-
+pub trait Rule<M>: 'static {
     /// Named rule type
     fn name(&self) -> &'static str;
 
-    /// Default rule error message, when validate fails, return the message to user
-    fn message(&self) -> Message;
-
     /// Rule specific implementation, data is gived type all field's value, and current field index.
-    fn call_message(&mut self, data: &mut ValueMap) -> Result<(), Message> {
-        if self.call_with_relate(data) {
-            Ok(())
-        } else {
-            Err(self.message())
-        }
-    }
-
-    /// Rule specific implementation, data is gived type all field's value, and current field index.
-    /// when the method return true, call_message will return Ok(()), or else return Err(String)
-    fn call_with_relate(&mut self, data: &mut ValueMap) -> bool {
-        // TODO unwrap
-        let value = data.current_mut().unwrap();
-        self.call(value)
-    }
-
-    /// Rule specific implementation, data is current field's value
-    fn call(&mut self, data: &mut Value) -> bool;
+    fn call(&mut self, data: &mut ValueMap) -> Result<(), Message<M>>;
 }
 
 /// Error message returned when validation fails
-pub type Message = String;
+pub struct Message<T> {
+    inner: String,
+    _marker: PhantomData<fn() -> T>,
+}
+
+impl<T> From<String> for Message<T> {
+    fn from(inner: String) -> Self {
+        Self {
+            inner,
+            _marker: PhantomData,
+        }
+    }
+}
+impl<T> From<&str> for Message<T> {
+    fn from(value: &str) -> Self {
+        Self {
+            inner: value.to_owned(),
+            _marker: PhantomData,
+        }
+    }
+}
 
 trait CloneRule<T>: Rule<T> {
     fn clone_box(&self) -> Box<dyn CloneRule<T>>;
@@ -65,8 +60,8 @@ impl<T> BoxCloneRule<T> {
     }
 }
 impl<T: 'static> BoxCloneRule<T> {
-    fn call_message(&mut self, map: &mut ValueMap) -> Result<(), Message> {
-        self.0.call_message(map)
+    fn call(&mut self, map: &mut ValueMap) -> Result<(), Message<T>> {
+        self.0.call(map)
     }
 }
 
@@ -116,19 +111,6 @@ impl<R: Rule<()> + Clone> RuleExt for R {
     }
 }
 
-/// Store validate rule name
-pub struct RuleName<T> {
-    _marker: PhantomData<fn() -> T>,
-}
-
-impl<T> From<&'static str> for RuleName<T> {
-    fn from(_name: &'static str) -> Self {
-        Self {
-            _marker: PhantomData,
-        }
-    }
-}
-
 enum Endpoint {
     Rule(BoxCloneRule<()>),
     HanderRule(BoxCloneRule<Value>),
@@ -167,13 +149,13 @@ impl RuleList {
         for endpoint in self.list.iter_mut() {
             match endpoint {
                 Endpoint::Rule(rule) => {
-                    let res = rule.call_message(data);
+                    let res = rule.call(data);
                 }
                 Endpoint::HanderRule(handle) => {
-                    let res = handle.call_message(data);
+                    let res = handle.call(data);
                 }
                 Endpoint::RelateRule(handle) => {
-                    let res = handle.call_message(data);
+                    let res = handle.call(data);
                 }
             }
         }
@@ -220,7 +202,8 @@ trait IntoRuleList {
 // }
 pub fn custom<F>(f: F) -> RuleList
 where
-    F: for<'a> FnOnce(&'a mut Value) -> Result<(), Message> + 'static + Clone,
+    F: for<'a> FnOnce(&'a mut Value) -> Result<(), String> + 'static + Clone,
+    F: Rule<Value>,
 {
     RuleList {
         list: vec![Endpoint::HanderRule(BoxCloneRule::new(f))],
@@ -229,7 +212,8 @@ where
 }
 pub fn relate<F>(f: F) -> RuleList
 where
-    F: for<'a> FnOnce(&'a mut ValueMap) -> Result<(), Message> + 'static + Clone,
+    F: for<'a> FnOnce(&'a mut ValueMap) -> Result<(), String> + 'static + Clone,
+    F: Rule<ValueMap>,
 {
     RuleList {
         list: vec![Endpoint::RelateRule(BoxCloneRule::new(f))],
@@ -258,10 +242,10 @@ mod test_regster {
     use super::*;
     fn register<R: IntoRuleList>(rule: R) {}
 
-    fn hander(_val: &mut ValueMap) -> Result<(), Message> {
+    fn hander(_val: &mut ValueMap) -> Result<(), String> {
         Ok(())
     }
-    fn hander2(_val: &mut Value) -> Result<(), Message> {
+    fn hander2(_val: &mut Value) -> Result<(), String> {
         Ok(())
     }
 
@@ -293,11 +277,11 @@ mod test_regster {
 #[derive(Clone, Debug)]
 struct Required;
 
-impl Rule<()> for Required {
+impl<M> RuleShortcut<M> for Required {
     fn name(&self) -> &'static str {
         "required"
     }
-    fn message(&self) -> Message {
+    fn message(&self) -> Message<M> {
         "this field is required".into()
     }
 
@@ -313,11 +297,11 @@ impl Rule<()> for Required {
 #[derive(Clone, Debug)]
 struct StartWith<T>(T);
 
-impl Rule<()> for StartWith<&'static str> {
+impl<M> RuleShortcut<M> for StartWith<&'static str> {
     fn name(&self) -> &'static str {
         "start_with"
     }
-    fn message(&self) -> Message {
+    fn message(&self) -> Message<M> {
         "this field must be start with {}".into()
     }
     fn call(&mut self, value: &mut Value) -> bool {
@@ -348,14 +332,14 @@ impl Rule<()> for StartWith<&'static str> {
 // #[derive(Clone)]
 // struct Confirm(&'static str);
 
-// impl Rule<()> for Confirm {
+// impl<M> RuleShortcut<M> for Confirm {
 //     fn name(&self) -> &'static str {
 //         "confirm"
 //     }
-//     fn message(&self) -> Message {
+//     fn message(&self) -> Message<M> {
 //         "this field value must be eq {} field value".into()
 //     }
-//     fn call_with_relate(&mut self, value: &ValueMap) -> bool {
+//     fn call_with_relate(&mut self, value: &mut ValueMap) -> bool {
 //         let target = value.get(self.0);
 //         let target = match target {
 //             Some(target) if target.is_leaf() => target,
@@ -367,7 +351,7 @@ impl Rule<()> for StartWith<&'static str> {
 //             _ => false,
 //         }
 //     }
-//     fn call(&mut self, _value: &Value) -> bool {
+//     fn call(&mut self, _value: &mut Value) -> bool {
 //         unreachable!()
 //     }
 // }
@@ -402,42 +386,66 @@ impl Rule<()> for StartWith<&'static str> {
 //     }
 // }
 
+pub trait RuleShortcut<T> {
+    /// Named rule type
+    fn name(&self) -> &'static str;
+
+    /// Default rule error message, when validate fails, return the message to user
+    fn message(&self) -> Message<T>;
+
+    /// Rule specific implementation, data is gived type all field's value, and current field index.
+    /// when the method return true, call_message will return Ok(()), or else return Err(String)
+    fn call_with_relate(&mut self, data: &mut ValueMap) -> bool {
+        // TODO unwrap
+        let value = data.current_mut().unwrap();
+        self.call(value)
+    }
+
+    /// Rule specific implementation, data is current field's value
+    fn call(&mut self, data: &mut Value) -> bool;
+}
+
+impl<T> Rule<()> for T
+where
+    T: RuleShortcut<()> + 'static,
+{
+    fn name(&self) -> &'static str {
+        self.name()
+    }
+    /// Rule specific implementation, data is gived type all field's value, and current field index.
+    fn call(&mut self, data: &mut ValueMap) -> Result<(), Message<()>> {
+        if self.call_with_relate(data) {
+            Ok(())
+        } else {
+            Err(self.message())
+        }
+    }
+}
+
 impl<F> Rule<ValueMap> for F
 where
-    F: for<'a> FnOnce(&'a mut ValueMap) -> Result<(), Message> + 'static + Clone,
+    F: for<'a> FnOnce(&'a mut ValueMap) -> Result<(), String> + 'static + Clone,
 {
-    fn call_message(&mut self, data: &mut ValueMap) -> Result<(), Message> {
-        self.clone()(data)
+    fn call(&mut self, data: &mut ValueMap) -> Result<(), Message<ValueMap>> {
+        self.clone()(data).map_err(|s| s.into())
     }
 
     fn name(&self) -> &'static str {
         "relate"
     }
-    fn message(&self) -> Message {
-        unreachable!()
-    }
-    fn call(&mut self, _: &mut Value) -> bool {
-        unreachable!()
-    }
 }
 
 impl<F> Rule<Value> for F
 where
-    F: for<'a> FnOnce(&'a mut Value) -> Result<(), Message> + 'static + Clone,
+    F: for<'a> FnOnce(&'a mut Value) -> Result<(), String> + 'static + Clone,
 {
-    fn call_message(&mut self, data: &mut ValueMap) -> Result<(), Message> {
+    fn call(&mut self, data: &mut ValueMap) -> Result<(), Message<Value>> {
         // TODO unwrap
         let value = data.current_mut().unwrap();
-        self.clone()(value)
+        self.clone()(value).map_err(|e| e.into())
     }
 
     fn name(&self) -> &'static str {
         "custom"
-    }
-    fn message(&self) -> Message {
-        unreachable!()
-    }
-    fn call(&mut self, _: &mut Value) -> bool {
-        unreachable!()
     }
 }
