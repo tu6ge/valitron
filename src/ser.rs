@@ -68,12 +68,12 @@ impl Value {
     }
 }
 
-struct Serializer;
+pub(crate) struct Serializer;
 
-struct Compound;
+pub(crate) struct Compound;
 
 #[derive(Debug, PartialEq, Eq)]
-struct SerializeStruct {
+pub(crate) struct SerializeStruct {
     fields: Map,
 }
 

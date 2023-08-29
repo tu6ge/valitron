@@ -2,7 +2,10 @@
 
 use std::collections::HashMap;
 
-use crate::rule::{IntoRuleList, RuleList};
+use crate::{
+    rule::{IntoRuleList, RuleList},
+    ser::Serializer,
+};
 
 use self::field_name::Name;
 
@@ -44,6 +47,14 @@ impl<'a> Ruler<'a> {
             .into_iter(),
         );
         self
+    }
+
+    pub fn validate<T>(self, data: T) -> Result<T, String>
+    where
+        T: serde::ser::Serialize,
+    {
+        let value = data.serialize(Serializer);
+        todo!()
     }
 
     fn rule_get(&self, names: &Vec<Name>) -> Option<&RuleList> {

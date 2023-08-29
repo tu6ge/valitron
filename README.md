@@ -134,12 +134,12 @@ fifth model
 let bar = "abc";
 let rules = Ruler::new()
   .rule("name", Required)
-  .rule("name2", (Required, LengthRange(6,12)).bail())
+  .rule("name2", Required.and(LengthRange(6,12)).bail())
   .rule("name3", StartWith("foo"))
   .rule("name4", StartWith("{name}"))
   .rule("password_confirm", Confirm("{password}"))
   .rule("name3", custom_check)
-  .rule("name4", (Required, custom_check))
+  .rule("name4", Required.custom(custom_check))
   .rule("address.city", Required)
   .rule("address.0", Required)
   .rule("address[0]", Required)
@@ -153,8 +153,7 @@ let rules = Ruler::new()
     ("address.city.required", "city is required"),
     ("name3.0", "custom check's message"),
     ("name4.1", "custom check's message"),
-  ])
-  .valudate(data);
-  
-let result = data.validate(rules);
+  ]);
+
+let data = rules.validate(data);
 ```
