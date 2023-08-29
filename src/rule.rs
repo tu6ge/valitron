@@ -6,7 +6,7 @@ use crate::ser::{Value, ValueMap};
 
 /// A Rule trait
 pub trait Rule<M>: 'static {
-    /// Named rule type
+    /// Named rule type, allow `a-z` | `A-Z` | `0-9` | `_`, and not start with `0-9`
     fn name(&self) -> &'static str;
 
     /// Rule specific implementation, data is gived type all field's value, and current field index.
@@ -118,6 +118,7 @@ enum Endpoint {
 }
 
 /// Rules collection
+#[derive(Default)]
 pub struct RuleList {
     list: Vec<Endpoint>,
     is_bail: bool,
@@ -186,7 +187,7 @@ impl RuleList {
 //     }
 // }
 
-trait IntoRuleList {
+pub trait IntoRuleList {
     fn into_list(self) -> RuleList;
 }
 

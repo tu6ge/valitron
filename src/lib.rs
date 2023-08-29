@@ -1,5 +1,6 @@
 use std::{collections::HashMap, error::Error, fmt::Display};
 
+pub mod register;
 pub mod rule;
 pub mod ser;
 

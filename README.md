@@ -145,6 +145,7 @@ let rules = Ruler::new()
   .rule("address[0]", Required)
   .rule("0.city", Required)
   .rule("[0].city", Required)
+  .rule("color[red]", Required) // match struct variant
   .message([
     ("name.required", "msg1"),
     ("name2.required", "{field} is required"),
