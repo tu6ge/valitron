@@ -309,6 +309,7 @@ impl<M> RuleShortcut<M> for Required {
             Value::Int8(_) => true,
             Value::String(s) => !s.is_empty(),
             Value::Struct(_) => true,
+            _ => todo!(),
         }
     }
 }
@@ -328,6 +329,7 @@ impl<M> RuleShortcut<M> for StartWith<&'static str> {
             Value::Int8(_) => false,
             Value::String(s) => s.starts_with(&self.0),
             Value::Struct(_) => false,
+            _ => todo!(),
         }
     }
 }

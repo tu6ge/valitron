@@ -3,7 +3,7 @@ use std::{fmt::Display, slice::Iter};
 use super::lexer::{lexer, Token, TokenKind};
 
 #[derive(Debug, PartialEq, Eq, Hash)]
-pub enum Name {
+pub enum FieldName {
     Literal(String),
     Array(usize),
     Tuple(u8),
@@ -12,29 +12,29 @@ pub enum Name {
     StructVariant(String),
 }
 
-impl Name {
+impl FieldName {
     pub fn as_str(&self) -> &str {
         match self {
-            Name::Literal(s) => s.as_str(),
-            Name::StructVariant(s) => s.as_str(),
+            FieldName::Literal(s) => s.as_str(),
+            FieldName::StructVariant(s) => s.as_str(),
             _ => "",
         }
     }
 }
 
-impl Display for Name {
+impl Display for FieldName {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Name::Literal(s) => s.fmt(f),
-            Name::Array(n) => n.fmt(f),
-            Name::Tuple(n) => n.fmt(f),
-            Name::StructVariant(s) => s.fmt(f),
+            FieldName::Literal(s) => s.fmt(f),
+            FieldName::Array(n) => n.fmt(f),
+            FieldName::Tuple(n) => n.fmt(f),
+            FieldName::StructVariant(s) => s.fmt(f),
         }
     }
 }
 
 struct Parser<'a> {
-    names: Vec<Name>,
+    names: Vec<FieldName>,
     tokens: Iter<'a, Token>,
 }
 
@@ -50,7 +50,7 @@ impl<'a> Parser<'a> {
         while let Some(token) = self.tokens.next() {
             match token.kind() {
                 TokenKind::Ident(s) => {
-                    self.names.push(Name::Literal(s.to_owned()));
+                    self.names.push(FieldName::Literal(s.to_owned()));
                     self.eat_point()?;
                 }
                 TokenKind::Point => return Err("`.` should not be start".into()),
@@ -59,7 +59,7 @@ impl<'a> Parser<'a> {
                 }
                 TokenKind::RightBracket => return Err("`]` should to stay behind `[`".into()),
                 TokenKind::Index(n) => {
-                    self.names.push(Name::Tuple(
+                    self.names.push(FieldName::Tuple(
                         (*n).try_into()
                             .map_err(|_| "tuple index is not u8 type".to_string())?,
                     ));
@@ -90,7 +90,7 @@ impl<'a> Parser<'a> {
                         ..
                     }) = peek.next()
                     {
-                        self.names.push(Name::Array(*n));
+                        self.names.push(FieldName::Array(*n));
                         // eat index
                         self.tokens.next();
                         // eat `]`
@@ -111,7 +111,7 @@ impl<'a> Parser<'a> {
                         ..
                     }) = peek.next()
                     {
-                        self.names.push(Name::StructVariant(s.to_owned()));
+                        self.names.push(FieldName::StructVariant(s.to_owned()));
                         // eat ident
                         self.tokens.next();
                         // eat `]`
@@ -168,7 +168,7 @@ impl<'a> Parser<'a> {
     }
 }
 
-pub fn parse(source: &str) -> Result<Vec<Name>, String> {
+pub fn parse(source: &str) -> Result<Vec<FieldName>, String> {
     let tokens = lexer(source).unwrap();
     let mut parser = Parser::new(tokens.iter());
     parser.parse()?;
@@ -176,11 +176,11 @@ pub fn parse(source: &str) -> Result<Vec<Name>, String> {
     Ok(parser.names)
 }
 
-pub fn parse_message(source: &str) -> Result<(Vec<Name>, Name), String> {
+pub fn parse_message(source: &str) -> Result<(Vec<FieldName>, FieldName), String> {
     let mut names = parse(source)?;
 
     if let Some(name) = names.pop() {
-        if let Name::Literal(_) = name {
+        if let FieldName::Literal(_) = name {
             return Ok((names, name));
         }
     }
@@ -190,34 +190,40 @@ pub fn parse_message(source: &str) -> Result<(Vec<Name>, Name), String> {
 #[test]
 fn test_parse() {
     let names = parse("abc").unwrap();
-    assert_eq!(names, vec![Name::Literal("abc".into())]);
+    assert_eq!(names, vec![FieldName::Literal("abc".into())]);
 
     let names = parse("name.full_name").unwrap();
     assert_eq!(
         names,
         vec![
-            Name::Literal("name".into()),
-            Name::Literal("full_name".into())
+            FieldName::Literal("name".into()),
+            FieldName::Literal("full_name".into())
         ]
     );
 
     let names = parse("name.1").unwrap();
-    assert_eq!(names, vec![Name::Literal("name".into()), Name::Tuple(1)]);
+    assert_eq!(
+        names,
+        vec![FieldName::Literal("name".into()), FieldName::Tuple(1)]
+    );
 
     let names = parse("name[511]").unwrap();
-    assert_eq!(names, vec![Name::Literal("name".into()), Name::Array(511)]);
+    assert_eq!(
+        names,
+        vec![FieldName::Literal("name".into()), FieldName::Array(511)]
+    );
 
     let names = parse("name[age]").unwrap();
     assert_eq!(
         names,
         vec![
-            Name::Literal("name".into()),
-            Name::StructVariant("age".into())
+            FieldName::Literal("name".into()),
+            FieldName::StructVariant("age".into())
         ]
     );
 
     let names = parse("5").unwrap();
-    assert_eq!(names, vec![Name::Tuple(5)]);
+    assert_eq!(names, vec![FieldName::Tuple(5)]);
 
     parse("511").unwrap_err();
     parse("5age").unwrap_err();
@@ -228,12 +234,12 @@ fn test_parse() {
     assert_eq!(
         names,
         vec![
-            Name::Literal("name".into()),
-            Name::Literal("age".into()),
-            Name::StructVariant("foo".into()),
-            Name::Array(0),
-            Name::Literal("color".into()),
-            Name::Tuple(0),
+            FieldName::Literal("name".into()),
+            FieldName::Literal("age".into()),
+            FieldName::StructVariant("foo".into()),
+            FieldName::Array(0),
+            FieldName::Literal("color".into()),
+            FieldName::Tuple(0),
         ]
     );
 }

@@ -1,34 +1,44 @@
-use std::collections::{BTreeMap, HashMap};
+use std::collections::BTreeMap;
 
 use serde::ser;
+
+use crate::register::FieldName;
 
 #[cfg(test)]
 mod test;
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Ord, PartialOrd)]
 pub enum Value {
     Int8(u8),
     String(String),
+    None,
+    Unit,
     //UnInt8(u8),
     // Boolean(bool),
     // Char(char),
-    Struct(Map),
+    Array(Vec<Value>),
+    Tuple(Vec<Value>),
+    TupleStruct(Vec<Value>),
+    TupleVariant(Vec<Value>),
+    Map(BTreeMap<Value, Value>),
+    Struct(BTreeMap<String, Value>),
+    StructVariant(BTreeMap<String, Value>),
 }
 
 pub struct ValueMap {
     value: Value,
-    index: &'static str,
+    index: Vec<FieldName>,
 }
 
 impl ValueMap {
     pub(crate) fn current(&self) -> Option<&Value> {
-        self.value.get(self.index)
+        self.value.get_with_names(&self.index)
     }
     pub(crate) fn current_mut(&mut self) -> Option<&mut Value> {
-        self.value.get_mut(self.index)
+        self.value.get_with_names_mut(&self.index)
     }
-    pub(crate) fn get(&self, key: &str) -> Option<&Value> {
-        self.value.get(key)
+    pub(crate) fn get(&self, key: &FieldName) -> Option<&Value> {
+        self.value.get_with_name(key)
     }
 }
 
@@ -42,6 +52,49 @@ where
 }
 
 impl Value {
+    fn get_with_name(&self, name: &FieldName) -> Option<&Value> {
+        match (name, self) {
+            (FieldName::Array(i), Value::Array(vec)) => vec.get(*i),
+            (FieldName::Tuple(i), Value::Tuple(vec))
+            | (FieldName::Tuple(i), Value::TupleStruct(vec))
+            | (FieldName::Tuple(i), Value::TupleVariant(vec)) => vec.get(*i as usize),
+            (FieldName::Literal(str), Value::Struct(btree)) => btree.get(str),
+            (FieldName::StructVariant(str), Value::StructVariant(btree)) => btree.get(str),
+            _ => None,
+        }
+    }
+    fn get_with_names(&self, names: &Vec<FieldName>) -> Option<&Value> {
+        let mut value = Some(self);
+        for name in names.iter() {
+            value = match value {
+                Some(v) => v.get_with_name(name),
+                None => return None,
+            }
+        }
+        value
+    }
+    fn get_with_name_mut(&mut self, name: &FieldName) -> Option<&mut Value> {
+        match (name, self) {
+            (FieldName::Array(i), Value::Array(vec)) => vec.get_mut(*i),
+            (FieldName::Tuple(i), Value::Tuple(vec))
+            | (FieldName::Tuple(i), Value::TupleStruct(vec))
+            | (FieldName::Tuple(i), Value::TupleVariant(vec)) => vec.get_mut(*i as usize),
+            (FieldName::Literal(str), Value::Struct(btree)) => btree.get_mut(str),
+            (FieldName::StructVariant(str), Value::StructVariant(btree)) => btree.get_mut(str),
+            _ => None,
+        }
+    }
+    fn get_with_names_mut(&mut self, names: &Vec<FieldName>) -> Option<&mut Value> {
+        let mut value = Some(self);
+        for name in names.iter() {
+            value = match value {
+                Some(v) => v.get_with_name_mut(name),
+                None => return None,
+            }
+        }
+        value
+    }
+
     pub(crate) fn get(&self, key: &str) -> Option<&Value> {
         if let Self::Struct(map) = self {
             map.get(key)
@@ -70,13 +123,6 @@ impl Value {
 
 pub(crate) struct Serializer;
 
-pub(crate) struct Compound;
-
-#[derive(Debug, PartialEq, Eq)]
-pub(crate) struct SerializeStruct {
-    fields: Map,
-}
-
 #[derive(Debug)]
 pub struct MyErr;
 
@@ -98,19 +144,19 @@ impl serde::ser::Serializer for Serializer {
 
     type Error = MyErr;
 
-    type SerializeSeq = Compound;
+    type SerializeSeq = SerializeSeq;
 
-    type SerializeTuple = Compound;
+    type SerializeTuple = SerializeSeq;
 
-    type SerializeTupleStruct = Compound;
+    type SerializeTupleStruct = SerializeSeq;
 
-    type SerializeTupleVariant = Compound;
+    type SerializeTupleVariant = SerializeSeq;
 
-    type SerializeMap = Compound;
+    type SerializeMap = SerializeMap;
 
     type SerializeStruct = SerializeStruct;
 
-    type SerializeStructVariant = Compound;
+    type SerializeStructVariant = SerializeStruct;
 
     fn serialize_bool(self, v: bool) -> Result<Self::Ok, Self::Error> {
         todo!()
@@ -128,88 +174,89 @@ impl serde::ser::Serializer for Serializer {
     where
         T: serde::Serialize,
     {
-        todo!()
+        value.serialize(Serializer)
     }
 
     fn serialize_unit(self) -> Result<Self::Ok, Self::Error> {
-        todo!()
+        Ok(Value::Unit)
     }
 
-    fn serialize_unit_struct(self, name: &'static str) -> Result<Self::Ok, Self::Error> {
-        todo!()
+    fn serialize_unit_struct(self, _name: &'static str) -> Result<Self::Ok, Self::Error> {
+        self.serialize_unit()
     }
 
     fn serialize_unit_variant(
         self,
-        name: &'static str,
-        variant_index: u32,
+        _name: &'static str,
+        _variant_index: u32,
         variant: &'static str,
     ) -> Result<Self::Ok, Self::Error> {
-        todo!()
+        self.serialize_str(variant)
     }
 
     fn serialize_newtype_struct<T: ?Sized>(
         self,
-        name: &'static str,
+        _name: &'static str,
         value: &T,
     ) -> Result<Self::Ok, Self::Error>
     where
         T: serde::Serialize,
     {
-        todo!()
+        value.serialize(self)
     }
 
     fn serialize_newtype_variant<T: ?Sized>(
         self,
-        name: &'static str,
-        variant_index: u32,
-        variant: &'static str,
+        _name: &'static str,
+        _variant_index: u32,
+        _variant: &'static str,
         value: &T,
     ) -> Result<Self::Ok, Self::Error>
     where
         T: serde::Serialize,
     {
-        todo!()
+        value.serialize(self)
     }
 
     fn serialize_seq(self, len: Option<usize>) -> Result<Self::SerializeSeq, Self::Error> {
-        todo!()
+        match len {
+            Some(len) => Ok(SerializeSeq::with_capacity(len)),
+            None => Ok(SerializeSeq::new()),
+        }
     }
 
     fn serialize_tuple(self, len: usize) -> Result<Self::SerializeTuple, Self::Error> {
-        todo!()
+        Ok(SerializeSeq::with_capacity(len))
     }
 
     fn serialize_tuple_struct(
         self,
-        name: &'static str,
+        _name: &'static str,
         len: usize,
     ) -> Result<Self::SerializeTupleStruct, Self::Error> {
-        todo!()
+        Ok(SerializeSeq::with_capacity(len))
     }
 
     fn serialize_tuple_variant(
         self,
-        name: &'static str,
-        variant_index: u32,
-        variant: &'static str,
+        _name: &'static str,
+        _variant_index: u32,
+        _variant: &'static str,
         len: usize,
     ) -> Result<Self::SerializeTupleVariant, Self::Error> {
-        todo!()
+        Ok(SerializeSeq::with_capacity(len))
     }
 
-    fn serialize_map(self, len: Option<usize>) -> Result<Self::SerializeMap, Self::Error> {
-        todo!()
+    fn serialize_map(self, _len: Option<usize>) -> Result<Self::SerializeMap, Self::Error> {
+        Ok(SerializeMap::new())
     }
 
     fn serialize_struct(
         self,
-        name: &'static str,
-        len: usize,
+        _name: &'static str,
+        _len: usize,
     ) -> Result<Self::SerializeStruct, Self::Error> {
-        Ok(SerializeStruct {
-            fields: Map::default(),
-        })
+        Ok(SerializeStruct(Map::default()))
     }
 
     fn serialize_struct_variant(
@@ -219,7 +266,7 @@ impl serde::ser::Serializer for Serializer {
         variant: &'static str,
         len: usize,
     ) -> Result<Self::SerializeStructVariant, Self::Error> {
-        todo!()
+        Ok(SerializeStruct(Map::default()))
     }
 
     fn serialize_i8(self, v: i8) -> Result<Self::Ok, Self::Error> {
@@ -267,11 +314,23 @@ impl serde::ser::Serializer for Serializer {
     }
 
     fn serialize_none(self) -> Result<Self::Ok, Self::Error> {
-        todo!()
+        Ok(Value::None)
     }
 }
 
-impl serde::ser::SerializeSeq for Compound {
+#[derive(Default)]
+pub(crate) struct SerializeSeq(Vec<Value>);
+
+impl SerializeSeq {
+    fn new() -> Self {
+        Self::default()
+    }
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self(Vec::with_capacity(capacity))
+    }
+}
+
+impl serde::ser::SerializeSeq for SerializeSeq {
     type Error = MyErr;
     type Ok = Value;
 
@@ -279,14 +338,16 @@ impl serde::ser::SerializeSeq for Compound {
     where
         T: serde::Serialize,
     {
-        todo!()
+        self.0.push(value.serialize(Serializer)?);
+        Ok(())
     }
 
     fn end(self) -> Result<Self::Ok, Self::Error> {
-        todo!()
+        Ok(Value::Array(self.0))
     }
 }
-impl ser::SerializeTuple for Compound {
+
+impl ser::SerializeTuple for SerializeSeq {
     type Error = MyErr;
     type Ok = Value;
 
@@ -294,15 +355,16 @@ impl ser::SerializeTuple for Compound {
     where
         T: serde::Serialize,
     {
-        todo!()
+        self.0.push(value.serialize(Serializer)?);
+        Ok(())
     }
 
     fn end(self) -> Result<Self::Ok, Self::Error> {
-        todo!()
+        Ok(Value::Tuple(self.0))
     }
 }
 
-impl ser::SerializeTupleStruct for Compound {
+impl ser::SerializeTupleStruct for SerializeSeq {
     type Error = MyErr;
     type Ok = Value;
 
@@ -310,14 +372,15 @@ impl ser::SerializeTupleStruct for Compound {
     where
         T: serde::Serialize,
     {
-        todo!()
+        self.0.push(value.serialize(Serializer)?);
+        Ok(())
     }
 
     fn end(self) -> Result<Self::Ok, Self::Error> {
-        todo!()
+        Ok(Value::TupleStruct(self.0))
     }
 }
-impl ser::SerializeTupleVariant for Compound {
+impl ser::SerializeTupleVariant for SerializeSeq {
     type Error = MyErr;
     type Ok = Value;
 
@@ -325,14 +388,30 @@ impl ser::SerializeTupleVariant for Compound {
     where
         T: serde::Serialize,
     {
-        todo!()
+        self.0.push(value.serialize(Serializer)?);
+        Ok(())
     }
 
     fn end(self) -> Result<Self::Ok, Self::Error> {
-        todo!()
+        Ok(Value::TupleVariant(self.0))
     }
 }
-impl ser::SerializeMap for Compound {
+
+pub(crate) struct SerializeMap {
+    map: BTreeMap<Value, Value>,
+    next_key: Option<Value>,
+}
+
+impl SerializeMap {
+    pub fn new() -> Self {
+        SerializeMap {
+            map: BTreeMap::new(),
+            next_key: None,
+        }
+    }
+}
+
+impl ser::SerializeMap for SerializeMap {
     type Error = MyErr;
     type Ok = Value;
 
@@ -340,20 +419,28 @@ impl ser::SerializeMap for Compound {
     where
         T: serde::Serialize,
     {
-        todo!()
+        self.next_key = Some(key.serialize(Serializer)?);
+
+        Ok(())
     }
 
     fn serialize_value<T: ?Sized>(&mut self, value: &T) -> Result<(), Self::Error>
     where
         T: serde::Serialize,
     {
-        todo!()
+        let key = self.next_key.take().unwrap();
+        self.map.insert(key, value.serialize(Serializer)?);
+
+        Ok(())
     }
 
     fn end(self) -> Result<Self::Ok, Self::Error> {
-        todo!()
+        Ok(Value::Map(self.map))
     }
 }
+
+#[derive(Debug, PartialEq, Eq)]
+pub(crate) struct SerializeStruct(BTreeMap<String, Value>);
 impl ser::SerializeStruct for SerializeStruct {
     type Error = MyErr;
     type Ok = Value;
@@ -366,17 +453,16 @@ impl ser::SerializeStruct for SerializeStruct {
     where
         T: serde::Serialize,
     {
-        self.fields
-            .insert(key.to_owned(), value.serialize(Serializer)?);
+        self.0.insert(key.to_owned(), value.serialize(Serializer)?);
 
         Ok(())
     }
 
     fn end(self) -> Result<Self::Ok, Self::Error> {
-        Ok(Value::Struct(self.fields))
+        Ok(Value::Struct(self.0))
     }
 }
-impl ser::SerializeStructVariant for Compound {
+impl ser::SerializeStructVariant for SerializeStruct {
     type Error = MyErr;
     type Ok = Value;
 
@@ -388,10 +474,11 @@ impl ser::SerializeStructVariant for Compound {
     where
         T: serde::Serialize,
     {
-        todo!()
+        self.0.insert(key.to_owned(), value.serialize(Serializer)?);
+        Ok(())
     }
 
     fn end(self) -> Result<Self::Ok, Self::Error> {
-        todo!()
+        Ok(Value::StructVariant(self.0))
     }
 }

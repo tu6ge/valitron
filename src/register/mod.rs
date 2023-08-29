@@ -7,15 +7,15 @@ use crate::{
     ser::Serializer,
 };
 
-use self::field_name::Name;
-
 mod field_name;
 mod lexer;
 
+pub use field_name::FieldName;
+
 #[derive(Default)]
 pub struct Ruler<'a> {
-    rule: HashMap<Vec<Name>, RuleList>,
-    message: HashMap<(Vec<Name>, Name), &'a str>,
+    rule: HashMap<Vec<FieldName>, RuleList>,
+    message: HashMap<(Vec<FieldName>, FieldName), &'a str>,
 }
 
 macro_rules! panic_on_err {
@@ -57,18 +57,18 @@ impl<'a> Ruler<'a> {
         todo!()
     }
 
-    fn rule_get(&self, names: &Vec<Name>) -> Option<&RuleList> {
+    fn rule_get(&self, names: &Vec<FieldName>) -> Option<&RuleList> {
         self.rule.get(names)
     }
 
-    fn rules_name(&self, names: &Vec<Name>) -> Option<Vec<&'static str>> {
+    fn rules_name(&self, names: &Vec<FieldName>) -> Option<Vec<&'static str>> {
         self.rule_get(names).map(|rule| rule.get_rules_name())
     }
 
     fn exit_message(
         &self,
         k_str: &str,
-        (names, rule_name): &(Vec<Name>, Name),
+        (names, rule_name): &(Vec<FieldName>, FieldName),
     ) -> Result<(), String> {
         let point_index = k_str
             .rfind('.')
