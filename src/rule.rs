@@ -63,6 +63,10 @@ impl<T: 'static> BoxCloneRule<T> {
     fn call(&mut self, map: &mut ValueMap) -> Result<(), Message<T>> {
         self.0.call(map)
     }
+
+    fn name(&self) -> &'static str {
+        self.0.name()
+    }
 }
 
 impl<T: 'static> Clone for BoxCloneRule<T> {
@@ -117,6 +121,16 @@ enum Endpoint {
     RelateRule(BoxCloneRule<ValueMap>),
 }
 
+impl Endpoint {
+    fn name(&self) -> &'static str {
+        match self {
+            Endpoint::Rule(b) => b.name(),
+            Endpoint::HanderRule(b) => b.name(),
+            Endpoint::RelateRule(b) => b.name(),
+        }
+    }
+}
+
 /// Rules collection
 #[derive(Default)]
 pub struct RuleList {
@@ -161,6 +175,10 @@ impl RuleList {
             }
         }
         "aa";
+    }
+
+    pub(crate) fn get_rules_name(&self) -> Vec<&'static str> {
+        self.list.iter().map(|endpoint| endpoint.name()).collect()
     }
 }
 

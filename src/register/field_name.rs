@@ -1,4 +1,4 @@
-use std::slice::Iter;
+use std::{fmt::Display, slice::Iter};
 
 use super::lexer::{lexer, Token, TokenKind};
 
@@ -12,7 +12,26 @@ pub enum Name {
     StructVariant(String),
 }
 
-impl Name {}
+impl Name {
+    pub fn as_str(&self) -> &str {
+        match self {
+            Name::Literal(s) => s.as_str(),
+            Name::StructVariant(s) => s.as_str(),
+            _ => "",
+        }
+    }
+}
+
+impl Display for Name {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Name::Literal(s) => s.fmt(f),
+            Name::Array(n) => n.fmt(f),
+            Name::Tuple(n) => n.fmt(f),
+            Name::StructVariant(s) => s.fmt(f),
+        }
+    }
+}
 
 struct Parser<'a> {
     names: Vec<Name>,
@@ -157,14 +176,15 @@ pub fn parse(source: &str) -> Result<Vec<Name>, String> {
     Ok(parser.names)
 }
 
-pub fn parse_message(source: &str) -> Result<Vec<Name>, String> {
-    let names = parse(source)?;
+pub fn parse_message(source: &str) -> Result<(Vec<Name>, Name), String> {
+    let mut names = parse(source)?;
 
-    if let Some(Name::Literal(_)) = names.last() {
-        Ok(names)
-    } else {
-        Err("not found validate rule name".into())
+    if let Some(name) = names.pop() {
+        if let Name::Literal(_) = name {
+            return Ok((names, name));
+        }
     }
+    Err("not found validate rule name".into())
 }
 
 #[test]
