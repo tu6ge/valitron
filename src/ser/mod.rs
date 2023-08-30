@@ -32,6 +32,15 @@ pub struct ValueMap {
 }
 
 impl ValueMap {
+    pub fn new(value: Value) -> Self {
+        Self {
+            value,
+            index: Vec::new(),
+        }
+    }
+    pub fn index(&mut self, index: Vec<FieldName>) {
+        self.index = index;
+    }
     pub fn current(&self) -> Option<&Value> {
         self.value.get_with_names(&self.index)
     }

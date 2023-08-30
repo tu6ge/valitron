@@ -132,7 +132,7 @@ fn custom_check(value) -> Result<(), String> {
 fifth model
 ```rust
 let bar = "abc";
-let rules = Ruler::new()
+let validator = Validator::new()
   .rule("name", Required)
   .rule("name2", Required.and(LengthRange(6,12)).bail())
   .rule("name3", StartWith("foo"))
@@ -155,5 +155,5 @@ let rules = Ruler::new()
     ("name4.1", "custom check's message"),
   ]);
 
-let data = rules.validate(data);
+let data = validator.validate(data);
 ```

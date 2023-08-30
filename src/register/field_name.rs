@@ -2,7 +2,7 @@ use std::{fmt::Display, slice::Iter};
 
 use super::lexer::{lexer, Token, TokenKind};
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub enum FieldName {
     Literal(String),
     Array(usize),
@@ -176,12 +176,12 @@ pub fn parse(source: &str) -> Result<Vec<FieldName>, String> {
     Ok(parser.names)
 }
 
-pub fn parse_message(source: &str) -> Result<(Vec<FieldName>, FieldName), String> {
+pub fn parse_message(source: &str) -> Result<(Vec<FieldName>, String), String> {
     let mut names = parse(source)?;
 
     if let Some(name) = names.pop() {
-        if let FieldName::Literal(_) = name {
-            return Ok((names, name));
+        if let FieldName::Literal(s) = name {
+            return Ok((names, s));
         }
     }
     Err("not found validate rule name".into())

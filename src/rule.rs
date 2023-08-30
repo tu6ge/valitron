@@ -27,6 +27,11 @@ impl<T> From<String> for Message<T> {
         }
     }
 }
+impl<T> From<Message<T>> for String {
+    fn from(msg: Message<T>) -> Self {
+        msg.inner
+    }
+}
 impl<T> From<&str> for Message<T> {
     fn from(value: &str) -> Self {
         Self {
@@ -115,6 +120,7 @@ impl<R: Rule<()> + Clone> RuleExt for R {
     }
 }
 
+#[derive(Clone)]
 enum Endpoint {
     Rule(BoxCloneRule<()>),
     HanderRule(BoxCloneRule<Value>),
@@ -132,7 +138,7 @@ impl Endpoint {
 }
 
 /// Rules collection
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct RuleList {
     list: Vec<Endpoint>,
     is_bail: bool,
@@ -160,21 +166,32 @@ impl RuleList {
         self
     }
 
-    fn call(mut self, data: &mut ValueMap) {
+    #[must_use]
+    pub(crate) fn call<'a>(mut self, data: &'a mut ValueMap) -> Vec<(&'static str, String)> {
+        let mut msg = Vec::new();
         for endpoint in self.list.iter_mut() {
             match endpoint {
                 Endpoint::Rule(rule) => {
-                    let res = rule.call(data);
+                    let _ = rule
+                        .call(data)
+                        .map_err(|m| msg.push((rule.name(), m.into())));
                 }
                 Endpoint::HanderRule(handle) => {
-                    let res = handle.call(data);
+                    let _ = handle
+                        .call(data)
+                        .map_err(|m| msg.push((handle.name(), m.into())));
                 }
                 Endpoint::RelateRule(handle) => {
-                    let res = handle.call(data);
+                    let _ = handle
+                        .call(data)
+                        .map_err(|m| msg.push((handle.name(), m.into())));
                 }
             }
+            if self.is_bail && msg.is_empty() == false {
+                return msg;
+            }
         }
-        "aa";
+        msg
     }
 
     pub(crate) fn get_rules_name(&self) -> Vec<&'static str> {
@@ -294,7 +311,7 @@ mod test_regster {
 }
 
 #[derive(Clone, Debug)]
-struct Required;
+pub struct Required;
 
 impl<M> RuleShortcut<M> for Required {
     fn name(&self) -> &'static str {
@@ -315,7 +332,7 @@ impl<M> RuleShortcut<M> for Required {
 }
 
 #[derive(Clone, Debug)]
-struct StartWith<T>(T);
+pub struct StartWith<T>(pub T);
 
 impl<M> RuleShortcut<M> for StartWith<&'static str> {
     fn name(&self) -> &'static str {

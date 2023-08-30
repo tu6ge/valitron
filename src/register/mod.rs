@@ -4,7 +4,7 @@ use std::collections::HashMap;
 
 use crate::{
     rule::{IntoRuleList, RuleList},
-    ser::Serializer,
+    ser::{Serializer, ValueMap},
 };
 
 mod field_name;
@@ -13,9 +13,9 @@ mod lexer;
 pub use field_name::FieldName;
 
 #[derive(Default)]
-pub struct Ruler<'a> {
-    rule: HashMap<Vec<FieldName>, RuleList>,
-    message: HashMap<(Vec<FieldName>, FieldName), &'a str>,
+pub struct Validator<'a> {
+    rules: HashMap<Vec<FieldName>, RuleList>,
+    message: HashMap<(Vec<FieldName>, String), &'a str>,
 }
 
 macro_rules! panic_on_err {
@@ -27,13 +27,13 @@ macro_rules! panic_on_err {
     };
 }
 
-impl<'a> Ruler<'a> {
+impl<'a> Validator<'a> {
     pub fn new() -> Self {
         Self::default()
     }
     pub fn rule<R: IntoRuleList>(mut self, field: &'a str, rule: R) -> Self {
         let names = panic_on_err!(field_name::parse(field));
-        self.rule.insert(names, rule.into_list());
+        self.rules.insert(names, rule.into_list());
         self
     }
 
@@ -49,16 +49,41 @@ impl<'a> Ruler<'a> {
         self
     }
 
-    pub fn validate<T>(self, data: T) -> Result<T, String>
+    pub fn validate<T>(self, data: T) -> Result<(), Vec<(Vec<FieldName>, Vec<String>)>>
     where
         T: serde::ser::Serialize,
     {
-        let value = data.serialize(Serializer);
-        todo!()
+        let value = data.serialize(Serializer).unwrap();
+        let mut value_map: ValueMap = ValueMap::new(value);
+        let mut message = Vec::new();
+
+        for (names, rules) in self.rules.iter() {
+            value_map.index(names.clone());
+            let rule_resp = rules.clone().call(&mut value_map);
+
+            let mut field_msg = Vec::new();
+            for (rule, msg) in rule_resp.into_iter() {
+                let final_msg = match self.get_message(&(names.clone(), rule.to_string())) {
+                    Some(s) => s.to_string(),
+                    None => msg,
+                };
+                field_msg.push(final_msg);
+            }
+
+            if !field_msg.is_empty() {
+                message.push((names.clone(), field_msg));
+            }
+        }
+
+        if message.is_empty() {
+            Ok(())
+        } else {
+            Err(message)
+        }
     }
 
     fn rule_get(&self, names: &Vec<FieldName>) -> Option<&RuleList> {
-        self.rule.get(names)
+        self.rules.get(names)
     }
 
     fn rules_name(&self, names: &Vec<FieldName>) -> Option<Vec<&'static str>> {
@@ -68,23 +93,25 @@ impl<'a> Ruler<'a> {
     fn exit_message(
         &self,
         k_str: &str,
-        (names, rule_name): &(Vec<FieldName>, FieldName),
+        (names, rule_name): &(Vec<FieldName>, String),
     ) -> Result<(), String> {
         let point_index = k_str
             .rfind('.')
             .ok_or(format!("no found `.` in the message index"))?;
         let names = self.rules_name(names).ok_or(format!(
-            "the field \"{}\" not found in ruler",
+            "the field \"{}\" not found in validator",
             &k_str[..point_index]
         ))?;
 
-        let rule_name_str = rule_name.as_str();
-
-        if names.contains(&rule_name_str) {
+        if names.contains(&rule_name.as_str()) {
             Ok(())
         } else {
-            Err(format!("rule \"{rule_name_str}\" is not found in rules"))
+            Err(format!("rule \"{rule_name}\" is not found in rules"))
         }
+    }
+
+    fn get_message(&self, key: &(Vec<FieldName>, String)) -> Option<&&str> {
+        self.message.get(key)
     }
 }
 
