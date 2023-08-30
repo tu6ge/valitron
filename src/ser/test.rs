@@ -3,6 +3,50 @@ use serde::Serialize;
 use super::*;
 
 #[test]
+fn test_get_value() {
+    #[derive(Serialize)]
+    struct A {
+        b: B,
+        foo: u8,
+    }
+    #[derive(Serialize)]
+    struct B {
+        c: C,
+        foo_str: &'static str,
+    }
+    #[derive(Serialize)]
+    struct C(u8);
+
+    let value = A {
+        b: B {
+            c: C(37),
+            foo_str: "bar",
+        },
+        foo: 11,
+    };
+    let value = to_value(value).unwrap();
+
+    let name1 = FieldName::Literal("foo".into());
+    let val1 = value.get_with_name(&name1).unwrap();
+    assert_eq!(val1, &Value::Int8(11));
+
+    let name2 = vec![
+        FieldName::Literal("b".into()),
+        FieldName::Literal("foo_str".into()),
+    ];
+    let val2 = value.get_with_names(&name2).unwrap();
+    assert_eq!(val2, &Value::String("bar".into()));
+
+    let name = vec![
+        FieldName::Literal("b".into()),
+        FieldName::Literal("c".into()),
+        FieldName::Tuple(0),
+    ];
+    let val = value.get_with_names(&name).unwrap();
+    assert_eq!(val, &Value::Int8(37));
+}
+
+#[test]
 fn test_struct() {
     #[derive(Serialize)]
     struct MyType {

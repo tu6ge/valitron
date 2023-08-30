@@ -32,18 +32,16 @@ pub struct ValueMap {
 }
 
 impl ValueMap {
-    pub(crate) fn current(&self) -> Option<&Value> {
+    pub fn current(&self) -> Option<&Value> {
         self.value.get_with_names(&self.index)
     }
-    pub(crate) fn current_mut(&mut self) -> Option<&mut Value> {
+    pub fn current_mut(&mut self) -> Option<&mut Value> {
         self.value.get_with_names_mut(&self.index)
     }
-    pub(crate) fn get(&self, key: &FieldName) -> Option<&Value> {
+    pub fn get(&self, key: &FieldName) -> Option<&Value> {
         self.value.get_with_name(key)
     }
 }
-
-type Map = BTreeMap<String, Value>;
 
 pub fn to_value<T>(value: T) -> Result<Value, MyErr>
 where
@@ -53,7 +51,7 @@ where
 }
 
 impl Value {
-    fn get_with_name(&self, name: &FieldName) -> Option<&Value> {
+    pub fn get_with_name(&self, name: &FieldName) -> Option<&Value> {
         match (name, self) {
             (FieldName::Array(i), Value::Array(vec)) => vec.get(*i),
             (FieldName::Tuple(i), Value::Tuple(vec))
@@ -67,7 +65,7 @@ impl Value {
             _ => None,
         }
     }
-    fn get_with_names(&self, names: &Vec<FieldName>) -> Option<&Value> {
+    pub fn get_with_names(&self, names: &Vec<FieldName>) -> Option<&Value> {
         let mut value = Some(self);
         for name in names.iter() {
             value = match value {
@@ -77,7 +75,7 @@ impl Value {
         }
         value
     }
-    fn get_with_name_mut(&mut self, name: &FieldName) -> Option<&mut Value> {
+    pub fn get_with_name_mut(&mut self, name: &FieldName) -> Option<&mut Value> {
         match (name, self) {
             (FieldName::Array(i), Value::Array(vec)) => vec.get_mut(*i),
             (FieldName::Tuple(i), Value::Tuple(vec))
@@ -91,7 +89,7 @@ impl Value {
             _ => None,
         }
     }
-    fn get_with_names_mut(&mut self, names: &Vec<FieldName>) -> Option<&mut Value> {
+    pub fn get_with_names_mut(&mut self, names: &Vec<FieldName>) -> Option<&mut Value> {
         let mut value = Some(self);
         for name in names.iter() {
             value = match value {
@@ -117,7 +115,7 @@ impl Value {
         }
     }
     pub(crate) fn get_clone(&self, key: &str) -> Option<Value> {
-        self.get(key).map(Clone::clone)
+        self.get(key).cloned()
     }
     pub fn is_leaf(&self) -> bool {
         match self {
@@ -268,10 +266,10 @@ impl serde::ser::Serializer for Serializer {
 
     fn serialize_struct_variant(
         self,
-        name: &'static str,
-        variant_index: u32,
+        _name: &'static str,
+        _variant_index: u32,
         variant: &'static str,
-        len: usize,
+        _len: usize,
     ) -> Result<Self::SerializeStructVariant, Self::Error> {
         Ok(SerializeStructVariant::new(variant))
     }
