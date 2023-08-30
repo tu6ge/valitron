@@ -11,18 +11,19 @@ mod test;
 pub enum Value {
     Int8(u8),
     String(String),
-    None,
     Unit,
     //UnInt8(u8),
     // Boolean(bool),
     // Char(char),
+    Option(Vec<Value>),
     Array(Vec<Value>),
     Tuple(Vec<Value>),
     TupleStruct(Vec<Value>),
-    TupleVariant(Vec<Value>),
+    Enum(&'static str, Vec<Value>),
+    TupleVariant(&'static str, Vec<Value>),
     Map(BTreeMap<Value, Value>),
-    Struct(BTreeMap<String, Value>),
-    StructVariant(BTreeMap<String, Value>),
+    Struct(BTreeMap<&'static str, Value>),
+    StructVariant(&'static str, BTreeMap<&'static str, Value>),
 }
 
 pub struct ValueMap {
@@ -57,9 +58,12 @@ impl Value {
             (FieldName::Array(i), Value::Array(vec)) => vec.get(*i),
             (FieldName::Tuple(i), Value::Tuple(vec))
             | (FieldName::Tuple(i), Value::TupleStruct(vec))
-            | (FieldName::Tuple(i), Value::TupleVariant(vec)) => vec.get(*i as usize),
-            (FieldName::Literal(str), Value::Struct(btree)) => btree.get(str),
-            (FieldName::StructVariant(str), Value::StructVariant(btree)) => btree.get(str),
+            | (FieldName::Tuple(i), Value::Enum(_, vec))
+            | (FieldName::Tuple(i), Value::TupleVariant(_, vec)) => vec.get(*i as usize),
+            (FieldName::Literal(str), Value::Struct(btree))
+            | (FieldName::StructVariant(str), Value::StructVariant(_, btree)) => {
+                btree.get(str.as_str())
+            }
             _ => None,
         }
     }
@@ -78,9 +82,12 @@ impl Value {
             (FieldName::Array(i), Value::Array(vec)) => vec.get_mut(*i),
             (FieldName::Tuple(i), Value::Tuple(vec))
             | (FieldName::Tuple(i), Value::TupleStruct(vec))
-            | (FieldName::Tuple(i), Value::TupleVariant(vec)) => vec.get_mut(*i as usize),
-            (FieldName::Literal(str), Value::Struct(btree)) => btree.get_mut(str),
-            (FieldName::StructVariant(str), Value::StructVariant(btree)) => btree.get_mut(str),
+            | (FieldName::Tuple(i), Value::Enum(_, vec))
+            | (FieldName::Tuple(i), Value::TupleVariant(_, vec)) => vec.get_mut(*i as usize),
+            (FieldName::Literal(str), Value::Struct(btree))
+            | (FieldName::StructVariant(str), Value::StructVariant(_, btree)) => {
+                btree.get_mut(str.as_str())
+            }
             _ => None,
         }
     }
@@ -146,17 +153,17 @@ impl serde::ser::Serializer for Serializer {
 
     type SerializeSeq = SerializeSeq;
 
-    type SerializeTuple = SerializeSeq;
+    type SerializeTuple = SerializeTuple;
 
-    type SerializeTupleStruct = SerializeSeq;
+    type SerializeTupleStruct = SerializeTupleStruct;
 
-    type SerializeTupleVariant = SerializeSeq;
+    type SerializeTupleVariant = SerializeTupleVariant;
 
     type SerializeMap = SerializeMap;
 
     type SerializeStruct = SerializeStruct;
 
-    type SerializeStructVariant = SerializeStruct;
+    type SerializeStructVariant = SerializeStructVariant;
 
     fn serialize_bool(self, v: bool) -> Result<Self::Ok, Self::Error> {
         todo!()
@@ -174,7 +181,7 @@ impl serde::ser::Serializer for Serializer {
     where
         T: serde::Serialize,
     {
-        value.serialize(Serializer)
+        Ok(Value::Option(vec![value.serialize(Serializer)?]))
     }
 
     fn serialize_unit(self) -> Result<Self::Ok, Self::Error> {
@@ -202,20 +209,20 @@ impl serde::ser::Serializer for Serializer {
     where
         T: serde::Serialize,
     {
-        value.serialize(self)
+        Ok(Value::TupleStruct(vec![value.serialize(self)?]))
     }
 
     fn serialize_newtype_variant<T: ?Sized>(
         self,
         _name: &'static str,
         _variant_index: u32,
-        _variant: &'static str,
+        variant: &'static str,
         value: &T,
     ) -> Result<Self::Ok, Self::Error>
     where
         T: serde::Serialize,
     {
-        value.serialize(self)
+        Ok(Value::Enum(variant, vec![value.serialize(self)?]))
     }
 
     fn serialize_seq(self, len: Option<usize>) -> Result<Self::SerializeSeq, Self::Error> {
@@ -226,7 +233,7 @@ impl serde::ser::Serializer for Serializer {
     }
 
     fn serialize_tuple(self, len: usize) -> Result<Self::SerializeTuple, Self::Error> {
-        Ok(SerializeSeq::with_capacity(len))
+        Ok(SerializeTuple::with_capacity(len))
     }
 
     fn serialize_tuple_struct(
@@ -234,17 +241,17 @@ impl serde::ser::Serializer for Serializer {
         _name: &'static str,
         len: usize,
     ) -> Result<Self::SerializeTupleStruct, Self::Error> {
-        Ok(SerializeSeq::with_capacity(len))
+        Ok(SerializeTupleStruct::with_capacity(len))
     }
 
     fn serialize_tuple_variant(
         self,
         _name: &'static str,
         _variant_index: u32,
-        _variant: &'static str,
+        variant: &'static str,
         len: usize,
     ) -> Result<Self::SerializeTupleVariant, Self::Error> {
-        Ok(SerializeSeq::with_capacity(len))
+        Ok(SerializeTupleVariant::with_capacity(variant, len))
     }
 
     fn serialize_map(self, _len: Option<usize>) -> Result<Self::SerializeMap, Self::Error> {
@@ -256,7 +263,7 @@ impl serde::ser::Serializer for Serializer {
         _name: &'static str,
         _len: usize,
     ) -> Result<Self::SerializeStruct, Self::Error> {
-        Ok(SerializeStruct(Map::default()))
+        Ok(SerializeStruct(BTreeMap::default()))
     }
 
     fn serialize_struct_variant(
@@ -266,7 +273,7 @@ impl serde::ser::Serializer for Serializer {
         variant: &'static str,
         len: usize,
     ) -> Result<Self::SerializeStructVariant, Self::Error> {
-        Ok(SerializeStruct(Map::default()))
+        Ok(SerializeStructVariant::new(variant))
     }
 
     fn serialize_i8(self, v: i8) -> Result<Self::Ok, Self::Error> {
@@ -314,7 +321,7 @@ impl serde::ser::Serializer for Serializer {
     }
 
     fn serialize_none(self) -> Result<Self::Ok, Self::Error> {
-        Ok(Value::None)
+        Ok(Value::Option(vec![]))
     }
 }
 
@@ -347,7 +354,19 @@ impl serde::ser::SerializeSeq for SerializeSeq {
     }
 }
 
-impl ser::SerializeTuple for SerializeSeq {
+#[derive(Default)]
+pub struct SerializeTuple(Vec<Value>);
+
+impl SerializeTuple {
+    fn new() -> Self {
+        Self::default()
+    }
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self(Vec::with_capacity(capacity))
+    }
+}
+
+impl ser::SerializeTuple for SerializeTuple {
     type Error = MyErr;
     type Ok = Value;
 
@@ -364,7 +383,19 @@ impl ser::SerializeTuple for SerializeSeq {
     }
 }
 
-impl ser::SerializeTupleStruct for SerializeSeq {
+#[derive(Default)]
+pub struct SerializeTupleStruct(Vec<Value>);
+
+impl SerializeTupleStruct {
+    fn new() -> Self {
+        Self::default()
+    }
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self(Vec::with_capacity(capacity))
+    }
+}
+
+impl ser::SerializeTupleStruct for SerializeTupleStruct {
     type Error = MyErr;
     type Ok = Value;
 
@@ -380,7 +411,27 @@ impl ser::SerializeTupleStruct for SerializeSeq {
         Ok(Value::TupleStruct(self.0))
     }
 }
-impl ser::SerializeTupleVariant for SerializeSeq {
+#[derive(Debug, PartialEq, Eq)]
+pub(crate) struct SerializeTupleVariant {
+    variant: &'static str,
+    map: Vec<Value>,
+}
+
+impl SerializeTupleVariant {
+    pub fn new(variant: &'static str) -> Self {
+        Self {
+            variant,
+            map: Vec::new(),
+        }
+    }
+    pub fn with_capacity(variant: &'static str, len: usize) -> Self {
+        Self {
+            variant,
+            map: Vec::with_capacity(len),
+        }
+    }
+}
+impl ser::SerializeTupleVariant for SerializeTupleVariant {
     type Error = MyErr;
     type Ok = Value;
 
@@ -388,12 +439,12 @@ impl ser::SerializeTupleVariant for SerializeSeq {
     where
         T: serde::Serialize,
     {
-        self.0.push(value.serialize(Serializer)?);
+        self.map.push(value.serialize(Serializer)?);
         Ok(())
     }
 
     fn end(self) -> Result<Self::Ok, Self::Error> {
-        Ok(Value::TupleVariant(self.0))
+        Ok(Value::TupleVariant(self.variant, self.map))
     }
 }
 
@@ -440,7 +491,7 @@ impl ser::SerializeMap for SerializeMap {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub(crate) struct SerializeStruct(BTreeMap<String, Value>);
+pub(crate) struct SerializeStruct(BTreeMap<&'static str, Value>);
 impl ser::SerializeStruct for SerializeStruct {
     type Error = MyErr;
     type Ok = Value;
@@ -453,7 +504,7 @@ impl ser::SerializeStruct for SerializeStruct {
     where
         T: serde::Serialize,
     {
-        self.0.insert(key.to_owned(), value.serialize(Serializer)?);
+        self.0.insert(key, value.serialize(Serializer)?);
 
         Ok(())
     }
@@ -462,7 +513,22 @@ impl ser::SerializeStruct for SerializeStruct {
         Ok(Value::Struct(self.0))
     }
 }
-impl ser::SerializeStructVariant for SerializeStruct {
+
+#[derive(Debug, PartialEq, Eq)]
+pub(crate) struct SerializeStructVariant {
+    variant: &'static str,
+    map: BTreeMap<&'static str, Value>,
+}
+
+impl SerializeStructVariant {
+    pub fn new(variant: &'static str) -> Self {
+        Self {
+            variant,
+            map: BTreeMap::new(),
+        }
+    }
+}
+impl ser::SerializeStructVariant for SerializeStructVariant {
     type Error = MyErr;
     type Ok = Value;
 
@@ -474,11 +540,11 @@ impl ser::SerializeStructVariant for SerializeStruct {
     where
         T: serde::Serialize,
     {
-        self.0.insert(key.to_owned(), value.serialize(Serializer)?);
+        self.map.insert(key, value.serialize(Serializer)?);
         Ok(())
     }
 
     fn end(self) -> Result<Self::Ok, Self::Error> {
-        Ok(Value::StructVariant(self.0))
+        Ok(Value::StructVariant(self.variant, self.map))
     }
 }
