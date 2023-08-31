@@ -32,7 +32,7 @@ pub struct ValueMap {
 }
 
 impl ValueMap {
-    pub fn new(value: Value) -> Self {
+    pub(crate) fn new(value: Value) -> Self {
         Self {
             value,
             index: FieldNames::new(),
@@ -339,7 +339,7 @@ impl SerializeSeq {
     fn new() -> Self {
         Self::default()
     }
-    pub fn with_capacity(capacity: usize) -> Self {
+    fn with_capacity(capacity: usize) -> Self {
         Self(Vec::with_capacity(capacity))
     }
 }
@@ -368,7 +368,7 @@ impl SerializeTuple {
     fn new() -> Self {
         Self::default()
     }
-    pub fn with_capacity(capacity: usize) -> Self {
+    fn with_capacity(capacity: usize) -> Self {
         Self(Vec::with_capacity(capacity))
     }
 }
@@ -397,7 +397,7 @@ impl SerializeTupleStruct {
     fn new() -> Self {
         Self::default()
     }
-    pub fn with_capacity(capacity: usize) -> Self {
+    fn with_capacity(capacity: usize) -> Self {
         Self(Vec::with_capacity(capacity))
     }
 }
@@ -425,13 +425,13 @@ pub(crate) struct SerializeTupleVariant {
 }
 
 impl SerializeTupleVariant {
-    pub fn new(variant: &'static str) -> Self {
+    fn new(variant: &'static str) -> Self {
         Self {
             variant,
             map: Vec::new(),
         }
     }
-    pub fn with_capacity(variant: &'static str, len: usize) -> Self {
+    fn with_capacity(variant: &'static str, len: usize) -> Self {
         Self {
             variant,
             map: Vec::with_capacity(len),
@@ -461,7 +461,7 @@ pub(crate) struct SerializeMap {
 }
 
 impl SerializeMap {
-    pub fn new() -> Self {
+    fn new() -> Self {
         SerializeMap {
             map: BTreeMap::new(),
             next_key: None,
@@ -528,7 +528,7 @@ pub(crate) struct SerializeStructVariant {
 }
 
 impl SerializeStructVariant {
-    pub fn new(variant: &'static str) -> Self {
+    fn new(variant: &'static str) -> Self {
         Self {
             variant,
             map: BTreeMap::new(),

@@ -159,7 +159,7 @@ pub struct MessageKey {
 }
 
 impl MessageKey {
-    pub fn new(fields: FieldNames, rule: String) -> Self {
+    pub(crate) fn new(fields: FieldNames, rule: String) -> Self {
         Self { fields, rule }
     }
 }

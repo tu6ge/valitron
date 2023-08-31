@@ -40,7 +40,7 @@ impl Display for FieldName {
 pub struct FieldNames(Vec<FieldName>);
 
 impl FieldNames {
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self(Vec::new())
     }
 
@@ -122,7 +122,7 @@ struct Parser<'a> {
 }
 
 impl<'a> Parser<'a> {
-    pub fn new(tokens: Iter<'a, Token>) -> Self {
+    pub(crate) fn new(tokens: Iter<'a, Token>) -> Self {
         Self {
             names: Vec::new(),
             tokens,
