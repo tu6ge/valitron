@@ -1,6 +1,9 @@
-use std::{fmt::Display, slice::Iter};
+use std::{convert::Infallible, fmt::Display, slice::Iter};
 
-use super::lexer::{lexer, Token, TokenKind};
+use super::{
+    lexer::{lexer, Token, TokenKind},
+    MessageKey,
+};
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub enum FieldName {
@@ -32,6 +35,86 @@ impl Display for FieldName {
         }
     }
 }
+
+#[derive(Debug, PartialEq, Eq, Hash, Clone)]
+pub struct FieldNames(Vec<FieldName>);
+
+impl FieldNames {
+    pub fn new() -> Self {
+        Self(Vec::new())
+    }
+
+    pub fn iter(&self) -> Iter<'_, FieldName> {
+        self.0.iter()
+    }
+}
+
+impl From<Vec<FieldName>> for FieldNames {
+    fn from(value: Vec<FieldName>) -> Self {
+        Self(value)
+    }
+}
+impl From<FieldName> for FieldNames {
+    fn from(value: FieldName) -> Self {
+        Self(vec![value])
+    }
+}
+impl<const N: usize> From<[FieldName; N]> for FieldNames {
+    fn from(value: [FieldName; N]) -> Self {
+        Self(value.into_iter().collect())
+    }
+}
+
+/// Convert to FieldName trait
+pub trait IntoFieldName {
+    type Error: std::fmt::Display;
+    fn into_field(self) -> Result<FieldNames, Self::Error>;
+}
+
+impl IntoFieldName for &str {
+    type Error = String;
+    fn into_field(self) -> Result<FieldNames, Self::Error> {
+        Ok(FieldNames(parse(self)?))
+    }
+}
+impl IntoFieldName for u8 {
+    type Error = Infallible;
+    fn into_field(self) -> Result<FieldNames, Self::Error> {
+        Ok(FieldNames(vec![FieldName::Tuple(self)]))
+    }
+}
+impl IntoFieldName for (u8, u8) {
+    type Error = Infallible;
+    fn into_field(self) -> Result<FieldNames, Self::Error> {
+        Ok(FieldNames(vec![
+            FieldName::Tuple(self.0),
+            FieldName::Tuple(self.1),
+        ]))
+    }
+}
+impl IntoFieldName for (u8, u8, u8) {
+    type Error = Infallible;
+    fn into_field(self) -> Result<FieldNames, Self::Error> {
+        Ok(FieldNames(vec![
+            FieldName::Tuple(self.0),
+            FieldName::Tuple(self.1),
+            FieldName::Tuple(self.2),
+        ]))
+    }
+}
+impl IntoFieldName for [usize; 1] {
+    type Error = Infallible;
+    fn into_field(self) -> Result<FieldNames, Self::Error> {
+        Ok(FieldNames(vec![FieldName::Array(self[0])]))
+    }
+}
+// impl IntoFieldName for [&str; 1] {
+//     type Error = String;
+//     fn into_field(self) -> Result<Vec<FieldName>, Self::Error> {
+//         self[0].chars()
+//         Ok(vec![FieldName::StructVariant(self[0].to_string())])
+//     }
+// }
 
 struct Parser<'a> {
     names: Vec<FieldName>,
@@ -176,12 +259,12 @@ pub fn parse(source: &str) -> Result<Vec<FieldName>, String> {
     Ok(parser.names)
 }
 
-pub fn parse_message(source: &str) -> Result<(Vec<FieldName>, String), String> {
+pub fn parse_message(source: &str) -> Result<MessageKey, String> {
     let mut names = parse(source)?;
 
     if let Some(name) = names.pop() {
         if let FieldName::Literal(s) = name {
-            return Ok((names, s));
+            return Ok(MessageKey::new(FieldNames(names), s));
         }
     }
     Err("not found validate rule name".into())

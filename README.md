@@ -146,6 +146,8 @@ let validator = Validator::new()
   .rule("0.city", Required)
   .rule("[0].city", Required)
   .rule("color[red]", Required) // match struct variant
+  .rule(0, Required)
+  .rule([10], Required)
   .message([
     ("name.required", "msg1"),
     ("name2.required", "{field} is required"),

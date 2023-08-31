@@ -31,11 +31,11 @@ fn test_validator() {
 
     assert!(res.len() == 2);
     assert!(res.contains(&(
-        vec![FieldName::Literal("age".into())],
+        vec![FieldName::Literal("age".into())].into(),
         vec!["age should be between 25 and 45".to_string()],
     )));
     assert!(res.contains(&(
-        vec![FieldName::Literal("name".into())],
+        vec![FieldName::Literal("name".into())].into(),
         vec!["name should be starts with `hello`".to_string()],
     )));
 
@@ -49,4 +49,35 @@ fn age_limit(v: &mut Value) -> Result<(), String> {
         }
     }
     Err("age should be between 25 and 45".to_owned())
+}
+
+#[test]
+fn test_has_tuple() {
+    let validator = Validator::new()
+        .rule(0, StartWith("hello"))
+        .message([("0.start_with", "first item should be start with `hello`")]);
+
+    #[derive(Serialize)]
+    struct Foo(&'static str, &'static str);
+
+    let res = validator.validate(Foo("heoo", "bar")).unwrap_err();
+    assert!(res.len() == 1);
+
+    assert!(res.contains(&(
+        vec![FieldName::Tuple(0)].into(),
+        vec!["first item should be start with `hello`".to_string()],
+    )));
+}
+
+#[test]
+fn test_has_array() {
+    let validator = Validator::new().rule([1], StartWith("hello"));
+
+    let res = validator.validate(vec!["foo", "bar"]).unwrap_err();
+
+    assert!(res.len() == 1);
+    assert!(res.contains(&(
+        vec![FieldName::Array(1)].into(),
+        vec!["this field must be start with {}".to_string()],
+    )));
 }

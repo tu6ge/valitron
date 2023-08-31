@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 
 use serde::ser;
 
-use crate::register::FieldName;
+use crate::register::{FieldName, FieldNames};
 
 #[cfg(test)]
 mod test;
@@ -28,17 +28,17 @@ pub enum Value {
 
 pub struct ValueMap {
     value: Value,
-    index: Vec<FieldName>,
+    index: FieldNames,
 }
 
 impl ValueMap {
     pub fn new(value: Value) -> Self {
         Self {
             value,
-            index: Vec::new(),
+            index: FieldNames::new(),
         }
     }
-    pub fn index(&mut self, index: Vec<FieldName>) {
+    pub fn index(&mut self, index: FieldNames) {
         self.index = index;
     }
     pub fn current(&self) -> Option<&Value> {
@@ -74,7 +74,7 @@ impl Value {
             _ => None,
         }
     }
-    pub fn get_with_names(&self, names: &Vec<FieldName>) -> Option<&Value> {
+    pub fn get_with_names(&self, names: &FieldNames) -> Option<&Value> {
         let mut value = Some(self);
         for name in names.iter() {
             value = match value {
@@ -98,7 +98,7 @@ impl Value {
             _ => None,
         }
     }
-    pub fn get_with_names_mut(&mut self, names: &Vec<FieldName>) -> Option<&mut Value> {
+    pub fn get_with_names_mut(&mut self, names: &FieldNames) -> Option<&mut Value> {
         let mut value = Some(self);
         for name in names.iter() {
             value = match value {

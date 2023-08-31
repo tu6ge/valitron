@@ -10,12 +10,14 @@ use crate::{
 mod field_name;
 mod lexer;
 
-pub use field_name::FieldName;
+pub use field_name::{FieldName, FieldNames};
+
+use self::field_name::IntoFieldName;
 
 #[derive(Default)]
 pub struct Validator<'a> {
-    rules: HashMap<Vec<FieldName>, RuleList>,
-    message: HashMap<(Vec<FieldName>, String), &'a str>,
+    rules: HashMap<FieldNames, RuleList>,
+    message: HashMap<MessageKey, &'a str>,
 }
 
 macro_rules! panic_on_err {
@@ -31,8 +33,8 @@ impl<'a> Validator<'a> {
     pub fn new() -> Self {
         Self::default()
     }
-    pub fn rule<R: IntoRuleList>(mut self, field: &'a str, rule: R) -> Self {
-        let names = panic_on_err!(field_name::parse(field));
+    pub fn rule<F: IntoFieldName, R: IntoRuleList>(mut self, field: F, rule: R) -> Self {
+        let names = panic_on_err!(field.into_field());
         self.rules.insert(names, rule.into_list());
         self
     }
@@ -63,10 +65,11 @@ impl<'a> Validator<'a> {
 
             let mut field_msg = Vec::new();
             for (rule, msg) in rule_resp.into_iter() {
-                let final_msg = match self.get_message(&(names.clone(), rule.to_string())) {
-                    Some(s) => s.to_string(),
-                    None => msg,
-                };
+                let final_msg =
+                    match self.get_message(&MessageKey::new(names.clone(), rule.to_string())) {
+                        Some(s) => s.to_string(),
+                        None => msg,
+                    };
                 field_msg.push(final_msg);
             }
 
@@ -80,45 +83,46 @@ impl<'a> Validator<'a> {
         }
     }
 
-    fn rule_get(&self, names: &Vec<FieldName>) -> Option<&RuleList> {
+    fn rule_get(&self, names: &FieldNames) -> Option<&RuleList> {
         self.rules.get(names)
     }
 
-    fn rules_name(&self, names: &Vec<FieldName>) -> Option<Vec<&'static str>> {
+    fn rules_name(&self, names: &FieldNames) -> Option<Vec<&'static str>> {
         self.rule_get(names).map(|rule| rule.get_rules_name())
     }
 
     fn exit_message(
         &self,
         k_str: &str,
-        (names, rule_name): &(Vec<FieldName>, String),
+        MessageKey { fields, rule }: &MessageKey,
     ) -> Result<(), String> {
         let point_index = k_str
             .rfind('.')
             .ok_or(format!("no found `.` in the message index"))?;
-        let names = self.rules_name(names).ok_or(format!(
+        let names = self.rules_name(fields).ok_or(format!(
             "the field \"{}\" not found in validator",
             &k_str[..point_index]
         ))?;
 
-        if names.contains(&rule_name.as_str()) {
+        if names.contains(&rule.as_str()) {
             Ok(())
         } else {
-            Err(format!("rule \"{rule_name}\" is not found in rules"))
+            Err(format!("rule \"{rule}\" is not found in rules"))
         }
     }
 
-    fn get_message(&self, key: &(Vec<FieldName>, String)) -> Option<&&str> {
+    fn get_message(&self, key: &MessageKey) -> Option<&&str> {
         self.message.get(key)
     }
 }
 
+#[derive(Debug)]
 pub struct Response {
-    message: Vec<(Vec<FieldName>, Vec<String>)>,
+    message: Vec<(FieldNames, Vec<String>)>,
 }
 
 impl Deref for Response {
-    type Target = Vec<(Vec<FieldName>, Vec<String>)>;
+    type Target = Vec<(FieldNames, Vec<String>)>;
     fn deref(&self) -> &Self::Target {
         &self.message
     }
@@ -131,7 +135,7 @@ impl Response {
         }
     }
 
-    fn push(&mut self, field_name: Vec<FieldName>, message: Vec<String>) {
+    fn push(&mut self, field_name: FieldNames, message: Vec<String>) {
         if !message.is_empty() {
             self.message.push((field_name, message));
         }
@@ -145,6 +149,18 @@ impl From<Response> for Result<(), Response> {
         } else {
             Err(value)
         }
+    }
+}
+
+#[derive(Debug, PartialEq, Eq, Hash, Clone)]
+pub struct MessageKey {
+    fields: FieldNames,
+    rule: String,
+}
+
+impl MessageKey {
+    pub fn new(fields: FieldNames, rule: String) -> Self {
+        Self { fields, rule }
     }
 }
 
