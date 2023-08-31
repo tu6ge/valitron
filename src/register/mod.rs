@@ -1,6 +1,6 @@
 //! register rules
 
-use std::collections::HashMap;
+use std::{collections::HashMap, ops::Deref};
 
 use crate::{
     rule::{IntoRuleList, RuleList},
@@ -49,13 +49,13 @@ impl<'a> Validator<'a> {
         self
     }
 
-    pub fn validate<T>(self, data: T) -> Result<(), Vec<(Vec<FieldName>, Vec<String>)>>
+    pub fn validate<T>(self, data: T) -> Result<(), Response>
     where
         T: serde::ser::Serialize,
     {
         let value = data.serialize(Serializer).unwrap();
         let mut value_map: ValueMap = ValueMap::new(value);
-        let mut message = Vec::new();
+        let mut message = Response::new();
 
         for (names, rules) in self.rules.iter() {
             value_map.index(names.clone());
@@ -70,9 +70,7 @@ impl<'a> Validator<'a> {
                 field_msg.push(final_msg);
             }
 
-            if !field_msg.is_empty() {
-                message.push((names.clone(), field_msg));
-            }
+            message.push(names.clone(), field_msg);
         }
 
         if message.is_empty() {
@@ -112,6 +110,41 @@ impl<'a> Validator<'a> {
 
     fn get_message(&self, key: &(Vec<FieldName>, String)) -> Option<&&str> {
         self.message.get(key)
+    }
+}
+
+pub struct Response {
+    message: Vec<(Vec<FieldName>, Vec<String>)>,
+}
+
+impl Deref for Response {
+    type Target = Vec<(Vec<FieldName>, Vec<String>)>;
+    fn deref(&self) -> &Self::Target {
+        &self.message
+    }
+}
+
+impl Response {
+    fn new() -> Self {
+        Self {
+            message: Vec::new(),
+        }
+    }
+
+    fn push(&mut self, field_name: Vec<FieldName>, message: Vec<String>) {
+        if !message.is_empty() {
+            self.message.push((field_name, message));
+        }
+    }
+}
+
+impl From<Response> for Result<(), Response> {
+    fn from(value: Response) -> Self {
+        if value.is_empty() {
+            Ok(())
+        } else {
+            Err(value)
+        }
     }
 }
 
