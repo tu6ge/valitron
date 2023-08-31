@@ -34,7 +34,7 @@ fn test_get_value() {
         FieldName::Literal("b".into()),
         FieldName::Literal("foo_str".into()),
     ];
-    let val2 = value.get_with_names(&name2).unwrap();
+    let val2 = value.get_with_names(&name2.into()).unwrap();
     assert_eq!(val2, &Value::String("bar".into()));
 
     let name = vec![
@@ -42,7 +42,7 @@ fn test_get_value() {
         FieldName::Literal("c".into()),
         FieldName::Tuple(0),
     ];
-    let val = value.get_with_names(&name).unwrap();
+    let val = value.get_with_names(&name.into()).unwrap();
     assert_eq!(val, &Value::Int8(37));
 }
 
