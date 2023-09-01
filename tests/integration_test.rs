@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use validator::{
+use valitron::{
     register::FieldName,
     rule::{custom, Required, RuleExt, StartWith},
     ser::Value,
