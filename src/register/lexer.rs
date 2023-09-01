@@ -11,7 +11,7 @@ pub enum TokenKind {
     Index(usize),
 
     /// match `.`
-    Point,
+    Dot,
 
     /// match `[`
     LeftBracket,
@@ -78,7 +78,7 @@ pub fn lexer<'a>(source: &'a str) -> Result<Vec<Token>, Error> {
             Some(res) => res,
         };
         let token: Token = match char {
-            '.' => TokenKind::Point.into(),
+            '.' => TokenKind::Dot.into(),
             '[' => TokenKind::LeftBracket.into(),
             ']' => TokenKind::RightBracket.into(),
             'a'..='z' | 'A'..='Z' | '_' => {
@@ -151,7 +151,7 @@ mod test {
     #[test]
     fn test_lexer() {
         let vec = lexer(".").unwrap();
-        assert_eq!(vec, vec![TokenKind::Point.into(), Token::eof()]);
+        assert_eq!(vec, vec![TokenKind::Dot.into(), Token::eof()]);
 
         let vec = lexer("[").unwrap();
         assert_eq!(vec, vec![TokenKind::LeftBracket.into(), Token::eof()]);
@@ -195,14 +195,14 @@ mod test {
             vec,
             vec![
                 TokenKind::Ident("abc".into()).into(),
-                TokenKind::Point.into(),
+                TokenKind::Dot.into(),
                 TokenKind::Ident("d23".into()).into(),
                 TokenKind::LeftBracket.into(),
                 TokenKind::Ident("cde".into()).into(),
                 TokenKind::RightBracket.into(),
-                TokenKind::Point.into(),
+                TokenKind::Dot.into(),
                 TokenKind::Ident("ff99".into()).into(),
-                TokenKind::Point.into(),
+                TokenKind::Dot.into(),
                 TokenKind::Ident("pp".into()).into(),
                 TokenKind::LeftBracket.into(),
                 TokenKind::Index(8).into(),

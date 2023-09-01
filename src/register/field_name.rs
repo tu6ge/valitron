@@ -134,9 +134,9 @@ impl<'a> Parser<'a> {
             match token.kind() {
                 TokenKind::Ident(s) => {
                     self.names.push(FieldName::Literal(s.to_owned()));
-                    self.eat_point()?;
+                    self.eat_dot()?;
                 }
-                TokenKind::Point => return Err("`.` should not be start".into()),
+                TokenKind::Dot => return Err("`.` should not be start".into()),
                 TokenKind::LeftBracket => {
                     self.parse_bracket()?;
                 }
@@ -146,13 +146,13 @@ impl<'a> Parser<'a> {
                         (*n).try_into()
                             .map_err(|_| "tuple index is not u8 type".to_string())?,
                     ));
-                    if !(self.expect(TokenKind::Point)
+                    if !(self.expect(TokenKind::Dot)
                         || self.expect(TokenKind::LeftBracket)
                         || self.expect(TokenKind::Eof))
                     {
                         return Err("after tuple index should be `.` or `[` or eof".into());
                     }
-                    self.eat_point()?;
+                    self.eat_dot()?;
                 }
                 TokenKind::Undefined => return Err("undefined char".into()),
                 TokenKind::Eof => (),
@@ -178,13 +178,13 @@ impl<'a> Parser<'a> {
                         self.tokens.next();
                         // eat `]`
                         self.tokens.next();
-                        if !(self.expect(TokenKind::Point)
+                        if !(self.expect(TokenKind::Dot)
                             || self.expect(TokenKind::LeftBracket)
                             || self.expect(TokenKind::Eof))
                         {
                             return Err("after `]` should be `.` or `[` or eof".into());
                         }
-                        self.eat_point()?;
+                        self.eat_dot()?;
                         return Ok(());
                     }
                 }
@@ -199,13 +199,13 @@ impl<'a> Parser<'a> {
                         self.tokens.next();
                         // eat `]`
                         self.tokens.next();
-                        if !(self.expect(TokenKind::Point)
+                        if !(self.expect(TokenKind::Dot)
                             || self.expect(TokenKind::LeftBracket)
                             || self.expect(TokenKind::Eof))
                         {
                             return Err("after `]` should be `.` or `[` or eof".into());
                         }
-                        self.eat_point()?;
+                        self.eat_dot()?;
                         return Ok(());
                     }
                 }
@@ -230,10 +230,10 @@ impl<'a> Parser<'a> {
         false
     }
 
-    fn eat_point(&mut self) -> Result<(), String> {
+    fn eat_dot(&mut self) -> Result<(), String> {
         let mut peek = self.tokens.clone().peekable();
         if let Some(Token {
-            kind: TokenKind::Point,
+            kind: TokenKind::Dot,
             ..
         }) = peek.next()
         {
