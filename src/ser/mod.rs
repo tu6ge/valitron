@@ -19,11 +19,21 @@ pub enum Value {
     Array(Vec<Value>),
     Tuple(Vec<Value>),
     TupleStruct(Vec<Value>),
+    NewtypeStruct(Vec<Value>),
+
     Enum(&'static str, Vec<Value>),
+    EnumUnit(&'static str),
     TupleVariant(&'static str, Vec<Value>),
+
     Map(BTreeMap<Value, Value>),
-    Struct(BTreeMap<&'static str, Value>),
-    StructVariant(&'static str, BTreeMap<&'static str, Value>),
+
+    StructKey(String),
+    /// the BtreeMap key only be StructKey(_)
+    Struct(BTreeMap<Value, Value>),
+
+    StructVariantKey(String),
+    /// the BtreeMap key only be StructVariantKey(_)
+    StructVariant(&'static str, BTreeMap<Value, Value>),
 }
 
 pub struct ValueMap {
@@ -65,11 +75,14 @@ impl Value {
             (FieldName::Array(i), Value::Array(vec)) => vec.get(*i),
             (FieldName::Tuple(i), Value::Tuple(vec))
             | (FieldName::Tuple(i), Value::TupleStruct(vec))
+            | (FieldName::Tuple(i), Value::NewtypeStruct(vec))
             | (FieldName::Tuple(i), Value::Enum(_, vec))
             | (FieldName::Tuple(i), Value::TupleVariant(_, vec)) => vec.get(*i as usize),
-            (FieldName::Literal(str), Value::Struct(btree))
-            | (FieldName::StructVariant(str), Value::StructVariant(_, btree)) => {
-                btree.get(str.as_str())
+            (FieldName::Literal(str), Value::Struct(btree)) => {
+                btree.get(&Value::StructKey(str.to_string()))
+            }
+            (FieldName::StructVariant(str), Value::StructVariant(_, btree)) => {
+                btree.get(&Value::StructVariantKey(str.to_string()))
             }
             _ => None,
         }
@@ -89,11 +102,14 @@ impl Value {
             (FieldName::Array(i), Value::Array(vec)) => vec.get_mut(*i),
             (FieldName::Tuple(i), Value::Tuple(vec))
             | (FieldName::Tuple(i), Value::TupleStruct(vec))
+            | (FieldName::Tuple(i), Value::NewtypeStruct(vec))
             | (FieldName::Tuple(i), Value::Enum(_, vec))
             | (FieldName::Tuple(i), Value::TupleVariant(_, vec)) => vec.get_mut(*i as usize),
-            (FieldName::Literal(str), Value::Struct(btree))
-            | (FieldName::StructVariant(str), Value::StructVariant(_, btree)) => {
-                btree.get_mut(str.as_str())
+            (FieldName::Literal(str), Value::Struct(btree)) => {
+                btree.get_mut(&Value::StructKey(str.to_string()))
+            }
+            (FieldName::StructVariant(str), Value::StructVariant(_, btree)) => {
+                btree.get_mut(&Value::StructVariantKey(str.to_string()))
             }
             _ => None,
         }
@@ -111,14 +127,14 @@ impl Value {
 
     pub(crate) fn get(&self, key: &str) -> Option<&Value> {
         if let Self::Struct(map) = self {
-            map.get(key)
+            map.get(&Value::StructKey(key.to_string()))
         } else {
             None
         }
     }
     pub(crate) fn get_mut(&mut self, key: &str) -> Option<&mut Value> {
         if let Self::Struct(map) = self {
-            map.get_mut(key)
+            map.get_mut(&Value::StructKey(key.to_string()))
         } else {
             None
         }
@@ -195,7 +211,7 @@ impl serde::ser::Serializer for Serializer {
         Ok(Value::Unit)
     }
 
-    fn serialize_unit_struct(self, _name: &'static str) -> Result<Self::Ok, Self::Error> {
+    fn serialize_unit_struct(self, name: &'static str) -> Result<Self::Ok, Self::Error> {
         self.serialize_unit()
     }
 
@@ -205,7 +221,7 @@ impl serde::ser::Serializer for Serializer {
         _variant_index: u32,
         variant: &'static str,
     ) -> Result<Self::Ok, Self::Error> {
-        self.serialize_str(variant)
+        Ok(Value::EnumUnit(variant))
     }
 
     fn serialize_newtype_struct<T: ?Sized>(
@@ -216,7 +232,7 @@ impl serde::ser::Serializer for Serializer {
     where
         T: serde::Serialize,
     {
-        Ok(Value::TupleStruct(vec![value.serialize(self)?]))
+        Ok(Value::NewtypeStruct(vec![value.serialize(self)?]))
     }
 
     fn serialize_newtype_variant<T: ?Sized>(
@@ -498,7 +514,7 @@ impl ser::SerializeMap for SerializeMap {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub(crate) struct SerializeStruct(BTreeMap<&'static str, Value>);
+pub(crate) struct SerializeStruct(BTreeMap<Value, Value>);
 impl ser::SerializeStruct for SerializeStruct {
     type Error = MyErr;
     type Ok = Value;
@@ -511,7 +527,10 @@ impl ser::SerializeStruct for SerializeStruct {
     where
         T: serde::Serialize,
     {
-        self.0.insert(key, value.serialize(Serializer)?);
+        self.0.insert(
+            Value::StructKey(key.to_string()),
+            value.serialize(Serializer)?,
+        );
 
         Ok(())
     }
@@ -524,7 +543,7 @@ impl ser::SerializeStruct for SerializeStruct {
 #[derive(Debug, PartialEq, Eq)]
 pub(crate) struct SerializeStructVariant {
     variant: &'static str,
-    map: BTreeMap<&'static str, Value>,
+    map: BTreeMap<Value, Value>,
 }
 
 impl SerializeStructVariant {
@@ -547,7 +566,10 @@ impl ser::SerializeStructVariant for SerializeStructVariant {
     where
         T: serde::Serialize,
     {
-        self.map.insert(key, value.serialize(Serializer)?);
+        self.map.insert(
+            Value::StructVariantKey(key.to_string()),
+            value.serialize(Serializer)?,
+        );
         Ok(())
     }
 

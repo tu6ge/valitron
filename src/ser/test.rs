@@ -64,8 +64,11 @@ fn test_struct() {
         value,
         Value::Struct({
             let mut map = BTreeMap::new();
-            map.insert("name", Value::String("wang".into()));
-            map.insert("age", Value::Int8(18));
+            map.insert(
+                Value::StructKey("name".to_string()),
+                Value::String("wang".into()),
+            );
+            map.insert(Value::StructKey("age".to_string()), Value::Int8(18));
             map
         })
     )
@@ -101,13 +104,19 @@ fn test_struct_nest() {
         value,
         Value::Struct({
             let mut map = BTreeMap::new();
-            map.insert("foo", Value::Int8(11));
+            map.insert(Value::StructKey("foo".to_string()), Value::Int8(11));
             map.insert(
-                "b",
+                Value::StructKey("b".to_string()),
                 Value::Struct({
                     let mut map = BTreeMap::new();
-                    map.insert("foo_str", Value::String("bar".to_string()));
-                    map.insert("c", Value::TupleStruct(vec![Value::Int8(37)]));
+                    map.insert(
+                        Value::StructKey("foo_str".to_string()),
+                        Value::String("bar".to_string()),
+                    );
+                    map.insert(
+                        Value::StructKey("c".to_string()),
+                        Value::TupleStruct(vec![Value::Int8(37)]),
+                    );
                     map
                 }),
             );
@@ -137,7 +146,7 @@ fn test_newtype_variant() {
             "A",
             vec![Value::Struct({
                 let mut map = BTreeMap::new();
-                map.insert("age", Value::Int8(10));
+                map.insert(Value::StructKey("age".to_string()), Value::Int8(10));
                 map
             })]
         )
@@ -153,7 +162,7 @@ fn test_newtype_variant() {
                 Value::Int8(11),
                 Value::Struct({
                     let mut map = BTreeMap::new();
-                    map.insert("age", Value::Int8(10));
+                    map.insert(Value::StructKey("age".to_string()), Value::Int8(10));
                     map
                 })
             ]
