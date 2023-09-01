@@ -115,7 +115,7 @@ fn test_struct_nest() {
                     );
                     map.insert(
                         Value::StructKey("c".to_string()),
-                        Value::TupleStruct(vec![Value::Int8(37)]),
+                        Value::NewtypeStruct(vec![Value::Int8(37)]),
                     );
                     map
                 }),

@@ -81,7 +81,7 @@ impl<T: 'static> Clone for BoxCloneRule<T> {
 }
 
 /// Rule extension, it contains some rules, such as
-/// ```no_run
+/// ```rust,ignore
 /// Rule1.and(Rule2).and(Rule3)
 /// ```
 pub trait RuleExt {

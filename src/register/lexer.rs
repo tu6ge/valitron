@@ -35,6 +35,11 @@ impl Token {
     pub fn kind(&self) -> &TokenKind {
         &self.kind
     }
+    fn eof() -> Self {
+        Self {
+            kind: TokenKind::Eof,
+        }
+    }
 }
 
 impl From<TokenKind> for Token {
@@ -141,38 +146,47 @@ pub fn lexer<'a>(source: &'a str) -> Result<Vec<Token>, Error> {
 
 #[cfg(test)]
 mod test {
-    use super::lexer;
-    use super::TokenKind;
+    use super::{lexer, Token, TokenKind};
 
     #[test]
     fn test_lexer() {
         let vec = lexer(".").unwrap();
-        assert_eq!(vec, vec![TokenKind::Point.into()]);
+        assert_eq!(vec, vec![TokenKind::Point.into(), Token::eof()]);
 
         let vec = lexer("[").unwrap();
-        assert_eq!(vec, vec![TokenKind::LeftBracket.into()]);
+        assert_eq!(vec, vec![TokenKind::LeftBracket.into(), Token::eof()]);
 
         let vec = lexer("]").unwrap();
-        assert_eq!(vec, vec![TokenKind::RightBracket.into()]);
+        assert_eq!(vec, vec![TokenKind::RightBracket.into(), Token::eof()]);
 
         let vec = lexer("abc").unwrap();
-        assert_eq!(vec, vec![TokenKind::Ident("abc".into()).into()]);
+        assert_eq!(
+            vec,
+            vec![TokenKind::Ident("abc".into()).into(), Token::eof()]
+        );
 
         let vec = lexer("abc_23").unwrap();
-        assert_eq!(vec, vec![TokenKind::Ident("abc_23".into()).into()]);
+        assert_eq!(
+            vec,
+            vec![TokenKind::Ident("abc_23".into()).into(), Token::eof()]
+        );
 
         let vec = lexer("_23").unwrap();
-        assert_eq!(vec, vec![TokenKind::Ident("_23".into()).into()]);
+        assert_eq!(
+            vec,
+            vec![TokenKind::Ident("_23".into()).into(), Token::eof()]
+        );
 
         let vec = lexer("234").unwrap();
-        assert_eq!(vec, vec![TokenKind::Index(234).into()]);
+        assert_eq!(vec, vec![TokenKind::Index(234).into(), Token::eof()]);
 
         let vec = lexer("234abc".into()).unwrap();
         assert_eq!(
             vec,
             vec![
                 TokenKind::Index(234).into(),
-                TokenKind::Ident("abc".into()).into()
+                TokenKind::Ident("abc".into()).into(),
+                Token::eof()
             ]
         );
 
@@ -193,6 +207,7 @@ mod test {
                 TokenKind::LeftBracket.into(),
                 TokenKind::Index(8).into(),
                 TokenKind::RightBracket.into(),
+                Token::eof()
             ]
         );
     }
