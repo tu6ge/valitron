@@ -60,6 +60,9 @@ impl ValueMap {
     pub fn get(&self, key: &FieldName) -> Option<&Value> {
         self.value.get_with_name(key)
     }
+    pub(crate) fn value(self) -> Value {
+        self.value
+    }
 }
 
 pub fn to_value<T>(value: T) -> Result<Value, MyErr>

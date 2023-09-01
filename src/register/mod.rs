@@ -51,9 +51,9 @@ impl<'a> Validator<'a> {
         self
     }
 
-    pub fn validate<T>(self, data: T) -> Result<(), Response>
+    pub fn validate<'de, T>(self, data: T) -> Result<T, Response>
     where
-        T: serde::ser::Serialize,
+        T: serde::ser::Serialize + serde::de::Deserialize<'de>,
     {
         let value = data.serialize(Serializer).unwrap();
         let mut value_map: ValueMap = ValueMap::new(value);
@@ -77,7 +77,7 @@ impl<'a> Validator<'a> {
         }
 
         if message.is_empty() {
-            Ok(())
+            Ok(T::deserialize(value_map.value()).unwrap())
         } else {
             Err(message)
         }

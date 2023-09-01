@@ -1,4 +1,4 @@
-use std::{collections::BTreeMap, vec::IntoIter};
+use std::{collections::BTreeMap, fmt::Display, vec::IntoIter};
 
 use serde::de::{
     DeserializeSeed, Deserializer, EnumAccess, Expected, IntoDeserializer, MapAccess, SeqAccess,
@@ -6,6 +6,9 @@ use serde::de::{
 };
 
 use crate::ser::Value;
+
+#[cfg(test)]
+mod test;
 
 impl Value {
     #[cold]
@@ -43,8 +46,8 @@ impl Value {
 pub struct MyErr;
 
 impl serde::de::Error for MyErr {
-    fn custom<T>(msg: T) -> Self {
-        todo!()
+    fn custom<T: Display>(msg: T) -> Self {
+        todo!("{msg}")
     }
 }
 
@@ -73,10 +76,10 @@ impl<'de> Deserializer<'de> for Value {
         V: Visitor<'de>,
     {
         if let Value::Int8(n) = self {
-            return visitor.visit_u8(n);
+            visitor.visit_u8(n)
+        } else {
+            Err(self.invalid_type(&visitor))
         }
-
-        Err(MyErr)
     }
 
     fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
@@ -193,14 +196,22 @@ impl<'de> Deserializer<'de> for Value {
     where
         V: Visitor<'de>,
     {
-        todo!()
+        if let Value::String(n) = self {
+            visitor.visit_str(&n)
+        } else {
+            Err(self.invalid_type(&visitor))
+        }
     }
 
     fn deserialize_string<V>(self, visitor: V) -> Result<V::Value, Self::Error>
     where
         V: Visitor<'de>,
     {
-        todo!()
+        if let Value::String(n) = self {
+            visitor.visit_string(n)
+        } else {
+            Err(self.invalid_type(&visitor))
+        }
     }
 
     fn deserialize_bytes<V>(self, visitor: V) -> Result<V::Value, Self::Error>
@@ -367,7 +378,13 @@ impl<'de> Deserializer<'de> for Value {
     where
         V: Visitor<'de>,
     {
-        todo!()
+        if let Value::StructKey(n) = self {
+            visitor.visit_string(n)
+        } else if let Value::StructVariantKey(n) = self {
+            visitor.visit_string(n)
+        } else {
+            Err(self.invalid_type(&visitor))
+        }
     }
 
     fn deserialize_ignored_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>

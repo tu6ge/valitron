@@ -1,4 +1,4 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use validator::{
     register::FieldName,
     rule::{custom, Required, RuleExt, StartWith},
@@ -6,7 +6,7 @@ use validator::{
     Validator,
 };
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize, Debug)]
 struct Person {
     name: &'static str,
     age: u8,
@@ -57,7 +57,7 @@ fn test_has_tuple() {
         .rule(0, StartWith("hello"))
         .message([("0.start_with", "first item should be start with `hello`")]);
 
-    #[derive(Serialize)]
+    #[derive(Serialize, Deserialize, Debug)]
     struct Foo(&'static str, &'static str);
 
     let res = validator.validate(Foo("heoo", "bar")).unwrap_err();
