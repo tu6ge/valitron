@@ -6,6 +6,18 @@ Inspired by axum
 
 > Warning: This is currently in a very early stage of development
 
+## Features
+
+- Ergonomics validation
+- Build-in rule, e.g. Required, StartWith ...
+- Closure validate
+- Related validate, e.g. password confirm
+- Custom rule with other parameter
+- Check / modify input data
+- Custom error message
+- collect validate error messages
+- Support all types data on `#[dervic(Serialize, Deserialize)]` ( visit [`serde`](https://serde.rs/) for more info)
+
 ## Examples
 
 ```rust
