@@ -4,6 +4,10 @@ use std::marker::PhantomData;
 
 use crate::ser::{Value, ValueMap};
 
+use boxed::BoxCloneRule;
+
+mod boxed;
+
 /// A Rule trait
 pub trait Rule<M>: 'static {
     /// Named rule type, allow `a-z` | `A-Z` | `0-9` | `_`, and not start with `0-9`
@@ -38,45 +42,6 @@ impl<T> From<&str> for Message<T> {
             inner: value.to_owned(),
             _marker: PhantomData,
         }
-    }
-}
-
-trait CloneRule<T>: Rule<T> {
-    fn clone_box(&self) -> Box<dyn CloneRule<T>>;
-}
-
-impl<T, R> CloneRule<T> for R
-where
-    R: Rule<T> + Clone + 'static,
-{
-    fn clone_box(&self) -> Box<dyn CloneRule<T>> {
-        Box::new(self.clone())
-    }
-}
-
-pub struct BoxCloneRule<T>(Box<dyn CloneRule<T>>);
-
-impl<T> BoxCloneRule<T> {
-    fn new<R>(rule: R) -> Self
-    where
-        R: Rule<T> + Clone + 'static,
-    {
-        BoxCloneRule(Box::new(rule))
-    }
-}
-impl<T: 'static> BoxCloneRule<T> {
-    fn call(&mut self, map: &mut ValueMap) -> Result<(), Message<T>> {
-        self.0.call(map)
-    }
-
-    fn name(&self) -> &'static str {
-        self.0.name()
-    }
-}
-
-impl<T: 'static> Clone for BoxCloneRule<T> {
-    fn clone(&self) -> Self {
-        Self(self.0.clone_box())
     }
 }
 

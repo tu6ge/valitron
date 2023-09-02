@@ -4,5 +4,5 @@ pub mod rule;
 mod ser;
 
 pub use register::Validator;
-pub use rule::{custom, relate, Rule, RuleExt};
+pub use rule::{custom, relate, Rule, RuleExt, RuleShortcut};
 pub use ser::Value;
