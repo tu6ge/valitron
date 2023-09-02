@@ -1,0 +1,98 @@
+name: Test and Publish
+
+on:
+  push:
+    branches: 
+      - "master"
+      - "branch*"
+  pull_request:
+    branches:
+      - "*"
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    name: 'publish'
+
+    environment: cargo
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Check fmt
+        run: cargo fmt --check
+
+      # v0.1.15 目前版本
+      - name: Cache
+        uses: Swatinem/rust-cache@v1
+        with:
+          key: ${{ runner.os }}-build-v0.2.2
+      
+      - name: Show cargo info
+        run: cargo version --verbose
+
+      - name: Install publish-action
+        if: steps.cache-publish-action.outputs.cache-hit != 'true'
+        run: |
+          cargo install publish-action --version=0.2.2
+      
+      - name: Run Test
+        run: |
+          cargo test --lib
+      
+      - name: Run publish-action
+        if: ${{ github.event_name == 'push' }}
+        id: publish-action
+        run: 
+          publish-action
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  # grcov:
+  #   name: Coverage and Grcov
+  #   runs-on: ubuntu-latest
+
+  #   steps:
+  #     - name: Checkout sources
+  #       uses: actions/checkout@v2
+
+  #     - uses: actions-rs/toolchain@v1
+  #       with:
+  #         toolchain: nightly-2023-03-26
+  #         override: true
+
+  #     - name: Cache
+  #       uses: Swatinem/rust-cache@v1
+  #       with:
+  #         key: ${{ runner.os }}-coverage-v0.2.0
+
+  #     - uses: actions-rs/cargo@v1
+  #       with:
+  #         command: test
+  #         args: --all-features --lib
+  #       env:
+  #         CARGO_INCREMENTAL: '0'
+  #         RUSTFLAGS: '-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
+  #         RUSTDOCFLAGS: '-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
+      
+  #     - uses: actions-rs/cargo@v1
+  #       with:
+  #         command: test
+  #         args: --all-features --doc
+  #       env:
+  #         CARGO_INCREMENTAL: '0'
+  #         RUSTFLAGS: '-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
+  #         RUSTDOCFLAGS: '-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
+  #     - name: Gather coverage data
+  #       id: coverage
+  #       uses: actions-rs/grcov@v0.1
+
+  #     - name: Coveralls upload
+  #       uses: coverallsapp/github-action@master
+  #       with:
+  #         github-token: ${{ secrets.GITHUB_TOKEN }}
+  #         path-to-lcov: ${{ steps.coverage.outputs.report }}
