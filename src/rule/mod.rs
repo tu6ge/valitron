@@ -167,7 +167,7 @@ impl RuleList {
     }
 
     #[must_use]
-    pub(crate) fn call<'a>(mut self, data: &'a mut ValueMap) -> Vec<(&'static str, String)> {
+    pub(crate) fn call(mut self, data: &mut ValueMap) -> Vec<(&'static str, String)> {
         let mut msg = Vec::new();
         for endpoint in self.list.iter_mut() {
             match endpoint {
