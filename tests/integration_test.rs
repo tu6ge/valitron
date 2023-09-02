@@ -2,8 +2,7 @@ use serde::{Deserialize, Serialize};
 use valitron::{
     register::FieldName,
     rule::{custom, Required, RuleExt, StartWith},
-    ser::Value,
-    Validator,
+    Validator, Value,
 };
 
 #[derive(Serialize, Deserialize, Debug)]
