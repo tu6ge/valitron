@@ -97,7 +97,7 @@ impl<R: Rule<()> + Clone> RuleExt for R {
                 Endpoint::Rule(BoxCloneRule::new(self)),
                 Endpoint::Rule(BoxCloneRule::new(other)),
             ],
-            is_bail: false,
+            ..Default::default()
         }
     }
     fn custom<R2: Rule<Value> + Clone>(self, other: R2) -> RuleList {
@@ -106,7 +106,7 @@ impl<R: Rule<()> + Clone> RuleExt for R {
                 Endpoint::Rule(BoxCloneRule::new(self)),
                 Endpoint::HanderRule(BoxCloneRule::new(other)),
             ],
-            is_bail: false,
+            ..Default::default()
         }
     }
     fn relate<R2: Rule<ValueMap> + Clone>(self, other: R2) -> RuleList {
@@ -115,7 +115,7 @@ impl<R: Rule<()> + Clone> RuleExt for R {
                 Endpoint::Rule(BoxCloneRule::new(self)),
                 Endpoint::RelateRule(BoxCloneRule::new(other)),
             ],
-            is_bail: false,
+            ..Default::default()
         }
     }
 }
@@ -187,7 +187,7 @@ impl RuleList {
                         .map_err(|m| msg.push((handle.name(), m.into())));
                 }
             }
-            if self.is_bail && msg.is_empty() == false {
+            if self.is_bail && !msg.is_empty() {
                 return msg;
             }
         }
@@ -199,43 +199,10 @@ impl RuleList {
     }
 }
 
-// impl<F> From<F> for RuleBox<ValueMap>
-// where
-//     F: for<'a> FnOnce(&'a ValueMap) -> Result<(), String> + 'static + Clone,
-// {
-//     fn from(value: F) -> Self {
-//         Self {
-//             list: vec![Endpoint::HanderRule(Box::new(value))],
-//             is_bail: false,
-//         }
-//     }
-// }
-// impl<F> From<F> for RuleBox<Value>
-// where
-//     F: for<'a> FnOnce(&'a Value) -> Result<(), String> + 'static + Clone,
-// {
-//     fn from(value: F) -> Self {
-//         Self {
-//             list: vec![Endpoint::HanderRule(Box::new(value))],
-//             is_bail: false,
-//         }
-//     }
-// }
-
 pub trait IntoRuleList {
     fn into_list(self) -> RuleList;
 }
 
-// impl IntoRuleBox<ValueMap> for RuleBox<ValueMap> {
-//     fn into_rule_box(self) -> RuleBox<ValueMap> {
-//         self
-//     }
-// }
-// impl IntoRuleBox<Value> for RuleBox<Value> {
-//     fn into_rule_box(self) -> RuleBox<Value> {
-//         self
-//     }
-// }
 pub fn custom<F>(f: F) -> RuleList
 where
     F: for<'a> FnOnce(&'a mut Value) -> Result<(), String> + 'static + Clone,
@@ -243,7 +210,7 @@ where
 {
     RuleList {
         list: vec![Endpoint::HanderRule(BoxCloneRule::new(f))],
-        is_bail: false,
+        ..Default::default()
     }
 }
 pub fn relate<F>(f: F) -> RuleList
@@ -253,7 +220,7 @@ where
 {
     RuleList {
         list: vec![Endpoint::RelateRule(BoxCloneRule::new(f))],
-        is_bail: false,
+        ..Default::default()
     }
 }
 impl IntoRuleList for RuleList {
@@ -268,7 +235,7 @@ where
     fn into_list(self) -> RuleList {
         RuleList {
             list: vec![Endpoint::Rule(BoxCloneRule::new(self))],
-            is_bail: false,
+            ..Default::default()
         }
     }
 }
