@@ -1,3 +1,4 @@
+pub mod cmp;
 mod de;
 pub mod register;
 pub mod rule;
