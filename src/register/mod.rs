@@ -15,9 +15,9 @@ pub use field_name::{FieldName, FieldNames};
 use self::field_name::IntoFieldName;
 
 #[derive(Default)]
-pub struct Validator<'a> {
-    rules: HashMap<FieldNames, RuleList>,
-    message: HashMap<MessageKey, &'a str>,
+pub struct Validator<'va> {
+    rules: HashMap<FieldNames<'va>, RuleList>,
+    message: HashMap<MessageKey<'va>, &'va str>,
 }
 
 macro_rules! panic_on_err {
@@ -29,17 +29,17 @@ macro_rules! panic_on_err {
     };
 }
 
-impl<'a> Validator<'a> {
+impl<'va> Validator<'va> {
     pub fn new() -> Self {
         Self::default()
     }
-    pub fn rule<F: IntoFieldName, R: IntoRuleList>(mut self, field: F, rule: R) -> Self {
+    pub fn rule<F: IntoFieldName<'va>, R: IntoRuleList>(mut self, field: F, rule: R) -> Self {
         let names = panic_on_err!(field.into_field());
         self.rules.insert(names, rule.into_list());
         self
     }
 
-    pub fn message<const N: usize>(mut self, list: [(&'a str, &'a str); N]) -> Self {
+    pub fn message<const N: usize>(mut self, list: [(&'va str, &'va str); N]) -> Self {
         self.message = HashMap::from_iter(
             list.map(|(k_str, v)| {
                 let key = panic_on_err!(field_name::parse_message(k_str));
@@ -51,7 +51,7 @@ impl<'a> Validator<'a> {
         self
     }
 
-    pub fn validate<'de, T>(self, data: T) -> Result<T, Response>
+    pub fn validate<'de, T>(self, data: T) -> Result<T, Response<'va>>
     where
         T: serde::ser::Serialize + serde::de::Deserialize<'de>,
     {
@@ -117,49 +117,49 @@ impl<'a> Validator<'a> {
 }
 
 #[derive(Debug)]
-pub struct Response {
-    message: Vec<(FieldNames, Vec<String>)>,
+pub struct Response<'va> {
+    message: Vec<(FieldNames<'va>, Vec<String>)>,
 }
 
-impl Deref for Response {
-    type Target = Vec<(FieldNames, Vec<String>)>;
+impl<'va> Deref for Response<'va> {
+    type Target = Vec<(FieldNames<'va>, Vec<String>)>;
     fn deref(&self) -> &Self::Target {
         &self.message
     }
 }
 
-impl Response {
+impl<'va> Response<'va> {
     fn new() -> Self {
         Self {
             message: Vec::new(),
         }
     }
 
-    fn push(&mut self, field_name: FieldNames, message: Vec<String>) {
+    fn push(&mut self, field_name: FieldNames<'va>, message: Vec<String>) {
         if !message.is_empty() {
             self.message.push((field_name, message));
         }
     }
 }
 
-impl From<Response> for Result<(), Response> {
-    fn from(value: Response) -> Self {
-        if value.is_empty() {
-            Ok(())
-        } else {
-            Err(value)
-        }
-    }
-}
+// impl From<Response> for Result<(), Response> {
+//     fn from(value: Response) -> Self {
+//         if value.is_empty() {
+//             Ok(())
+//         } else {
+//             Err(value)
+//         }
+//     }
+// }
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
-pub struct MessageKey {
-    fields: FieldNames,
+pub struct MessageKey<'key> {
+    fields: FieldNames<'key>,
     rule: String,
 }
 
-impl MessageKey {
-    pub(crate) fn new(fields: FieldNames, rule: String) -> Self {
+impl<'key> MessageKey<'key> {
+    pub(crate) fn new(fields: FieldNames<'key>, rule: String) -> Self {
         Self { fields, rule }
     }
 }

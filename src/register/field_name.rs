@@ -6,26 +6,26 @@ use super::{
 };
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
-pub enum FieldName {
-    Literal(String),
+pub enum FieldName<'field> {
+    Literal(&'field str),
     Array(usize),
     Tuple(u8),
 
     /// get `g` on enum A { Color{ r:u8, g:u8, b:u8}}
-    StructVariant(String),
+    StructVariant(&'field str),
 }
 
-impl FieldName {
+impl FieldName<'_> {
     pub fn as_str(&self) -> &str {
         match self {
-            FieldName::Literal(s) => s.as_str(),
-            FieldName::StructVariant(s) => s.as_str(),
+            FieldName::Literal(s) => s,
+            FieldName::StructVariant(s) => s,
             _ => "",
         }
     }
 }
 
-impl Display for FieldName {
+impl Display for FieldName<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             FieldName::Literal(s) => s.fmt(f),
@@ -37,9 +37,9 @@ impl Display for FieldName {
 }
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
-pub struct FieldNames(Vec<FieldName>);
+pub struct FieldNames<'field>(Vec<FieldName<'field>>);
 
-impl FieldNames {
+impl FieldNames<'_> {
     pub(crate) fn new() -> Self {
         Self(Vec::new())
     }
@@ -49,52 +49,52 @@ impl FieldNames {
     }
 }
 
-impl From<Vec<FieldName>> for FieldNames {
-    fn from(value: Vec<FieldName>) -> Self {
+impl<'field> From<Vec<FieldName<'field>>> for FieldNames<'field> {
+    fn from(value: Vec<FieldName<'field>>) -> Self {
         Self(value)
     }
 }
-impl From<FieldName> for FieldNames {
-    fn from(value: FieldName) -> Self {
+impl<'field> From<FieldName<'field>> for FieldNames<'field> {
+    fn from(value: FieldName<'field>) -> Self {
         Self(vec![value])
     }
 }
-impl<const N: usize> From<[FieldName; N]> for FieldNames {
-    fn from(value: [FieldName; N]) -> Self {
+impl<'field, const N: usize> From<[FieldName<'field>; N]> for FieldNames<'field> {
+    fn from(value: [FieldName<'field>; N]) -> Self {
         Self(value.into_iter().collect())
     }
 }
 
 /// Convert to FieldName trait
-pub trait IntoFieldName {
+pub trait IntoFieldName<'field> {
     type Error: std::fmt::Display;
-    fn into_field(self) -> Result<FieldNames, Self::Error>;
+    fn into_field(self) -> Result<FieldNames<'field>, Self::Error>;
 }
 
-impl IntoFieldName for &str {
+impl<'a> IntoFieldName<'a> for &'a str {
     type Error = String;
-    fn into_field(self) -> Result<FieldNames, Self::Error> {
+    fn into_field(self) -> Result<FieldNames<'a>, Self::Error> {
         Ok(FieldNames(parse(self)?))
     }
 }
-impl IntoFieldName for u8 {
+impl<'a> IntoFieldName<'a> for u8 {
     type Error = Infallible;
-    fn into_field(self) -> Result<FieldNames, Self::Error> {
+    fn into_field(self) -> Result<FieldNames<'a>, Self::Error> {
         Ok(FieldNames(vec![FieldName::Tuple(self)]))
     }
 }
-impl IntoFieldName for (u8, u8) {
+impl<'a> IntoFieldName<'a> for (u8, u8) {
     type Error = Infallible;
-    fn into_field(self) -> Result<FieldNames, Self::Error> {
+    fn into_field(self) -> Result<FieldNames<'a>, Self::Error> {
         Ok(FieldNames(vec![
             FieldName::Tuple(self.0),
             FieldName::Tuple(self.1),
         ]))
     }
 }
-impl IntoFieldName for (u8, u8, u8) {
+impl<'a> IntoFieldName<'a> for (u8, u8, u8) {
     type Error = Infallible;
-    fn into_field(self) -> Result<FieldNames, Self::Error> {
+    fn into_field(self) -> Result<FieldNames<'a>, Self::Error> {
         Ok(FieldNames(vec![
             FieldName::Tuple(self.0),
             FieldName::Tuple(self.1),
@@ -102,9 +102,9 @@ impl IntoFieldName for (u8, u8, u8) {
         ]))
     }
 }
-impl IntoFieldName for [usize; 1] {
+impl<'a> IntoFieldName<'a> for [usize; 1] {
     type Error = Infallible;
-    fn into_field(self) -> Result<FieldNames, Self::Error> {
+    fn into_field(self) -> Result<FieldNames<'a>, Self::Error> {
         Ok(FieldNames(vec![FieldName::Array(self[0])]))
     }
 }
@@ -127,12 +127,12 @@ impl<'a> Parser<'a> {
         Self { source, token }
     }
 
-    pub fn next_name(&mut self) -> Result<Option<FieldName>, String> {
+    pub fn next_name(&mut self) -> Result<Option<FieldName<'a>>, String> {
         let token = self.token.advance();
         match token.kind() {
             TokenKind::Ident => {
                 //self.current_pos += 1;
-                let res = FieldName::Literal(self.source[..token.len].to_owned());
+                let res = FieldName::Literal(&self.source[..token.len]);
                 self.source = &self.source[token.len..];
                 self.eat_dot()?;
                 Ok(Some(res))
@@ -166,7 +166,7 @@ impl<'a> Parser<'a> {
     }
 
     /// parse `[0]` or `[abc]`
-    fn parse_bracket(&mut self) -> Result<FieldName, String> {
+    fn parse_bracket(&mut self) -> Result<FieldName<'a>, String> {
         let mut peek = self.token.clone();
         let t = peek.advance();
         match t.kind() {
@@ -204,7 +204,7 @@ impl<'a> Parser<'a> {
                     ..
                 } = peek.advance()
                 {
-                    let name = FieldName::StructVariant((self.source[..t.len]).to_owned());
+                    let name = FieldName::StructVariant(&self.source[..t.len]);
                     // eat ident
                     self.token.advance();
                     self.source = &self.source[t.len..];
@@ -255,7 +255,7 @@ impl<'a> Parser<'a> {
     }
 }
 
-pub fn parse(source: &str) -> Result<Vec<FieldName>, String> {
+pub fn parse<'a>(source: &'a str) -> Result<Vec<FieldName<'a>>, String> {
     let mut parser = Parser::new(source);
 
     let mut vec = Vec::new();
@@ -267,15 +267,13 @@ pub fn parse(source: &str) -> Result<Vec<FieldName>, String> {
     }
 }
 
-pub fn parse_message(source: &str) -> Result<MessageKey, String> {
-    let mut names = parse(source)?;
+pub fn parse_message<'a>(source: &'a str) -> Result<MessageKey, String> {
+    let (names, message) = source
+        .rsplit_once('.')
+        .ok_or("not found message".to_string())?;
+    let names = parse(names)?;
 
-    if let Some(name) = names.pop() {
-        if let FieldName::Literal(s) = name {
-            return Ok(MessageKey::new(FieldNames(names), s));
-        }
-    }
-    Err("not found validate rule name".into())
+    Ok(MessageKey::new(FieldNames(names), message.to_owned()))
 }
 
 #[test]

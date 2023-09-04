@@ -36,12 +36,12 @@ pub enum Value {
     StructVariant(&'static str, BTreeMap<Value, Value>),
 }
 
-pub struct ValueMap {
+pub struct ValueMap<'map> {
     value: Value,
-    index: FieldNames,
+    index: FieldNames<'map>,
 }
 
-impl ValueMap {
+impl ValueMap<'_> {
     pub(crate) fn new(value: Value) -> Self {
         Self {
             value,
