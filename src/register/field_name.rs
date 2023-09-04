@@ -331,14 +331,14 @@ pub fn parse(source: &str) -> Result<Vec<FieldName>, String> {
 }
 
 pub fn parse_message(source: &str) -> Result<MessageKey, String> {
-    let (name, string) = source
+    let (name_str, string) = source
         .rsplit_once('.')
         .ok_or("not found message".to_owned())?;
-    let mut names = parse(name)?;
+    let names = parse(name_str)?;
 
     Ok(MessageKey::new(
         FieldNames {
-            string: source.to_string(),
+            string: name_str.to_string(),
             vec: names,
         },
         string.to_string(),
