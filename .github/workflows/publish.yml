@@ -41,7 +41,7 @@ jobs:
       
       - name: Run Test
         run: |
-          cargo test --lib
+          cargo test
       
       - name: Run publish-action
         if: ${{ github.event_name == 'push' }}
