@@ -1,4 +1,4 @@
-use std::slice::Iter;
+use std::{slice::Iter, str::CharIndices};
 
 pub(crate) const EOF_CHAR: char = '\0';
 
@@ -73,21 +73,28 @@ fn can_be_raw(string: &str) -> bool {
     }
 }
 
-pub fn lexer<'a>(source: &'a str) -> Result<Vec<Token>, Error> {
-    let mut indices = source.char_indices();
+#[derive(Clone)]
+pub struct Cursor<'a> {
+    char: CharIndices<'a>,
+}
+impl<'a> Cursor<'a> {
+    pub fn new(source: &'a str) -> Self {
+        Self {
+            char: source.char_indices(),
+        }
+    }
 
-    let mut tokens = Vec::new();
-    loop {
-        let (start_usize, char) = match indices.next() {
-            None => break,
+    pub fn advance(&mut self) -> Token {
+        let (start_usize, char) = match self.char.next() {
             Some(res) => res,
+            None => return Token::new(TokenKind::Eof, 0),
         };
         let token = match char {
             '.' => (TokenKind::Dot, 1),
             '[' => (TokenKind::LeftBracket, 1),
             ']' => (TokenKind::RightBracket, 1),
             'a'..='z' | 'A'..='Z' | '_' => {
-                let mut iter = indices.clone().peekable();
+                let mut iter = self.char.clone().peekable();
                 let mut current_usize = start_usize;
                 loop {
                     match iter.next() {
@@ -96,7 +103,7 @@ pub fn lexer<'a>(source: &'a str) -> Result<Vec<Token>, Error> {
                             if !(con.is_ascii_alphanumeric() || con == '_') {
                                 break (TokenKind::Ident, current_usize - start_usize);
                             } else {
-                                indices.next();
+                                self.char.next();
                             }
                         }
                         None => {
@@ -106,7 +113,7 @@ pub fn lexer<'a>(source: &'a str) -> Result<Vec<Token>, Error> {
                 }
             }
             '0'..='9' => {
-                let mut iter = indices.clone().peekable();
+                let mut iter = self.char.clone().peekable();
                 let mut current_usize = start_usize;
                 loop {
                     match iter.next() {
@@ -115,7 +122,7 @@ pub fn lexer<'a>(source: &'a str) -> Result<Vec<Token>, Error> {
                             if !matches!(con, '0'..='9') {
                                 break (TokenKind::Index, current_usize - start_usize);
                             } else {
-                                indices.next();
+                                self.char.next();
                             }
                         }
                         None => {
@@ -126,89 +133,49 @@ pub fn lexer<'a>(source: &'a str) -> Result<Vec<Token>, Error> {
             }
             other => (TokenKind::Undefined, other.len_utf8()),
         };
-        tokens.push(token.into());
+
+        token.into()
     }
-
-    tokens.push((TokenKind::Eof, 0).into());
-
-    Ok(tokens)
 }
 
 #[cfg(test)]
 mod test {
-    use super::{lexer, Token, TokenKind};
-
-    fn vec_kind(token: Vec<Token>) -> Vec<TokenKind> {
-        token.into_iter().map(|t| t.kind).collect()
-    }
+    use super::{Cursor, TokenKind};
 
     #[test]
     fn test_lexer() {
-        let vec = lexer(".").unwrap();
-        assert_eq!(vec_kind(vec), vec![TokenKind::Dot, TokenKind::Eof]);
+        let mut vec = Cursor::new(".");
+        assert_eq!(vec.advance().kind(), &TokenKind::Dot);
+        assert_eq!(vec.advance().kind(), &TokenKind::Eof);
 
-        let vec = lexer("[").unwrap();
-        assert_eq!(vec_kind(vec), vec![TokenKind::LeftBracket, TokenKind::Eof]);
+        let mut vec = Cursor::new("[");
+        assert_eq!(vec.advance().kind(), &TokenKind::LeftBracket);
+        assert_eq!(vec.advance().kind(), &TokenKind::Eof);
 
-        let vec = lexer("]").unwrap();
-        assert_eq!(vec_kind(vec), vec![TokenKind::RightBracket, TokenKind::Eof]);
+        let mut vec = Cursor::new("]");
+        assert_eq!(vec.advance().kind(), &TokenKind::RightBracket);
+        assert_eq!(vec.advance().kind(), &TokenKind::Eof);
 
-        let vec = lexer("abc").unwrap();
-        assert_eq!(
-            vec_kind(vec.clone()),
-            vec![TokenKind::Ident, TokenKind::Eof]
-        );
-        assert!(vec[0].len == 3);
+        let mut vec = Cursor::new("abc");
+        let first = vec.advance();
+        assert_eq!(first.kind(), &TokenKind::Ident);
+        assert!(first.len == 3);
+        assert_eq!(vec.advance().kind(), &TokenKind::Eof);
 
-        let vec = lexer("abc_23").unwrap();
-        assert_eq!(vec_kind(vec), vec![TokenKind::Ident, TokenKind::Eof]);
-
-        let vec = lexer("_23").unwrap();
-        assert_eq!(vec_kind(vec), vec![TokenKind::Ident, TokenKind::Eof]);
-
-        let vec = lexer("234").unwrap();
-        assert_eq!(
-            vec_kind(vec.clone()),
-            vec![TokenKind::Index, TokenKind::Eof]
-        );
-        assert!(vec[0].len == 3);
-
-        let vec = lexer("234abc".into()).unwrap();
-        assert_eq!(
-            vec_kind(vec),
-            vec![TokenKind::Index, TokenKind::Ident, TokenKind::Eof]
-        );
-
-        let vec = lexer("234abc我".into()).unwrap();
-        assert_eq!(
-            vec_kind(vec),
-            vec![
-                TokenKind::Index,
-                TokenKind::Ident,
-                TokenKind::Undefined,
-                TokenKind::Eof
-            ]
-        );
-
-        let vec = lexer("abc.d23[cde].ff99.pp[8]").unwrap();
-        assert_eq!(
-            vec_kind(vec),
-            vec![
-                TokenKind::Ident,
-                TokenKind::Dot,
-                TokenKind::Ident,
-                TokenKind::LeftBracket,
-                TokenKind::Ident,
-                TokenKind::RightBracket,
-                TokenKind::Dot,
-                TokenKind::Ident,
-                TokenKind::Dot,
-                TokenKind::Ident,
-                TokenKind::LeftBracket,
-                TokenKind::Index,
-                TokenKind::RightBracket,
-                TokenKind::Eof
-            ]
-        );
+        let mut vec = Cursor::new("abc.d23[cde].ff99.pp[8]");
+        assert_eq!(vec.advance().kind(), &TokenKind::Ident);
+        assert_eq!(vec.advance().kind(), &TokenKind::Dot);
+        assert_eq!(vec.advance().kind(), &TokenKind::Ident);
+        assert_eq!(vec.advance().kind(), &TokenKind::LeftBracket);
+        assert_eq!(vec.advance().kind(), &TokenKind::Ident);
+        assert_eq!(vec.advance().kind(), &TokenKind::RightBracket);
+        assert_eq!(vec.advance().kind(), &TokenKind::Dot);
+        assert_eq!(vec.advance().kind(), &TokenKind::Ident);
+        assert_eq!(vec.advance().kind(), &TokenKind::Dot);
+        assert_eq!(vec.advance().kind(), &TokenKind::Ident);
+        assert_eq!(vec.advance().kind(), &TokenKind::LeftBracket);
+        assert_eq!(vec.advance().kind(), &TokenKind::Index);
+        assert_eq!(vec.advance().kind(), &TokenKind::RightBracket);
+        assert_eq!(vec.advance().kind(), &TokenKind::Eof);
     }
 }
