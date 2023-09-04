@@ -1,6 +1,6 @@
 //! register rules
 
-use std::{collections::HashMap, ops::Deref};
+use std::{collections::HashMap, hash::Hash, ops::Deref};
 
 use crate::{
     rule::{IntoRuleList, RuleList},
@@ -152,10 +152,17 @@ impl From<Response> for Result<(), Response> {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Hash, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct MessageKey {
     fields: FieldNames,
     rule: String,
+}
+
+impl Hash for MessageKey {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.fields.hash(state);
+        self.rule.hash(state);
+    }
 }
 
 impl MessageKey {
