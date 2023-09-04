@@ -119,6 +119,7 @@ impl IntoFieldName for [usize; 1] {
 struct Parser<'a> {
     names: Vec<FieldName>,
     tokens: Iter<'a, Token>,
+    current_pos: usize,
 }
 
 impl<'a> Parser<'a> {
@@ -126,24 +127,30 @@ impl<'a> Parser<'a> {
         Self {
             names: Vec::new(),
             tokens,
+            current_pos: 0,
         }
     }
 
-    pub fn parse(&mut self) -> Result<(), String> {
+    pub fn parse(&mut self, source: &str) -> Result<(), String> {
         while let Some(token) = self.tokens.next() {
             match token.kind() {
-                TokenKind::Ident(s) => {
-                    self.names.push(FieldName::Literal(s.to_owned()));
+                TokenKind::Ident => {
+                    //self.current_pos += 1;
+                    self.names.push(FieldName::Literal(
+                        source[self.current_pos..self.current_pos + token.len].to_owned(),
+                    ));
                     self.eat_dot()?;
                 }
                 TokenKind::Dot => return Err("`.` should not be start".into()),
                 TokenKind::LeftBracket => {
-                    self.parse_bracket()?;
+                    self.parse_bracket(&source)?;
+                    continue;
                 }
                 TokenKind::RightBracket => return Err("`]` should to stay behind `[`".into()),
-                TokenKind::Index(n) => {
+                TokenKind::Index => {
                     self.names.push(FieldName::Tuple(
-                        (*n).try_into()
+                        (&source[self.current_pos..self.current_pos + token.len])
+                            .parse()
                             .map_err(|_| "tuple index is not u8 type".to_string())?,
                     ));
                     if !(self.expect(TokenKind::Dot)
@@ -157,27 +164,34 @@ impl<'a> Parser<'a> {
                 TokenKind::Undefined => return Err("undefined char".into()),
                 TokenKind::Eof => (),
             }
+            self.current_pos += token.len;
         }
 
         Ok(())
     }
 
     /// parse `[0]` or `[abc]`
-    fn parse_bracket(&mut self) -> Result<(), String> {
+    fn parse_bracket(&mut self, source: &str) -> Result<(), String> {
         let mut peek = self.tokens.clone().peekable();
         if let Some(t) = peek.next() {
             match t.kind() {
-                TokenKind::Index(n) => {
+                TokenKind::Index => {
                     if let Some(Token {
                         kind: TokenKind::RightBracket,
                         ..
                     }) = peek.next()
                     {
-                        self.names.push(FieldName::Array(*n));
+                        self.current_pos += 1;
+                        self.names.push(FieldName::Array(
+                            (&source[self.current_pos..self.current_pos + t.len])
+                                .parse()
+                                .map_err(|_| "tuple index is not u8 type".to_string())?,
+                        ));
                         // eat index
                         self.tokens.next();
                         // eat `]`
                         self.tokens.next();
+                        self.current_pos += t.len + 1;
                         if !(self.expect(TokenKind::Dot)
                             || self.expect(TokenKind::LeftBracket)
                             || self.expect(TokenKind::Eof))
@@ -188,23 +202,28 @@ impl<'a> Parser<'a> {
                         return Ok(());
                     }
                 }
-                TokenKind::Ident(s) => {
+                TokenKind::Ident => {
                     if let Some(Token {
                         kind: TokenKind::RightBracket,
                         ..
                     }) = peek.next()
                     {
-                        self.names.push(FieldName::StructVariant(s.to_owned()));
+                        self.current_pos += 1;
+                        self.names.push(FieldName::StructVariant(
+                            (&source[self.current_pos..self.current_pos + t.len]).to_owned(),
+                        ));
                         // eat ident
                         self.tokens.next();
                         // eat `]`
                         self.tokens.next();
+                        self.current_pos += t.len + 1;
                         if !(self.expect(TokenKind::Dot)
                             || self.expect(TokenKind::LeftBracket)
                             || self.expect(TokenKind::Eof))
                         {
                             return Err("after `]` should be `.` or `[` or eof".into());
                         }
+
                         self.eat_dot()?;
                         return Ok(());
                     }
@@ -221,7 +240,7 @@ impl<'a> Parser<'a> {
     fn expect(&self, token: TokenKind) -> bool {
         let mut peek = self.tokens.clone().peekable();
 
-        if let Some(Token { kind }) = peek.next() {
+        if let Some(Token { kind, .. }) = peek.next() {
             if &token == kind {
                 return true;
             }
@@ -237,7 +256,7 @@ impl<'a> Parser<'a> {
             ..
         }) = peek.next()
         {
-            if let Some(Token { kind }) = peek.next() {
+            if let Some(Token { kind, .. }) = peek.next() {
                 match kind {
                     TokenKind::Eof => return Err("`.` should not be end".into()),
                     TokenKind::LeftBracket => return Err("after `.` should not be `[`".into()),
@@ -245,6 +264,7 @@ impl<'a> Parser<'a> {
                 }
             }
             self.tokens.next();
+            self.current_pos += 1;
         }
 
         Ok(())
@@ -254,7 +274,7 @@ impl<'a> Parser<'a> {
 pub fn parse(source: &str) -> Result<Vec<FieldName>, String> {
     let tokens = lexer(source).unwrap();
     let mut parser = Parser::new(tokens.iter());
-    parser.parse()?;
+    parser.parse(source)?;
 
     Ok(parser.names)
 }

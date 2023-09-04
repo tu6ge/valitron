@@ -2,13 +2,13 @@ use std::slice::Iter;
 
 pub(crate) const EOF_CHAR: char = '\0';
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum TokenKind {
     /// match field name
-    Ident(String),
+    Ident,
 
     /// number index
-    Index(usize),
+    Index,
 
     /// match `.`
     Dot,
@@ -26,9 +26,10 @@ pub enum TokenKind {
     Eof,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Token {
     pub(super) kind: TokenKind,
+    pub(super) len: usize,
 }
 
 impl Token {
@@ -38,13 +39,17 @@ impl Token {
     fn eof() -> Self {
         Self {
             kind: TokenKind::Eof,
+            len: 0,
         }
+    }
+    fn new(kind: TokenKind, len: usize) -> Self {
+        Self { kind, len }
     }
 }
 
-impl From<TokenKind> for Token {
-    fn from(kind: TokenKind) -> Self {
-        Self { kind }
+impl From<(TokenKind, usize)> for Token {
+    fn from((kind, len): (TokenKind, usize)) -> Self {
+        Self { kind, len }
     }
 }
 
@@ -77,69 +82,54 @@ pub fn lexer<'a>(source: &'a str) -> Result<Vec<Token>, Error> {
             None => break,
             Some(res) => res,
         };
-        let token: Token = match char {
-            '.' => TokenKind::Dot.into(),
-            '[' => TokenKind::LeftBracket.into(),
-            ']' => TokenKind::RightBracket.into(),
+        let token = match char {
+            '.' => (TokenKind::Dot, 1),
+            '[' => (TokenKind::LeftBracket, 1),
+            ']' => (TokenKind::RightBracket, 1),
             'a'..='z' | 'A'..='Z' | '_' => {
                 let mut iter = indices.clone().peekable();
-                let t;
                 let mut current_usize = start_usize;
                 loop {
                     match iter.next() {
                         Some((last_usize, con)) => {
                             current_usize = last_usize;
                             if !(con.is_ascii_alphanumeric() || con == '_') {
-                                t = TokenKind::Ident(source[start_usize..last_usize].into()).into();
-                                break;
+                                break (TokenKind::Ident, current_usize - start_usize);
                             } else {
                                 indices.next();
                             }
                         }
                         None => {
-                            t = TokenKind::Ident(source[start_usize..current_usize + 1].into())
-                                .into();
-                            break;
+                            break (TokenKind::Ident, current_usize - start_usize + 1);
                         }
                     }
                 }
-                t
             }
             '0'..='9' => {
                 let mut iter = indices.clone().peekable();
-                let t;
                 let mut current_usize = start_usize;
                 loop {
                     match iter.next() {
                         Some((last_usize, con)) => {
                             current_usize = last_usize;
                             if !matches!(con, '0'..='9') {
-                                t = TokenKind::Index(
-                                    source[start_usize..last_usize].parse().unwrap(),
-                                )
-                                .into();
-                                break;
+                                break (TokenKind::Index, current_usize - start_usize);
                             } else {
                                 indices.next();
                             }
                         }
                         None => {
-                            t = TokenKind::Index(
-                                source[start_usize..current_usize + 1].parse().unwrap(),
-                            )
-                            .into();
-                            break;
+                            break (TokenKind::Index, current_usize - start_usize + 1);
                         }
                     }
                 }
-                t
             }
-            _ => TokenKind::Undefined.into(),
+            other => (TokenKind::Undefined, other.len_utf8()),
         };
-        tokens.push(token);
+        tokens.push(token.into());
     }
 
-    tokens.push(TokenKind::Eof.into());
+    tokens.push((TokenKind::Eof, 0).into());
 
     Ok(tokens)
 }
@@ -148,66 +138,76 @@ pub fn lexer<'a>(source: &'a str) -> Result<Vec<Token>, Error> {
 mod test {
     use super::{lexer, Token, TokenKind};
 
+    fn vec_kind(token: Vec<Token>) -> Vec<TokenKind> {
+        token.into_iter().map(|t| t.kind).collect()
+    }
+
     #[test]
     fn test_lexer() {
         let vec = lexer(".").unwrap();
-        assert_eq!(vec, vec![TokenKind::Dot.into(), Token::eof()]);
+        assert_eq!(vec_kind(vec), vec![TokenKind::Dot, TokenKind::Eof]);
 
         let vec = lexer("[").unwrap();
-        assert_eq!(vec, vec![TokenKind::LeftBracket.into(), Token::eof()]);
+        assert_eq!(vec_kind(vec), vec![TokenKind::LeftBracket, TokenKind::Eof]);
 
         let vec = lexer("]").unwrap();
-        assert_eq!(vec, vec![TokenKind::RightBracket.into(), Token::eof()]);
+        assert_eq!(vec_kind(vec), vec![TokenKind::RightBracket, TokenKind::Eof]);
 
         let vec = lexer("abc").unwrap();
         assert_eq!(
-            vec,
-            vec![TokenKind::Ident("abc".into()).into(), Token::eof()]
+            vec_kind(vec.clone()),
+            vec![TokenKind::Ident, TokenKind::Eof]
         );
+        assert!(vec[0].len == 3);
 
         let vec = lexer("abc_23").unwrap();
-        assert_eq!(
-            vec,
-            vec![TokenKind::Ident("abc_23".into()).into(), Token::eof()]
-        );
+        assert_eq!(vec_kind(vec), vec![TokenKind::Ident, TokenKind::Eof]);
 
         let vec = lexer("_23").unwrap();
-        assert_eq!(
-            vec,
-            vec![TokenKind::Ident("_23".into()).into(), Token::eof()]
-        );
+        assert_eq!(vec_kind(vec), vec![TokenKind::Ident, TokenKind::Eof]);
 
         let vec = lexer("234").unwrap();
-        assert_eq!(vec, vec![TokenKind::Index(234).into(), Token::eof()]);
+        assert_eq!(
+            vec_kind(vec.clone()),
+            vec![TokenKind::Index, TokenKind::Eof]
+        );
+        assert!(vec[0].len == 3);
 
         let vec = lexer("234abc".into()).unwrap();
         assert_eq!(
-            vec,
+            vec_kind(vec),
+            vec![TokenKind::Index, TokenKind::Ident, TokenKind::Eof]
+        );
+
+        let vec = lexer("234abc我".into()).unwrap();
+        assert_eq!(
+            vec_kind(vec),
             vec![
-                TokenKind::Index(234).into(),
-                TokenKind::Ident("abc".into()).into(),
-                Token::eof()
+                TokenKind::Index,
+                TokenKind::Ident,
+                TokenKind::Undefined,
+                TokenKind::Eof
             ]
         );
 
         let vec = lexer("abc.d23[cde].ff99.pp[8]").unwrap();
         assert_eq!(
-            vec,
+            vec_kind(vec),
             vec![
-                TokenKind::Ident("abc".into()).into(),
-                TokenKind::Dot.into(),
-                TokenKind::Ident("d23".into()).into(),
-                TokenKind::LeftBracket.into(),
-                TokenKind::Ident("cde".into()).into(),
-                TokenKind::RightBracket.into(),
-                TokenKind::Dot.into(),
-                TokenKind::Ident("ff99".into()).into(),
-                TokenKind::Dot.into(),
-                TokenKind::Ident("pp".into()).into(),
-                TokenKind::LeftBracket.into(),
-                TokenKind::Index(8).into(),
-                TokenKind::RightBracket.into(),
-                Token::eof()
+                TokenKind::Ident,
+                TokenKind::Dot,
+                TokenKind::Ident,
+                TokenKind::LeftBracket,
+                TokenKind::Ident,
+                TokenKind::RightBracket,
+                TokenKind::Dot,
+                TokenKind::Ident,
+                TokenKind::Dot,
+                TokenKind::Ident,
+                TokenKind::LeftBracket,
+                TokenKind::Index,
+                TokenKind::RightBracket,
+                TokenKind::Eof
             ]
         );
     }
