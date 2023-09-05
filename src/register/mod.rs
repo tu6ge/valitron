@@ -91,24 +91,21 @@ impl<'a> Validator<'a> {
         self.rules.get(names)
     }
 
-    fn rules_name(&self, names: &FieldNames) -> Option<Vec<&'static str>> {
-        self.rule_get(names).map(|rule| rule.get_rules_name())
-    }
-
     fn exit_message(
         &self,
         k_str: &str,
         MessageKey { fields, rule }: &MessageKey,
     ) -> Result<(), String> {
-        let point_index = k_str
-            .rfind('.')
+        let (field_name, ..) = k_str
+            .rsplit_once('.')
             .ok_or(format!("no found `.` in the message index"))?;
-        let names = self.rules_name(fields).ok_or(format!(
+
+        let names = self.rule_get(fields).ok_or(format!(
             "the field \"{}\" not found in validator",
-            &k_str[..point_index]
+            field_name
         ))?;
 
-        if names.contains(&rule.as_str()) {
+        if names.contains(rule) {
             Ok(())
         } else {
             Err(format!("rule \"{rule}\" is not found in rules"))

@@ -1,6 +1,6 @@
 //! define Rule trait, inner rule type
 
-use std::marker::PhantomData;
+use std::{marker::PhantomData, slice::Iter};
 
 use crate::ser::{Value, ValueMap};
 
@@ -159,8 +159,16 @@ impl RuleList {
         msg
     }
 
-    pub(crate) fn get_rules_name(&self) -> Vec<&'static str> {
-        self.list.iter().map(|endpoint| endpoint.name()).collect()
+    fn iter(&self) -> Iter<'_, Endpoint> {
+        self.list.iter()
+    }
+
+    /// check the rule name is existing
+    pub(crate) fn contains(&self, rule: &str) -> bool {
+        self.iter()
+            .map(|endpoint| endpoint.name())
+            .find(|&name| name == rule)
+            .is_some()
     }
 }
 
