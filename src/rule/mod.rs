@@ -255,7 +255,14 @@ impl<M> RuleShortcut<M> for Required {
 
     fn call(&mut self, value: &mut Value) -> bool {
         match value {
-            Value::Int8(_) => true,
+            Value::UInt8(_)
+            | Value::UInt16(_)
+            | Value::UInt32(_)
+            | Value::UInt64(_)
+            | Value::Int8(_)
+            | Value::Int16(_)
+            | Value::Int32(_)
+            | Value::Int64(_) => true,
             Value::String(s) => !s.is_empty(),
             Value::Struct(_) => true,
             _ => todo!(),
