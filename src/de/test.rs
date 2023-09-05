@@ -15,11 +15,11 @@ struct B {
     foo_str: String,
 }
 #[derive(Deserialize, Debug)]
-struct C(u8, u8);
+struct C(i8, u64);
 
 #[test]
 fn test_dep() {
-    let c_value = Value::TupleStruct(vec![Value::Int8(22), Value::Int8(33)]);
+    let c_value = Value::TupleStruct(vec![Value::Int8(22), Value::UInt64(33)]);
     let b_value = Value::Struct({
         let mut map = BTreeMap::new();
         map.insert(Value::StructKey("c".to_string()), c_value);
@@ -32,7 +32,7 @@ fn test_dep() {
     let a_value = Value::Struct({
         let mut map = BTreeMap::new();
         map.insert(Value::StructKey("b".to_string()), b_value);
-        map.insert(Value::StructKey("foo".to_string()), Value::Int8(11));
+        map.insert(Value::StructKey("foo".to_string()), Value::UInt8(11));
         map
     });
 

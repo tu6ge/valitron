@@ -9,10 +9,18 @@ mod test;
 
 #[derive(Debug, PartialEq, Eq, Clone, Ord, PartialOrd)]
 pub enum Value {
-    Int8(u8),
+    UInt8(u8),
+    Int8(i8),
+    UInt16(u16),
+    Int16(i16),
+    UInt32(u32),
+    Int32(i32),
+    UInt64(u64),
+    Int64(i64),
+    // Float32(f32),
+    // Float64(f64),
     String(String),
     Unit,
-    //UnInt8(u8),
     // Boolean(bool),
     // Char(char),
     Option(Vec<Value>),
@@ -147,7 +155,15 @@ impl Value {
     }
     pub fn is_leaf(&self) -> bool {
         match self {
-            Self::Int8(_) => true,
+            Self::UInt8(_)
+            | Self::UInt16(_)
+            | Self::UInt32(_)
+            | Self::UInt64(_)
+            | Self::Int8(_)
+            | Self::Int16(_)
+            | Self::Int32(_)
+            | Self::Int64(_) => true,
+            Self::Unit => true,
             Self::String(_) => true,
             _ => false,
         }
@@ -192,10 +208,6 @@ impl serde::ser::Serializer for Serializer {
     type SerializeStructVariant = SerializeStructVariant;
 
     fn serialize_bool(self, v: bool) -> Result<Self::Ok, Self::Error> {
-        todo!()
-    }
-
-    fn serialize_i16(self, v: i16) -> Result<Self::Ok, Self::Error> {
         todo!()
     }
 
@@ -303,31 +315,35 @@ impl serde::ser::Serializer for Serializer {
     }
 
     fn serialize_i8(self, v: i8) -> Result<Self::Ok, Self::Error> {
-        todo!()
-    }
-
-    fn serialize_i32(self, v: i32) -> Result<Self::Ok, Self::Error> {
-        todo!()
-    }
-
-    fn serialize_i64(self, v: i64) -> Result<Self::Ok, Self::Error> {
-        todo!()
-    }
-
-    fn serialize_u8(self, v: u8) -> Result<Self::Ok, Self::Error> {
         Ok(Value::Int8(v))
     }
 
+    fn serialize_i16(self, v: i16) -> Result<Self::Ok, Self::Error> {
+        Ok(Value::Int16(v))
+    }
+
+    fn serialize_i32(self, v: i32) -> Result<Self::Ok, Self::Error> {
+        Ok(Value::Int32(v))
+    }
+
+    fn serialize_i64(self, v: i64) -> Result<Self::Ok, Self::Error> {
+        Ok(Value::Int64(v))
+    }
+
+    fn serialize_u8(self, v: u8) -> Result<Self::Ok, Self::Error> {
+        Ok(Value::UInt8(v))
+    }
+
     fn serialize_u16(self, v: u16) -> Result<Self::Ok, Self::Error> {
-        todo!()
+        Ok(Value::UInt16(v))
     }
 
     fn serialize_u32(self, v: u32) -> Result<Self::Ok, Self::Error> {
-        todo!()
+        Ok(Value::UInt32(v))
     }
 
     fn serialize_u64(self, v: u64) -> Result<Self::Ok, Self::Error> {
-        todo!()
+        Ok(Value::UInt64(v))
     }
 
     fn serialize_f32(self, v: f32) -> Result<Self::Ok, Self::Error> {

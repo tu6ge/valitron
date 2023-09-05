@@ -22,7 +22,14 @@ impl Value {
     #[cold]
     fn unexpected(&self) -> Unexpected {
         match self {
-            Value::Int8(n) => Unexpected::Unsigned(*n as u64),
+            Value::UInt8(n) => Unexpected::Unsigned(*n as u64),
+            Value::UInt16(n) => Unexpected::Unsigned(*n as u64),
+            Value::UInt32(n) => Unexpected::Unsigned(*n as u64),
+            Value::UInt64(n) => Unexpected::Unsigned(*n),
+            Value::Int8(n) => Unexpected::Signed(*n as i64),
+            Value::Int16(n) => Unexpected::Signed(*n as i64),
+            Value::Int32(n) => Unexpected::Signed(*n as i64),
+            Value::Int64(n) => Unexpected::Signed(*n),
             Value::String(s) => Unexpected::Str(s),
             Value::StructKey(_s) => Unexpected::Other("struct field name"),
             Value::StructVariantKey(_s) => Unexpected::Other("struct variant"),
@@ -71,23 +78,19 @@ impl std::fmt::Display for MyErr {
 impl<'de> Deserializer<'de> for Value {
     type Error = MyErr;
 
-    fn deserialize_u8<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: Visitor<'de>,
-    {
-        if let Value::Int8(n) = self {
-            visitor.visit_u8(n)
-        } else {
-            Err(self.invalid_type(&visitor))
-        }
-    }
-
     fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
     where
         V: Visitor<'de>,
     {
         match self {
-            Value::Int8(n) => visitor.visit_u8(n),
+            Value::UInt8(n) => visitor.visit_u8(n),
+            Value::UInt16(n) => visitor.visit_u16(n),
+            Value::UInt32(n) => visitor.visit_u32(n),
+            Value::UInt64(n) => visitor.visit_u64(n),
+            Value::Int8(n) => visitor.visit_i8(n),
+            Value::Int16(n) => visitor.visit_i16(n),
+            Value::Int32(n) => visitor.visit_i32(n),
+            Value::Int64(n) => visitor.visit_i64(n),
             Value::String(s) => visitor.visit_string(s),
             Value::Option(mut s) => {
                 debug_assert!(s.len() == 1);
@@ -126,49 +129,88 @@ impl<'de> Deserializer<'de> for Value {
     where
         V: Visitor<'de>,
     {
-        todo!()
+        if let Value::Int8(n) = self {
+            visitor.visit_i8(n)
+        } else {
+            Err(self.invalid_type(&visitor))
+        }
     }
 
     fn deserialize_i16<V>(self, visitor: V) -> Result<V::Value, Self::Error>
     where
         V: Visitor<'de>,
     {
-        todo!()
+        if let Value::Int16(n) = self {
+            visitor.visit_i16(n)
+        } else {
+            Err(self.invalid_type(&visitor))
+        }
     }
 
     fn deserialize_i32<V>(self, visitor: V) -> Result<V::Value, Self::Error>
     where
         V: Visitor<'de>,
     {
-        todo!()
+        if let Value::Int32(n) = self {
+            visitor.visit_i32(n)
+        } else {
+            Err(self.invalid_type(&visitor))
+        }
     }
 
     fn deserialize_i64<V>(self, visitor: V) -> Result<V::Value, Self::Error>
     where
         V: Visitor<'de>,
     {
-        todo!()
+        if let Value::Int64(n) = self {
+            visitor.visit_i64(n)
+        } else {
+            Err(self.invalid_type(&visitor))
+        }
+    }
+
+    fn deserialize_u8<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        if let Value::UInt8(n) = self {
+            visitor.visit_u8(n)
+        } else {
+            Err(self.invalid_type(&visitor))
+        }
     }
 
     fn deserialize_u16<V>(self, visitor: V) -> Result<V::Value, Self::Error>
     where
         V: Visitor<'de>,
     {
-        todo!()
+        if let Value::UInt16(n) = self {
+            visitor.visit_u16(n)
+        } else {
+            Err(self.invalid_type(&visitor))
+        }
     }
 
     fn deserialize_u32<V>(self, visitor: V) -> Result<V::Value, Self::Error>
     where
         V: Visitor<'de>,
     {
-        todo!()
+        if let Value::UInt32(n) = self {
+            visitor.visit_u32(n)
+        } else {
+            Err(self.invalid_type(&visitor))
+        }
     }
 
     fn deserialize_u64<V>(self, visitor: V) -> Result<V::Value, Self::Error>
     where
         V: Visitor<'de>,
     {
-        todo!()
+        if let Value::UInt64(n) = self {
+            visitor.visit_u64(n)
+        } else {
+            Err(self.invalid_type(&visitor))
+        }
     }
 
     fn deserialize_f32<V>(self, visitor: V) -> Result<V::Value, Self::Error>
