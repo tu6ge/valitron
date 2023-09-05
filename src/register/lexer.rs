@@ -1,6 +1,4 @@
-use std::{slice::Iter, str::CharIndices};
-
-pub(crate) const EOF_CHAR: char = '\0';
+use std::str::CharIndices;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum TokenKind {

@@ -2,7 +2,6 @@ use std::{
     convert::Infallible,
     fmt::Display,
     hash::{Hash, Hasher},
-    slice::Iter,
 };
 
 use super::{
