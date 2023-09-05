@@ -282,10 +282,8 @@ impl<M> RuleShortcut<M> for StartWith<&'static str> {
     }
     fn call(&mut self, value: &mut Value) -> bool {
         match value {
-            Value::Int8(_) => false,
-            Value::String(s) => s.starts_with(&self.0),
-            Value::Struct(_) => false,
-            _ => todo!(),
+            Value::String(s) => s.starts_with(self.0),
+            _ => false,
         }
     }
 }
