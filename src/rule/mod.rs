@@ -281,7 +281,7 @@ impl<M> RuleShortcut<M> for Required {
 #[derive(Clone, Debug)]
 pub struct StartWith<T>(pub T);
 
-impl<M> RuleShortcut<M> for StartWith<&'static str> {
+impl<M> RuleShortcut<M> for StartWith<&str> {
     fn name(&self) -> &'static str {
         "start_with"
     }
@@ -378,10 +378,11 @@ pub trait RuleShortcut<T> {
 
     /// Rule specific implementation, data is gived type all field's value, and current field index.
     /// when the method return true, call_message will return Ok(()), or else return Err(String)
+    ///
+    /// *Panic*
+    /// when not found value
     fn call_with_relate(&mut self, data: &mut ValueMap) -> bool {
-        // TODO unwrap
-        let value = data.current_mut().unwrap();
-        self.call(value)
+        self.call(data.current_mut().expect("not found value with fields"))
     }
 
     /// Rule specific implementation, data is current field's value
@@ -422,9 +423,10 @@ impl<F> Rule<Value> for F
 where
     F: for<'a> FnOnce(&'a mut Value) -> Result<(), String> + 'static + Clone,
 {
+    /// *Panic*
+    /// when not found value
     fn call(&mut self, data: &mut ValueMap) -> Result<(), Message<Value>> {
-        // TODO unwrap
-        let value = data.current_mut().unwrap();
+        let value = data.current_mut().expect("not found value with fields");
         self.clone()(value).map_err(|e| e.into())
     }
 
