@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 
 use serde::ser;
 
-use crate::register::{FieldName, FieldNames};
+use crate::register::{FieldName, FieldNames, Parser};
 
 #[cfg(test)]
 mod test;
@@ -100,13 +100,19 @@ impl Value {
     }
     pub fn get_with_names(&self, names: &FieldNames) -> Option<&Value> {
         let mut value = Some(self);
-        for name in names.iter() {
-            value = match value {
-                Some(v) => v.get_with_name(name),
-                None => return None,
+        let mut parser = Parser::new(names.string());
+        loop {
+            match parser.next_name() {
+                Ok(Some(name)) => {
+                    value = match value {
+                        Some(v) => v.get_with_name(&name),
+                        None => return None,
+                    }
+                }
+                Ok(None) => break value,
+                Err(_) => return None,
             }
         }
-        value
     }
     pub fn get_with_name_mut(&mut self, name: &FieldName) -> Option<&mut Value> {
         match (name, self) {
@@ -127,13 +133,19 @@ impl Value {
     }
     pub fn get_with_names_mut(&mut self, names: &FieldNames) -> Option<&mut Value> {
         let mut value = Some(self);
-        for name in names.iter() {
-            value = match value {
-                Some(v) => v.get_with_name_mut(name),
-                None => return None,
+        let mut parser = Parser::new(names.string());
+        loop {
+            match parser.next_name() {
+                Ok(Some(name)) => {
+                    value = match value {
+                        Some(v) => v.get_with_name_mut(&name),
+                        None => break None,
+                    }
+                }
+                Ok(None) => break value,
+                Err(_) => break None,
             }
         }
-        value
     }
 
     pub(crate) fn get(&self, key: &str) -> Option<&Value> {

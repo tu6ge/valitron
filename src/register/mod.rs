@@ -14,6 +14,7 @@ use crate::{
 mod field_name;
 mod lexer;
 
+pub(crate) use field_name::Parser;
 pub use field_name::{FieldName, FieldNames};
 
 use self::field_name::IntoFieldName;

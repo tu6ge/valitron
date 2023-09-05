@@ -75,7 +75,6 @@ fn names_to_string(vec: &Vec<FieldName>) -> String {
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
 pub struct FieldNames {
     string: String,
-    vec: Vec<FieldName>,
 }
 
 impl Hash for FieldNames {
@@ -85,13 +84,13 @@ impl Hash for FieldNames {
 }
 
 impl FieldNames {
-    pub(crate) fn new(string: String, vec: Vec<FieldName>) -> Self {
-        Self { string, vec }
+    pub(crate) fn new(string: String) -> Self {
+        Self { string }
     }
 
-    pub fn iter(&self) -> Iter<'_, FieldName> {
-        self.vec.iter()
-    }
+    // pub fn iter(&self) -> Iter<'_, FieldName> {
+    //     self.vec.iter()
+    // }
     pub fn string(&self) -> &String {
         &self.string
     }
@@ -101,7 +100,6 @@ impl From<Vec<FieldName>> for FieldNames {
     fn from(value: Vec<FieldName>) -> Self {
         Self {
             string: names_to_string(&value),
-            vec: value,
         }
     }
 }
@@ -110,7 +108,6 @@ impl From<FieldName> for FieldNames {
         let vec = vec![value];
         Self {
             string: names_to_string(&vec),
-            vec,
         }
     }
 }
@@ -132,7 +129,6 @@ impl IntoFieldName for &str {
     fn into_field(self) -> Result<FieldNames, Self::Error> {
         Ok(FieldNames {
             string: self.to_string(),
-            vec: parse(self)?,
         })
     }
 }
@@ -141,7 +137,6 @@ impl IntoFieldName for u8 {
     fn into_field(self) -> Result<FieldNames, Self::Error> {
         Ok(FieldNames {
             string: self.to_string(),
-            vec: vec![FieldName::Tuple(self)],
         })
     }
 }
@@ -150,7 +145,6 @@ impl IntoFieldName for (u8, u8) {
     fn into_field(self) -> Result<FieldNames, Self::Error> {
         Ok(FieldNames {
             string: format!("{}.{}", self.0, self.1),
-            vec: vec![FieldName::Tuple(self.0), FieldName::Tuple(self.1)],
         })
     }
 }
@@ -159,11 +153,6 @@ impl IntoFieldName for (u8, u8, u8) {
     fn into_field(self) -> Result<FieldNames, Self::Error> {
         Ok(FieldNames {
             string: format!("{}.{}.{}", self.0, self.1, self.2),
-            vec: vec![
-                FieldName::Tuple(self.0),
-                FieldName::Tuple(self.1),
-                FieldName::Tuple(self.2),
-            ],
         })
     }
 }
@@ -172,7 +161,6 @@ impl IntoFieldName for [usize; 1] {
     fn into_field(self) -> Result<FieldNames, Self::Error> {
         Ok(FieldNames {
             string: format!("[{}]", self[0]),
-            vec: vec![FieldName::Array(self[0])],
         })
     }
 }
@@ -184,7 +172,7 @@ impl IntoFieldName for [usize; 1] {
 //     }
 // }
 
-struct Parser<'a> {
+pub(crate) struct Parser<'a> {
     source: &'a str,
     token: Cursor<'a>,
 }
@@ -339,10 +327,9 @@ pub fn parse_message(source: &str) -> Result<MessageKey, String> {
     let (name_str, string) = source
         .rsplit_once('.')
         .ok_or("not found message".to_owned())?;
-    let names = parse(name_str)?;
 
     Ok(MessageKey::new(
-        FieldNames::new(name_str.to_string(), names),
+        FieldNames::new(name_str.to_string()),
         string.to_string(),
     ))
 }
