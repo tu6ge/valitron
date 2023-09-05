@@ -61,13 +61,13 @@ impl<'a> Validator<'a> {
     {
         let value = data.serialize(Serializer).unwrap();
         let mut value_map: ValueMap = ValueMap::new(value);
-        let mut message = Response::new();
+        let mut message = Response::with_capacity(self.rules.len());
 
         for (names, rules) in self.rules.iter() {
             value_map.index(names.clone());
             let rule_resp = rules.clone().call(&mut value_map);
 
-            let mut field_msg = Vec::new();
+            let mut field_msg = Vec::with_capacity(rule_resp.len());
             for (rule, msg) in rule_resp.into_iter() {
                 let final_msg =
                     match self.get_message(&MessageKey::new(names.clone(), rule.to_string())) {
@@ -125,6 +125,11 @@ impl Response {
     fn new() -> Self {
         Self {
             message: Vec::new(),
+        }
+    }
+    fn with_capacity(capacity: usize) -> Self {
+        Self {
+            message: Vec::with_capacity(capacity),
         }
     }
 
