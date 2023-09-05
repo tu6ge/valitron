@@ -1,6 +1,10 @@
 //! register rules
 
-use std::{collections::HashMap, hash::Hash, ops::Deref};
+use std::{
+    collections::HashMap,
+    hash::{Hash, Hasher},
+    ops::Deref,
+};
 
 use crate::{
     rule::{IntoRuleList, RuleList},
@@ -41,10 +45,10 @@ impl<'a> Validator<'a> {
 
     pub fn message<const N: usize>(mut self, list: [(&'a str, &'a str); N]) -> Self {
         self.message = HashMap::from_iter(
-            list.map(|(k_str, v)| {
-                let key = panic_on_err!(field_name::parse_message(k_str));
-                panic_on_err!(self.exit_message(&k_str, &key));
-                (key, v)
+            list.map(|(key_str, v)| {
+                let msg_key = panic_on_err!(field_name::parse_message(key_str));
+                panic_on_err!(self.exit_message(&key_str, &msg_key));
+                (msg_key, v)
             })
             .into_iter(),
         );
@@ -159,7 +163,7 @@ pub struct MessageKey {
 }
 
 impl Hash for MessageKey {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+    fn hash<H: Hasher>(&self, state: &mut H) {
         self.fields.hash(state);
         self.rule.hash(state);
     }

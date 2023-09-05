@@ -53,7 +53,7 @@ impl ValueMap {
     pub(crate) fn new(value: Value) -> Self {
         Self {
             value,
-            index: FieldNames::new(),
+            index: FieldNames::default(),
         }
     }
     pub fn index(&mut self, index: FieldNames) {

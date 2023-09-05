@@ -1,4 +1,9 @@
-use std::{convert::Infallible, fmt::Display, hash::Hash, slice::Iter};
+use std::{
+    convert::Infallible,
+    fmt::Display,
+    hash::{Hash, Hasher},
+    slice::Iter,
+};
 
 use super::{
     lexer::{Cursor, Token, TokenKind},
@@ -59,7 +64,7 @@ fn names_to_string(vec: &Vec<FieldName>) -> String {
             }
             FieldName::StructVariant(s) => {
                 string.push('[');
-                string.push_str(&s.to_string());
+                string.push_str(s);
                 string.push(']');
             }
         }
@@ -67,24 +72,21 @@ fn names_to_string(vec: &Vec<FieldName>) -> String {
     string
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Default)]
 pub struct FieldNames {
     string: String,
     vec: Vec<FieldName>,
 }
 
 impl Hash for FieldNames {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+    fn hash<H: Hasher>(&self, state: &mut H) {
         self.string.hash(state)
     }
 }
 
 impl FieldNames {
-    pub(crate) fn new() -> Self {
-        Self {
-            string: String::new(),
-            vec: Vec::new(),
-        }
+    pub(crate) fn new(string: String, vec: Vec<FieldName>) -> Self {
+        Self { string, vec }
     }
 
     pub fn iter(&self) -> Iter<'_, FieldName> {
@@ -337,10 +339,7 @@ pub fn parse_message(source: &str) -> Result<MessageKey, String> {
     let names = parse(name_str)?;
 
     Ok(MessageKey::new(
-        FieldNames {
-            string: name_str.to_string(),
-            vec: names,
-        },
+        FieldNames::new(name_str.to_string(), names),
         string.to_string(),
     ))
 }
