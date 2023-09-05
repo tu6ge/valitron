@@ -1,6 +1,5 @@
 use serde::{Deserialize, Serialize};
 use valitron::{
-    register::FieldName,
     rule::{custom, Required, RuleExt, StartWith},
     Validator, Value,
 };
@@ -29,14 +28,14 @@ fn test_validator() {
     let res = validator.validate(person).unwrap_err();
 
     assert!(res.len() == 2);
-    assert!(res.contains(&(
-        vec![FieldName::Literal("age".into())].into(),
-        vec!["age should be between 25 and 45".to_string()],
-    )));
-    assert!(res.contains(&(
-        vec![FieldName::Literal("name".into())].into(),
-        vec!["name should be starts with `hello`".to_string()],
-    )));
+    assert_eq!(
+        res.get("age"),
+        Some(&vec!["age should be between 25 and 45".to_string()])
+    );
+    assert_eq!(
+        res.get("name"),
+        Some(&vec!["name should be starts with `hello`".to_string()])
+    );
 
     //println!("{res:?}");
 }
@@ -62,10 +61,10 @@ fn test_has_tuple() {
     let res = validator.validate(Foo("heoo", "bar")).unwrap_err();
     assert!(res.len() == 1);
 
-    assert!(res.contains(&(
-        vec![FieldName::Tuple(0)].into(),
-        vec!["first item should be start with `hello`".to_string()],
-    )));
+    assert_eq!(
+        res.get(0),
+        Some(&vec!["first item should be start with `hello`".to_string()])
+    );
 }
 
 #[test]
@@ -75,8 +74,8 @@ fn test_has_array() {
     let res = validator.validate(vec!["foo", "bar"]).unwrap_err();
 
     assert!(res.len() == 1);
-    assert!(res.contains(&(
-        vec![FieldName::Array(1)].into(),
-        vec!["this field must be start with {}".to_string()],
-    )));
+    assert_eq!(
+        res.get([1]),
+        Some(&vec!["this field must be start with {}".to_string()])
+    );
 }

@@ -170,6 +170,16 @@ impl IntoFieldName for [usize; 1] {
 //         Ok(vec![FieldName::StructVariant(self[0].to_string())])
 //     }
 // }
+impl<'a, T> IntoFieldName for &'a T
+where
+    T: IntoFieldName + Copy,
+{
+    type Error = T::Error;
+
+    fn into_field(self) -> Result<FieldNames, Self::Error> {
+        T::into_field(*self)
+    }
+}
 
 pub(crate) struct Parser<'a> {
     source: &'a str,

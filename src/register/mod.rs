@@ -112,11 +112,11 @@ impl<'a> Validator<'a> {
 
 #[derive(Debug)]
 pub struct Response {
-    message: Vec<(FieldNames, Vec<String>)>,
+    message: HashMap<FieldNames, Vec<String>>,
 }
 
 impl Deref for Response {
-    type Target = Vec<(FieldNames, Vec<String>)>;
+    type Target = HashMap<FieldNames, Vec<String>>;
     fn deref(&self) -> &Self::Target {
         &self.message
     }
@@ -125,19 +125,24 @@ impl Deref for Response {
 impl Response {
     fn new() -> Self {
         Self {
-            message: Vec::new(),
+            message: HashMap::new(),
         }
     }
     fn with_capacity(capacity: usize) -> Self {
         Self {
-            message: Vec::with_capacity(capacity),
+            message: HashMap::with_capacity(capacity),
         }
     }
 
     fn push(&mut self, field_name: FieldNames, message: Vec<String>) {
         if !message.is_empty() {
-            self.message.push((field_name, message));
+            self.message.insert(field_name, message);
         }
+    }
+
+    pub fn get<K: IntoFieldName>(&self, key: K) -> Option<&Vec<String>> {
+        let k = key.into_field().ok()?;
+        self.message.get(&k)
     }
 }
 
