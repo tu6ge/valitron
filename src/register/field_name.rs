@@ -92,6 +92,9 @@ impl FieldNames {
     pub fn iter(&self) -> Iter<'_, FieldName> {
         self.vec.iter()
     }
+    pub fn string(&self) -> &String {
+        &self.string
+    }
 }
 
 impl From<Vec<FieldName>> for FieldNames {

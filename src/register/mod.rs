@@ -47,7 +47,7 @@ impl<'a> Validator<'a> {
         self.message = HashMap::from_iter(
             list.map(|(key_str, v)| {
                 let msg_key = panic_on_err!(field_name::parse_message(key_str));
-                panic_on_err!(self.exit_message(&key_str, &msg_key));
+                panic_on_err!(self.exit_message(&msg_key));
                 (msg_key, v)
             })
             .into_iter(),
@@ -91,19 +91,11 @@ impl<'a> Validator<'a> {
         self.rules.get(names)
     }
 
-    fn exit_message(
-        &self,
-        k_str: &str,
-        MessageKey { fields, rule }: &MessageKey,
-    ) -> Result<(), String> {
-        let (field_name, ..) = k_str
-            .rsplit_once('.')
-            .ok_or(format!("no found `.` in the message index"))?;
-
-        let names = self.rule_get(fields).ok_or(format!(
-            "the field \"{}\" not found in validator",
-            field_name
-        ))?;
+    fn exit_message(&self, MessageKey { fields, rule }: &MessageKey) -> Result<(), String> {
+        let names = self.rule_get(fields).ok_or({
+            let field_name = fields.string();
+            format!("the field \"{}\" not found in validator", field_name)
+        })?;
 
         if names.contains(rule) {
             Ok(())
