@@ -213,3 +213,30 @@ fn test_int() {
         })
     )
 }
+
+#[test]
+fn test_float() {
+    #[derive(Serialize)]
+    struct MyType {
+        v1: u8,
+        v2: f32,
+        v3: f64,
+    }
+    let my_struct = MyType {
+        v1: u8::MAX,
+        v2: f32::MAX,
+        v3: f64::MIN,
+    };
+    let value = to_value(my_struct).unwrap();
+
+    assert_eq!(
+        value,
+        Value::Struct({
+            let mut map = BTreeMap::new();
+            map.insert(Value::StructKey("v1".to_string()), Value::UInt8(u8::MAX));
+            map.insert(Value::StructKey("v2".to_string()), Value::Float32(f32::MAX.into()));
+            map.insert(Value::StructKey("v3".to_string()), Value::Float64(f64::MIN.into()));
+            map
+        })
+    )
+}

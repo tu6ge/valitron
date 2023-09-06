@@ -191,11 +191,11 @@ impl serde::ser::Serializer for Serializer {
     }
 
     fn serialize_f32(self, v: f32) -> Result<Self::Ok, Self::Error> {
-        todo!()
+        Ok(Value::Float32(v.into()))
     }
 
     fn serialize_f64(self, v: f64) -> Result<Self::Ok, Self::Error> {
-        todo!()
+        Ok(Value::Float64(v.into()))
     }
 
     fn serialize_char(self, v: char) -> Result<Self::Ok, Self::Error> {
