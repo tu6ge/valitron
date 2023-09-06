@@ -15,11 +15,11 @@ struct B {
     foo_str: String,
 }
 #[derive(Deserialize, Debug)]
-struct C(i8, u64);
+struct C(i8, u64, f32, f64);
 
 #[test]
 fn test_dep() {
-    let c_value = Value::TupleStruct(vec![Value::Int8(22), Value::UInt64(33)]);
+    let c_value = Value::TupleStruct(vec![Value::Int8(22), Value::UInt64(33), Value::Float32(5.0_f32.into()), Value::Float64(100.0_f64.into())]);
     let b_value = Value::Struct({
         let mut map = BTreeMap::new();
         map.insert(Value::StructKey("c".to_string()), c_value);
@@ -40,6 +40,6 @@ fn test_dep() {
 
     assert_eq!(
         format!("{res:?}"),
-        r#"A { b: B { c: C(22, 33), foo_str: "hello" }, foo: 11 }"#
+        r#"A { b: B { c: C(22, 33, 5.0, 100.0), foo_str: "hello" }, foo: 11 }"#
     );
 }

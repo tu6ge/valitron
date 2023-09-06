@@ -17,8 +17,8 @@ pub enum Value {
     Int32(i32),
     UInt64(u64),
     Int64(i64),
-    // Float32(f32),
-    // Float64(f64),
+    Float32(crate::float::Float32),
+    Float64(crate::float::Float64),
     String(String),
     Unit,
     // Boolean(bool),
@@ -174,7 +174,9 @@ impl Value {
             | Self::Int8(_)
             | Self::Int16(_)
             | Self::Int32(_)
-            | Self::Int64(_) => true,
+            | Self::Int64(_)
+            | Self::Float32(_)
+            | Self::Float64(_) => true,
             Self::Unit => true,
             Self::String(_) => true,
             _ => false,
@@ -359,11 +361,11 @@ impl serde::ser::Serializer for Serializer {
     }
 
     fn serialize_f32(self, v: f32) -> Result<Self::Ok, Self::Error> {
-        todo!()
+        Ok(Value::Float32(v.into()))
     }
 
     fn serialize_f64(self, v: f64) -> Result<Self::Ok, Self::Error> {
-        todo!()
+        Ok(Value::Float64(v.into()))
     }
 
     fn serialize_char(self, v: char) -> Result<Self::Ok, Self::Error> {
