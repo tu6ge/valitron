@@ -12,8 +12,8 @@ pub enum Value {
     Int32(i32),
     UInt64(u64),
     Int64(i64),
-    // Float32(f32),
-    // Float64(f64),
+    Float32(crate::float::Float32),
+    Float64(crate::float::Float64),
     String(String),
     Unit,
     // Boolean(bool),
@@ -163,6 +163,7 @@ impl Value {
             | Self::Int16(_)
             | Self::Int32(_)
             | Self::Int64(_) => true,
+            Self::Float32(_) | Self::Float64(_) => true,
             Self::Unit => true,
             Self::String(_) => true,
             _ => false,

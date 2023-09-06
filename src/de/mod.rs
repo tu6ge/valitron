@@ -30,6 +30,8 @@ impl Value {
             Value::Int16(n) => Unexpected::Signed(*n as i64),
             Value::Int32(n) => Unexpected::Signed(*n as i64),
             Value::Int64(n) => Unexpected::Signed(*n),
+            Value::Float32(n) => Unexpected::Float(n.get() as f64),
+            Value::Float64(n) => Unexpected::Float(n.get()),
             Value::String(s) => Unexpected::Str(s),
             Value::StructKey(_s) => Unexpected::Other("struct field name"),
             Value::StructVariantKey(_s) => Unexpected::Other("struct variant"),
@@ -217,14 +219,22 @@ impl<'de> Deserializer<'de> for Value {
     where
         V: Visitor<'de>,
     {
-        todo!()
+        if let Value::Float32(n) = self {
+            visitor.visit_f32(n.into())
+        } else {
+            Err(self.invalid_type(&visitor))
+        }
     }
 
     fn deserialize_f64<V>(self, visitor: V) -> Result<V::Value, Self::Error>
     where
         V: Visitor<'de>,
     {
-        todo!()
+        if let Value::Float64(n) = self {
+            visitor.visit_f64(n.into())
+        } else {
+            Err(self.invalid_type(&visitor))
+        }
     }
 
     fn deserialize_char<V>(self, visitor: V) -> Result<V::Value, Self::Error>
