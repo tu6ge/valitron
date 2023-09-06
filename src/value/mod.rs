@@ -2,6 +2,8 @@ use std::collections::BTreeMap;
 
 use crate::register::{FieldName, FieldNames, Parser};
 
+mod float;
+
 #[derive(Debug, PartialEq, Eq, Clone, Ord, PartialOrd)]
 pub enum Value {
     UInt8(u8),
@@ -12,8 +14,8 @@ pub enum Value {
     Int32(i32),
     UInt64(u64),
     Int64(i64),
-    Float32(crate::float::Float32),
-    Float64(crate::float::Float64),
+    Float32(float::Float32),
+    Float64(float::Float64),
     String(String),
     Unit,
     // Boolean(bool),

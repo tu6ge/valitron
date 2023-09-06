@@ -1,6 +1,5 @@
 pub mod cmp;
 mod de;
-mod float;
 pub mod register;
 pub mod rule;
 mod ser;
