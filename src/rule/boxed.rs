@@ -1,4 +1,4 @@
-use crate::ser::ValueMap;
+use crate::value::ValueMap;
 
 use super::{Message, Rule};
 

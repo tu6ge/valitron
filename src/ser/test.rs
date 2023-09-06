@@ -1,5 +1,7 @@
 use serde::Serialize;
 
+use crate::register::FieldName;
+
 use super::*;
 
 #[test]

@@ -5,7 +5,7 @@ use serde::de::{
     Unexpected, VariantAccess, Visitor,
 };
 
-use crate::ser::Value;
+use crate::value::Value;
 
 #[cfg(test)]
 mod test;

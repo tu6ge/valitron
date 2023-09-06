@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 
 use serde::Deserialize;
 
-use crate::ser::Value;
+use crate::value::Value;
 
 #[derive(Deserialize, Debug)]
 struct A {

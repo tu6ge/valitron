@@ -8,7 +8,8 @@ use std::{
 
 use crate::{
     rule::{IntoRuleList, RuleList},
-    ser::{Serializer, ValueMap},
+    ser::Serializer,
+    value::ValueMap,
 };
 
 mod field_name;

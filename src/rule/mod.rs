@@ -2,7 +2,7 @@
 
 use std::{marker::PhantomData, slice::Iter};
 
-use crate::ser::{Value, ValueMap};
+use crate::value::{Value, ValueMap};
 
 use boxed::BoxCloneRule;
 
