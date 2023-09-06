@@ -57,13 +57,13 @@ impl<'a> Validator<'a> {
         self
     }
 
-    pub fn validate<'de, T>(self, data: T) -> Result<T, Response>
+    pub fn validate<'de, T>(self, data: T) -> Result<T, ValidatorError>
     where
         T: serde::ser::Serialize + serde::de::Deserialize<'de>,
     {
         let value = data.serialize(Serializer).unwrap();
         let mut value_map: ValueMap = ValueMap::new(value);
-        let mut message = Response::with_capacity(self.rules.len());
+        let mut message = ValidatorError::with_capacity(self.rules.len());
 
         for (names, rules) in self.rules.iter() {
             value_map.index(names.clone());
@@ -111,19 +111,19 @@ impl<'a> Validator<'a> {
     }
 }
 
-#[derive(Debug)]
-pub struct Response {
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ValidatorError {
     message: HashMap<FieldNames, Vec<String>>,
 }
 
-impl Deref for Response {
-    type Target = HashMap<FieldNames, Vec<String>>;
-    fn deref(&self) -> &Self::Target {
-        &self.message
-    }
-}
+// impl Deref for ValidatorError {
+//     type Target = HashMap<FieldNames, Vec<String>>;
+//     fn deref(&self) -> &Self::Target {
+//         &self.message
+//     }
+// }
 
-impl Response {
+impl ValidatorError {
     fn new() -> Self {
         Self {
             message: HashMap::new(),
@@ -145,10 +145,18 @@ impl Response {
         let k = key.into_field().ok()?;
         self.message.get(&k)
     }
+
+    pub fn is_empty(&self) -> bool {
+        self.message.is_empty()
+    }
+
+    pub fn len(&self) -> usize {
+        self.message.len()
+    }
 }
 
-impl From<Response> for Result<(), Response> {
-    fn from(value: Response) -> Self {
+impl From<ValidatorError> for Result<(), ValidatorError> {
+    fn from(value: ValidatorError) -> Self {
         if value.is_empty() {
             Ok(())
         } else {
