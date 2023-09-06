@@ -130,4 +130,48 @@ mod tests {
         h.insert(Float64::new(10.0), 10);
         h.insert(Float64::new(20.0), 20);
     }
+
+    #[test]
+    fn test_eq_f32() {
+        let a = Float32::new(10.0);
+        let b = Float32::new(10.0);
+        assert_eq!(a, b);
+
+        let c = Float32(f32::NAN);
+        let d = Float32(f32::NAN);
+        assert!(d != c);
+
+        let e = Float32(0.0);
+        let f = Float32(-0.0);
+        assert!(f == e);
+    }
+
+    #[test]
+    fn test_ord_f32() {
+        let a = Float32::new(10.0);
+        let b = Float32::new(20.0);
+        assert!(b > a);
+    }
+
+    #[test]
+    fn test_eq_f64() {
+        let a = Float64::new(10.0);
+        let b = Float64::new(10.0);
+        assert_eq!(a, b);
+
+        let c = Float64(f64::NAN);
+        let d = Float64(f64::NAN);
+        assert!(d != c);
+
+        let e = Float64(0.0);
+        let f = Float64(-0.0);
+        assert!(f == e);
+    }
+
+    #[test]
+    fn test_ord_f64() {
+        let a = Float64::new(10.0);
+        let b = Float64::new(20.0);
+        assert!(b > a);
+    }
 }
