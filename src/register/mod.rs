@@ -1,9 +1,11 @@
 //! register rules
 
 use std::{
-    collections::HashMap,
+    collections::{
+        hash_map::{Iter, IterMut},
+        HashMap,
+    },
     hash::{Hash, Hasher},
-    ops::Deref,
 };
 
 use crate::{
@@ -79,8 +81,12 @@ impl<'a> Validator<'a> {
                 field_msg.push(final_msg);
             }
 
+            field_msg.shrink_to_fit();
+
             message.push(names.clone(), field_msg);
         }
+
+        message.shrink_to_fit();
 
         if message.is_empty() {
             Ok(T::deserialize(value_map.value()).unwrap())
@@ -141,9 +147,33 @@ impl ValidatorError {
         }
     }
 
+    fn shrink_to_fit(&mut self) {
+        self.message.shrink_to_fit()
+    }
+
     pub fn get<K: IntoFieldName>(&self, key: K) -> Option<&Vec<String>> {
         let k = key.into_field().ok()?;
         self.message.get(&k)
+    }
+
+    pub fn get_key_value<K: IntoFieldName>(&self, key: K) -> Option<(&FieldNames, &Vec<String>)> {
+        let k = key.into_field().ok()?;
+        self.message.get_key_value(&k)
+    }
+
+    pub fn contains_key<K: IntoFieldName>(&self, key: K) -> bool {
+        match key.into_field() {
+            Ok(k) => self.message.contains_key(&k),
+            Err(_) => false,
+        }
+    }
+
+    pub fn iter(&self) -> Iter<'_, FieldNames, Vec<String>> {
+        self.message.iter()
+    }
+
+    pub fn iter_mut(&mut self) -> IterMut<'_, FieldNames, Vec<String>> {
+        self.message.iter_mut()
     }
 
     pub fn is_empty(&self) -> bool {
