@@ -246,3 +246,44 @@ fn test_float() {
         })
     )
 }
+
+#[derive(Serialize, Debug, PartialEq)]
+enum EnumA {
+    Foo,
+    Bar,
+}
+
+#[derive(Serialize, Debug, PartialEq)]
+enum EnumB {
+    A(u8),
+    B { r: u8, g: u8, b: u8 },
+}
+
+#[test]
+fn test_enum() {
+    let val = EnumA::Foo;
+
+    let value = to_value(val).unwrap();
+    assert_eq!(value, Value::EnumUnit("Foo"));
+
+    let val = EnumB::A(34);
+    let value = to_value(val).unwrap();
+    assert_eq!(value, Value::Enum("A", vec![Value::UInt8(34)]));
+
+    let val = EnumB::B {
+        r: 22,
+        g: 33,
+        b: 44,
+    };
+    let value = to_value(val).unwrap();
+    assert_eq!(
+        value,
+        Value::StructVariant("B", {
+            let mut map = BTreeMap::new();
+            map.insert(Value::StructVariantKey("r".to_string()), Value::UInt8(22));
+            map.insert(Value::StructVariantKey("g".to_string()), Value::UInt8(33));
+            map.insert(Value::StructVariantKey("b".to_string()), Value::UInt8(44));
+            map
+        })
+    );
+}
