@@ -5,13 +5,13 @@ pub struct Float64(u64);
 
 impl Float32 {
     pub fn get(&self) -> f32 {
-        unsafe{
+        unsafe {
             let p = &self.0 as *const u32 as *const f32;
             *p
         }
-    }    
+    }
 
-    pub fn set(&mut self, val:f32) {
+    pub fn set(&mut self, val: f32) {
         let val = unsafe {
             let p = &val as *const f32 as *const u32;
             *p
@@ -19,7 +19,7 @@ impl Float32 {
         self.0 = val;
     }
 
-    fn new(val:f32) -> Self {
+    fn new(val: f32) -> Self {
         let val = unsafe {
             let p = &val as *const f32 as *const u32;
             *p
@@ -46,16 +46,15 @@ impl std::fmt::Debug for Float32 {
     }
 }
 
-
 impl Float64 {
     pub fn get(&self) -> f64 {
-        unsafe{
+        unsafe {
             let p = &self.0 as *const u64 as *const f64;
             *p
         }
-    }    
+    }
 
-    pub fn set(&mut self, val:f64) {
+    pub fn set(&mut self, val: f64) {
         let val = unsafe {
             let p = &val as *const f64 as *const u64;
             *p
@@ -63,7 +62,7 @@ impl Float64 {
         self.0 = val;
     }
 
-    fn new(val:f64) -> Self {
+    fn new(val: f64) -> Self {
         let val = unsafe {
             let p = &val as *const f64 as *const u64;
             *p

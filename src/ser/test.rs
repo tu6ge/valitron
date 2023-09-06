@@ -234,8 +234,14 @@ fn test_float() {
         Value::Struct({
             let mut map = BTreeMap::new();
             map.insert(Value::StructKey("v1".to_string()), Value::UInt8(u8::MAX));
-            map.insert(Value::StructKey("v2".to_string()), Value::Float32(f32::MAX.into()));
-            map.insert(Value::StructKey("v3".to_string()), Value::Float64(f64::MIN.into()));
+            map.insert(
+                Value::StructKey("v2".to_string()),
+                Value::Float32(f32::MAX.into()),
+            );
+            map.insert(
+                Value::StructKey("v3".to_string()),
+                Value::Float64(f64::MIN.into()),
+            );
             map
         })
     )
