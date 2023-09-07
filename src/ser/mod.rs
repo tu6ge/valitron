@@ -63,7 +63,7 @@ impl serde::ser::Serializer for Serializer {
     where
         T: serde::Serialize,
     {
-        Ok(Value::Option(vec![value.serialize(Serializer)?]))
+        Ok(Value::Option(Box::new(Some(value.serialize(Serializer)?))))
     }
 
     fn serialize_unit(self) -> Result<Self::Ok, Self::Error> {
@@ -207,7 +207,7 @@ impl serde::ser::Serializer for Serializer {
     }
 
     fn serialize_none(self) -> Result<Self::Ok, Self::Error> {
-        Ok(Value::Option(vec![]))
+        Ok(Value::Option(Box::new(None)))
     }
 }
 

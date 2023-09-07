@@ -94,13 +94,10 @@ impl<'de> Deserializer<'de> for Value {
             Value::Int32(n) => visitor.visit_i32(n),
             Value::Int64(n) => visitor.visit_i64(n),
             Value::String(s) => visitor.visit_string(s),
-            Value::Option(mut s) => {
-                debug_assert!(s.len() == 1);
-                match s.pop() {
-                    Some(s) => visitor.visit_some(s),
-                    None => visitor.visit_none(),
-                }
-            }
+            Value::Option(val) => match *val {
+                Some(s) => visitor.visit_some(s),
+                None => visitor.visit_none(),
+            },
             Value::Unit => visitor.visit_unit(),
             Value::Tuple(vec) => visit_array(vec, visitor),
             Value::Array(vec) => visit_array(vec, visitor),
@@ -284,9 +281,8 @@ impl<'de> Deserializer<'de> for Value {
     where
         V: Visitor<'de>,
     {
-        if let Value::Option(mut vec) = self {
-            debug_assert!(vec.len() == 1);
-            match vec.pop() {
+        if let Value::Option(val) = self {
+            match *val {
                 Some(value) => visitor.visit_some(value),
                 None => visitor.visit_none(),
             }

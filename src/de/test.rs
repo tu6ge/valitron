@@ -88,3 +88,47 @@ fn test_enum() {
         }
     ));
 }
+
+#[derive(Deserialize, Debug, PartialEq)]
+struct Opt {
+    val_u8: Option<u8>,
+    val_f32: Option<f32>,
+    val_string: Option<String>,
+}
+
+#[test]
+fn test_option() {
+    let value = Value::Option(Box::new(Some(Value::UInt32(10))));
+    let a = Option::deserialize(value).unwrap();
+    assert_eq!(a, Some(10u32));
+
+    let value = Value::Option(Box::new(None));
+    let b: Option<u32> = Option::deserialize(value).unwrap();
+    assert_eq!(b, None);
+
+    let value = Value::Struct({
+        let mut map = BTreeMap::new();
+        map.insert(
+            Value::StructKey("val_u8".to_string()),
+            Value::Option(Box::new(Some(Value::UInt8(22)))),
+        );
+        map.insert(
+            Value::StructKey("val_f32".to_string()),
+            Value::Option(Box::new(Some(Value::Float32(33.0_f32.into())))),
+        );
+        map.insert(
+            Value::StructKey("val_string".to_string()),
+            Value::Option(Box::new(None)),
+        );
+        map
+    });
+    let c = Opt::deserialize(value).unwrap();
+    assert_eq!(
+        c,
+        Opt {
+            val_u8: Some(22),
+            val_f32: Some(33_f32),
+            val_string: None,
+        }
+    );
+}
