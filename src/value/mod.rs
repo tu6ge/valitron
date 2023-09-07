@@ -46,6 +46,10 @@ pub struct ValueMap {
     index: FieldNames,
 }
 
+pub trait FromValue {
+    fn from_value(value: &mut ValueMap) -> Option<&mut Self>;
+}
+
 impl ValueMap {
     pub(crate) fn new(value: Value) -> Self {
         Self {
@@ -169,6 +173,22 @@ impl Value {
             Self::Unit => true,
             Self::String(_) => true,
             _ => false,
+        }
+    }
+}
+
+impl FromValue for ValueMap {
+    fn from_value(value: &mut ValueMap) -> Option<&mut Self> {
+        Some(value)
+    }
+}
+
+impl FromValue for i8 {
+    fn from_value(value: &mut ValueMap) -> Option<&mut Self> {
+        if let Some(Value::Int8(n)) = value.current_mut() {
+            Some(n)
+        } else {
+            None
         }
     }
 }
