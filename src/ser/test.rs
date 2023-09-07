@@ -287,3 +287,60 @@ fn test_enum() {
         })
     );
 }
+
+#[test]
+fn test_option() {
+    #[derive(Serialize)]
+    struct MyType {
+        v1: u8,
+        v2: Option<u8>,
+        v3: Option<String>,
+    }
+    let my_struct = MyType {
+        v1: 10,
+        v2: Some(20),
+        v3: None,
+    };
+    let value = to_value(my_struct).unwrap();
+
+    assert_eq!(
+        value,
+        Value::Struct({
+            let mut map = BTreeMap::new();
+            map.insert(Value::StructKey("v1".to_string()), Value::UInt8(10));
+            map.insert(
+                Value::StructKey("v2".to_string()),
+                Value::Option(Box::new(Some(Value::UInt8(20)))),
+            );
+            map.insert(
+                Value::StructKey("v3".to_string()),
+                Value::Option(Box::new(None)),
+            );
+            map
+        })
+    );
+
+    let my_struct = MyType {
+        v1: 10,
+        v2: None,
+        v3: Some("option test".to_string()),
+    };
+    let value = to_value(my_struct).unwrap();
+
+    assert_eq!(
+        value,
+        Value::Struct({
+            let mut map = BTreeMap::new();
+            map.insert(Value::StructKey("v1".to_string()), Value::UInt8(10));
+            map.insert(
+                Value::StructKey("v2".to_string()),
+                Value::Option(Box::new(None)),
+            );
+            map.insert(
+                Value::StructKey("v3".to_string()),
+                Value::Option(Box::new(Some(Value::String("option test".to_string())))),
+            );
+            map
+        })
+    );
+}

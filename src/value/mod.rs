@@ -20,7 +20,7 @@ pub enum Value {
     Unit,
     // Boolean(bool),
     // Char(char),
-    Option(Vec<Value>),
+    Option(Box<Option<Value>>),
     Array(Vec<Value>),
     Tuple(Vec<Value>),
     TupleStruct(Vec<Value>),
