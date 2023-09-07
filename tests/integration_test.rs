@@ -48,7 +48,7 @@ fn test_validator() {
 }
 
 fn age_limit(v: &mut Value) -> Result<(), String> {
-    if let Value::Int8(n) = v {
+    if let Value::UInt8(n) = v {
         if *n >= 25 && *n <= 45 {
             return Ok(());
         }
