@@ -183,9 +183,24 @@ impl FromValue for ValueMap {
     }
 }
 
+impl FromValue for Value {
+    fn from_value(value: &mut ValueMap) -> Option<&mut Self> {
+        value.current_mut()
+    }
+}
+
 impl FromValue for i8 {
     fn from_value(value: &mut ValueMap) -> Option<&mut Self> {
         if let Some(Value::Int8(n)) = value.current_mut() {
+            Some(n)
+        } else {
+            None
+        }
+    }
+}
+impl FromValue for u8 {
+    fn from_value(value: &mut ValueMap) -> Option<&mut Self> {
+        if let Some(Value::UInt8(n)) = value.current_mut() {
             Some(n)
         } else {
             None

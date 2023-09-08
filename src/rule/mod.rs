@@ -2,7 +2,7 @@
 
 use std::slice::Iter;
 
-use crate::value::{Value, ValueMap};
+use crate::value::{FromValue, Value, ValueMap};
 
 use self::boxed::{BaseRule, RuleIntoService};
 
@@ -50,7 +50,11 @@ impl From<&str> for Message {
 /// ```
 pub trait RuleExt {
     fn and<R: Rule<()> + Clone>(self, other: R) -> RuleList;
-    fn custom<R2: Rule<Value> + Clone>(self, other: R2) -> RuleList;
+    fn custom<F, V>(self, other: F) -> RuleList
+    where
+        F: for<'a> FnOnce(&'a mut V) -> Result<(), String> + 'static + Clone,
+        F: Rule<V>,
+        V: FromValue + 'static;
     fn relate<R2: Rule<ValueMap> + Clone>(self, other: R2) -> RuleList;
 }
 
@@ -61,7 +65,12 @@ impl<R: Rule<()> + Clone> RuleExt for R {
             ..Default::default()
         }
     }
-    fn custom<R2: Rule<Value> + Clone>(self, other: R2) -> RuleList {
+    fn custom<F, V>(self, other: F) -> RuleList
+    where
+        F: for<'a> FnOnce(&'a mut V) -> Result<(), String> + 'static + Clone,
+        F: Rule<V>,
+        V: FromValue + 'static,
+    {
         RuleList {
             list: vec![BaseRule::new(self), BaseRule::new(other)],
             ..Default::default()
@@ -134,10 +143,11 @@ pub trait IntoRuleList {
     fn into_list(self) -> RuleList;
 }
 
-pub fn custom<F>(f: F) -> RuleList
+pub fn custom<F, V>(f: F) -> RuleList
 where
-    F: for<'a> FnOnce(&'a mut Value) -> Result<(), String> + 'static + Clone,
-    F: Rule<Value>,
+    F: for<'a> FnOnce(&'a mut V) -> Result<(), String> + 'static + Clone,
+    F: Rule<V>,
+    V: FromValue + 'static,
 {
     RuleList {
         list: vec![BaseRule::new(f)],
@@ -203,7 +213,7 @@ mod test_regster {
         register(relate(hander));
         register(relate(hander).and(StartWith("foo")));
         register(relate(hander).and(StartWith("foo")).bail());
-        register(custom(|_a| Ok(())));
+        register(custom(|_a: &mut u8| Ok(())));
         register(relate(|_a| Ok(())));
     }
 }
@@ -364,30 +374,44 @@ where
     }
 }
 
-impl<F> Rule<ValueMap> for F
+// impl<F> Rule<ValueMap> for F
+// where
+//     F: for<'a> FnOnce(&'a mut ValueMap) -> Result<(), String> + 'static + Clone,
+// {
+//     fn call(&mut self, data: &mut ValueMap) -> Result<(), Message> {
+//         self.clone()(data).map_err(|s| s.into())
+//     }
+
+//     fn name(&self) -> &'static str {
+//         "relate"
+//     }
+// }
+
+// impl<F> Rule<Value> for F
+// where
+//     F: for<'a> FnOnce(&'a mut Value) -> Result<(), String> + 'static + Clone,
+// {
+//     /// *Panic*
+//     /// when not found value
+//     fn call(&mut self, data: &mut ValueMap) -> Result<(), Message> {
+//         let value = data.current_mut().expect("not found value with fields");
+//         self.clone()(value).map_err(|e| e.into())
+//     }
+
+//     fn name(&self) -> &'static str {
+//         "custom"
+//     }
+// }
+
+impl<F, V> Rule<V> for F
 where
-    F: for<'a> FnOnce(&'a mut ValueMap) -> Result<(), String> + 'static + Clone,
+    F: for<'a> FnOnce(&'a mut V) -> Result<(), String> + 'static + Clone,
+    V: FromValue,
 {
     fn call(&mut self, data: &mut ValueMap) -> Result<(), Message> {
-        self.clone()(data).map_err(|s| s.into())
+        let val = V::from_value(data).unwrap();
+        self.clone()(val).map_err(|e| e.into())
     }
-
-    fn name(&self) -> &'static str {
-        "relate"
-    }
-}
-
-impl<F> Rule<Value> for F
-where
-    F: for<'a> FnOnce(&'a mut Value) -> Result<(), String> + 'static + Clone,
-{
-    /// *Panic*
-    /// when not found value
-    fn call(&mut self, data: &mut ValueMap) -> Result<(), Message> {
-        let value = data.current_mut().expect("not found value with fields");
-        self.clone()(value).map_err(|e| e.into())
-    }
-
     fn name(&self) -> &'static str {
         "custom"
     }

@@ -47,11 +47,9 @@ fn test_validator() {
     //println!("{res:?}");
 }
 
-fn age_limit(v: &mut Value) -> Result<(), String> {
-    if let Value::UInt8(n) = v {
-        if *n >= 25 && *n <= 45 {
-            return Ok(());
-        }
+fn age_limit(n: &mut u8) -> Result<(), String> {
+    if *n >= 25 && *n <= 45 {
+        return Ok(());
     }
     Err("age should be between 25 and 45".to_owned())
 }
