@@ -12,7 +12,14 @@ impl ErasedRule {
         H: Rule<M>,
         M: 'static,
     {
-        Self(Box::new(handler.into_serve()))
+        Self(Box::new(handler.into_boxed()))
+    }
+
+    pub fn name(&self) -> &'static str {
+        self.0.name()
+    }
+    pub fn call(&mut self, data: &mut ValueMap) -> Result<(), String> {
+        self.0.call(data)
     }
 }
 

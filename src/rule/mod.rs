@@ -16,7 +16,7 @@ pub trait Rule<M>: 'static + Sized + Clone {
     /// Rule specific implementation, data is gived type all field's value, and current field index.
     fn call(&mut self, data: &mut ValueMap) -> Result<(), Message>;
 
-    fn into_serve(self) -> RuleIntoBoxed<Self, M> {
+    fn into_boxed(self) -> RuleIntoBoxed<Self, M> {
         RuleIntoBoxed::new(self)
     }
 }
@@ -115,9 +115,8 @@ impl RuleList {
         let mut msg = Vec::new();
         for endpoint in self.list.iter_mut() {
             let _ = endpoint
-                .0
                 .call(data)
-                .map_err(|e| msg.push((endpoint.0.name(), e)));
+                .map_err(|e| msg.push((endpoint.name(), e)));
             if self.is_bail && !msg.is_empty() {
                 return msg;
             }
@@ -132,9 +131,32 @@ impl RuleList {
     /// check the rule name is existing
     pub(crate) fn contains(&self, rule: &str) -> bool {
         self.iter()
-            .map(|endpoint| endpoint.0.name())
+            .map(|endpoint| endpoint.name())
             .find(|&name| name == rule)
             .is_some()
+    }
+
+    /// check all rule names is valid or not
+    pub(crate) fn valid_name(&self) -> bool {
+        self.iter().map(|endpoint| endpoint.name()).all(|name| {
+            let mut chares = name.chars();
+            let first = match chares.next() {
+                Some(ch) => ch,
+                None => return false,
+            };
+
+            if !(first.is_ascii_alphabetic() || first == '_') {
+                return false;
+            }
+
+            loop {
+                match chares.next() {
+                    Some(ch) if ch.is_ascii_alphanumeric() || ch == '_' => (),
+                    None => break true,
+                    _ => break false,
+                }
+            }
+        })
     }
 }
 

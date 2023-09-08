@@ -43,7 +43,13 @@ impl<'a> Validator<'a> {
     }
     pub fn rule<F: IntoFieldName, R: IntoRuleList>(mut self, field: F, rule: R) -> Self {
         let names = panic_on_err!(field.into_field());
-        self.rules.insert(names, rule.into_list());
+        let rules = rule.into_list();
+
+        // if !rules.valid_name() {
+        //     panic!("")
+        // }
+
+        self.rules.insert(names, rules);
         self
     }
 
