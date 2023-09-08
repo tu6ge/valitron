@@ -189,7 +189,7 @@ impl FromValue for Value {
     }
 }
 
-macro_rules! primary_impl {
+macro_rules! primitive_impl {
     ($val:ident($ty:ty)) => {
         impl FromValue for $ty {
             fn from_value(value: &mut ValueMap) -> Option<&mut Self> {
@@ -203,11 +203,31 @@ macro_rules! primary_impl {
     };
 }
 
-primary_impl!(UInt8(u8));
-primary_impl!(Int8(i8));
-primary_impl!(UInt16(u16));
-primary_impl!(Int16(i16));
-primary_impl!(UInt32(u32));
-primary_impl!(Int32(i32));
-primary_impl!(UInt64(u64));
-primary_impl!(Int64(i64));
+primitive_impl!(UInt8(u8));
+primitive_impl!(Int8(i8));
+primitive_impl!(UInt16(u16));
+primitive_impl!(Int16(i16));
+primitive_impl!(UInt32(u32));
+primitive_impl!(Int32(i32));
+primitive_impl!(UInt64(u64));
+primitive_impl!(Int64(i64));
+
+impl FromValue for f32 {
+    fn from_value(value: &mut ValueMap) -> Option<&mut Self> {
+        if let Some(Value::Float32(float::Float32(n))) = value.current_mut() {
+            Some(n)
+        } else {
+            None
+        }
+    }
+}
+
+impl FromValue for f64 {
+    fn from_value(value: &mut ValueMap) -> Option<&mut Self> {
+        if let Some(Value::Float64(float::Float64(n))) = value.current_mut() {
+            Some(n)
+        } else {
+            None
+        }
+    }
+}

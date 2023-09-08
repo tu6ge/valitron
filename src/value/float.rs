@@ -1,11 +1,11 @@
 #[derive(Default, Clone)]
 /// Wrapper of `f32`, marked as implementation of `Eq` and `Ord`, but avoid user to use them.
 /// Just alow in "Value", but not "Key"
-pub struct Float32(f32);
+pub struct Float32(pub(super) f32);
 #[derive(Default, Clone)]
 /// Wrapper of `f64`, marked as implementation of `Eq` and `Ord`, but avoid user to use them.
 /// Just alow in "Value", but not "Key"
-pub struct Float64(f64);
+pub struct Float64(pub(super) f64);
 
 impl Float32 {
     pub fn get(&self) -> f32 {
