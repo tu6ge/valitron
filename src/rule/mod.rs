@@ -55,7 +55,6 @@ pub trait RuleExt {
         F: for<'a> FnOnce(&'a mut V) -> Result<(), String> + 'static + Clone,
         F: Rule<V>,
         V: FromValue + 'static;
-    fn relate<R2: Rule<ValueMap> + Clone>(self, other: R2) -> RuleList;
 }
 
 impl<R: Rule<()> + Clone> RuleExt for R {
@@ -76,12 +75,6 @@ impl<R: Rule<()> + Clone> RuleExt for R {
             ..Default::default()
         }
     }
-    fn relate<R2: Rule<ValueMap> + Clone>(self, other: R2) -> RuleList {
-        RuleList {
-            list: vec![BaseRule::new(self), BaseRule::new(other)],
-            ..Default::default()
-        }
-    }
 }
 
 /// Rules collection
@@ -96,12 +89,12 @@ impl RuleList {
         self.list.push(BaseRule::new(other));
         self
     }
-    pub fn custom<R: Rule<Value> + Clone>(mut self, other: R) -> Self {
-        self.list.push(BaseRule::new(other));
-        self
-    }
-
-    pub fn relate<R: Rule<ValueMap> + Clone>(mut self, other: R) -> Self {
+    pub fn custom<F, V>(mut self, other: F) -> Self
+    where
+        F: for<'a> FnOnce(&'a mut V) -> Result<(), String> + 'static + Clone,
+        F: Rule<V>,
+        V: FromValue + 'static,
+    {
         self.list.push(BaseRule::new(other));
         self
     }
@@ -154,16 +147,7 @@ where
         ..Default::default()
     }
 }
-pub fn relate<F>(f: F) -> RuleList
-where
-    F: for<'a> FnOnce(&'a mut ValueMap) -> Result<(), String> + 'static + Clone,
-    F: Rule<ValueMap>,
-{
-    RuleList {
-        list: vec![BaseRule::new(f)],
-        ..Default::default()
-    }
-}
+
 impl IntoRuleList for RuleList {
     fn into_list(self) -> Self {
         self
@@ -197,24 +181,23 @@ mod test_regster {
     fn test() {
         register(Required);
         register(Required.custom(hander2));
-        register(Required.relate(hander));
+        register(Required.custom(hander));
         register(Required.and(StartWith("foo")));
         register(Required.and(StartWith("foo")).bail());
         register(Required.and(StartWith("foo")).custom(hander2).bail());
-        register(Required.and(StartWith("foo")).relate(hander).bail());
         register(
             Required
                 .and(StartWith("foo"))
                 .custom(hander2)
-                .relate(hander)
+                .custom(hander)
                 .bail(),
         );
         register(custom(hander2));
-        register(relate(hander));
-        register(relate(hander).and(StartWith("foo")));
-        register(relate(hander).and(StartWith("foo")).bail());
+        register(custom(hander));
+        register(custom(hander).and(StartWith("foo")));
+        register(custom(hander).and(StartWith("foo")).bail());
         register(custom(|_a: &mut u8| Ok(())));
-        register(relate(|_a| Ok(())));
+        register(custom(|_a: &mut u8| Ok(())));
     }
 }
 
