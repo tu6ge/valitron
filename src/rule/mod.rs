@@ -9,7 +9,7 @@ use self::boxed::{BaseRule, RuleIntoService};
 mod boxed;
 
 /// A Rule trait
-pub trait Rule<M>: 'static + Sized {
+pub trait Rule<M>: 'static + Sized + Clone {
     /// Named rule type, allow `a-z` | `A-Z` | `0-9` | `_`, and not start with `0-9`
     fn name(&self) -> &'static str;
 
@@ -359,7 +359,7 @@ pub trait RuleShortcut {
 
 impl<T> Rule<()> for T
 where
-    T: RuleShortcut + 'static,
+    T: RuleShortcut + 'static + Clone,
 {
     fn name(&self) -> &'static str {
         self.name()

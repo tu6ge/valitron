@@ -1,13 +1,17 @@
 use std::marker::PhantomData;
 
-use crate::{value::ValueMap, Value};
+use crate::value::ValueMap;
 
-use super::{Message, Rule};
+use super::Rule;
 
 pub(super) struct BoxedIntoRule(pub Box<dyn ErasedIntoRule + 'static>);
 
 impl BoxedIntoRule {
-    pub(super) fn new<H: Rule<M> + Clone + 'static, M: 'static>(handler: H) -> Self {
+    pub(super) fn new<H, M>(handler: H) -> Self
+    where
+        H: Rule<M>,
+        M: 'static,
+    {
         Self(Box::new(MakeErasedHandler {
             handler,
             into_route: |h| BaseRule::new(h),
@@ -37,7 +41,11 @@ pub(super) struct MakeErasedHandler<H, M> {
     _marker: PhantomData<M>,
 }
 
-impl<H: Rule<M> + Clone + 'static, M: 'static> ErasedIntoRule for MakeErasedHandler<H, M> {
+impl<H, M> ErasedIntoRule for MakeErasedHandler<H, M>
+where
+    H: Rule<M> + Clone,
+    M: 'static,
+{
     fn clone_box(&self) -> Box<dyn ErasedIntoRule> {
         Box::new(self.clone())
     }
@@ -61,7 +69,7 @@ pub struct BaseRule(pub(super) Box<dyn RuleService>);
 impl BaseRule {
     pub fn new<H, M>(handler: H) -> Self
     where
-        H: Rule<M> + Clone + 'static,
+        H: Rule<M>,
         M: 'static,
     {
         Self(Box::new(handler.into_serve()))
