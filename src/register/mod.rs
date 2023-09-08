@@ -1,5 +1,8 @@
 //! register rules
 
+extern crate hashbrown;
+use hashbrown::Equivalent;
+
 use std::{
     collections::{
         hash_map::{Iter, IterMut},
@@ -25,7 +28,7 @@ use self::field_name::IntoFieldName;
 #[derive(Default)]
 pub struct Validator<'a> {
     rules: HashMap<FieldNames, RuleList>,
-    message: HashMap<MessageKey, &'a str>,
+    message: hashbrown::HashMap<MessageKey, &'a str>,
 }
 
 macro_rules! panic_on_err {
@@ -48,7 +51,7 @@ impl<'a> Validator<'a> {
     }
 
     pub fn message<const N: usize>(mut self, list: [(&'a str, &'a str); N]) -> Self {
-        self.message = HashMap::from_iter(
+        self.message = hashbrown::HashMap::from_iter(
             list.map(|(key_str, v)| {
                 let msg_key = panic_on_err!(field_name::parse_message(key_str));
                 panic_on_err!(self.exit_message(&msg_key));
@@ -74,7 +77,7 @@ impl<'a> Validator<'a> {
             let mut field_msg = Vec::with_capacity(rule_resp.len());
             for (rule, msg) in rule_resp.into_iter() {
                 let final_msg =
-                    match self.get_message(&MessageKey::new(names.clone(), rule.to_string())) {
+                    match self.get_message(&BorrowedMessageKey::new(names.string(), rule)) {
                         Some(s) => s.to_string(),
                         None => msg,
                     };
@@ -112,7 +115,7 @@ impl<'a> Validator<'a> {
         }
     }
 
-    fn get_message(&self, key: &MessageKey) -> Option<&&str> {
+    fn get_message(&self, key: &BorrowedMessageKey) -> Option<&&str> {
         self.message.get(key)
     }
 }
@@ -214,6 +217,23 @@ impl MessageKey {
     }
 }
 
+#[derive(Debug, PartialEq, Eq, Clone, Hash)]
+pub struct BorrowedMessageKey<'a> {
+    fields: &'a str,
+    rule: &'a str,
+}
+
+impl<'a> BorrowedMessageKey<'a> {
+    pub(crate) fn new(fields: &'a str, rule: &'a str) -> Self {
+        Self { fields, rule }
+    }
+}
+
+impl<'a> Equivalent<MessageKey> for BorrowedMessageKey<'a> {
+    fn equivalent(&self, key: &MessageKey) -> bool {
+        self.fields == key.fields.string() && self.rule == key.rule
+    }
+}
 // #[test]
 // fn test_message() {
 //     let ruler = Ruler::new().message([
