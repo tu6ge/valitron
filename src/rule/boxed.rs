@@ -4,69 +4,9 @@ use crate::value::ValueMap;
 
 use super::Rule;
 
-pub(super) struct BoxedIntoRule(pub Box<dyn ErasedIntoRule + 'static>);
+pub struct ErasedRule(pub(super) Box<dyn BoxedRule>);
 
-impl BoxedIntoRule {
-    pub(super) fn new<H, M>(handler: H) -> Self
-    where
-        H: Rule<M>,
-        M: 'static,
-    {
-        Self(Box::new(MakeErasedHandler {
-            handler,
-            into_route: |h| BaseRule::new(h),
-            _marker: PhantomData::<M>,
-        }))
-    }
-
-    // pub(super) fn name(&self) -> &'static str {
-    //     self.0.clone_box().into_rule().name()
-    // }
-}
-
-impl Clone for BoxedIntoRule {
-    fn clone(&self) -> Self {
-        Self(self.0.clone_box())
-    }
-}
-
-pub trait ErasedIntoRule {
-    fn clone_box(&self) -> Box<dyn ErasedIntoRule>;
-    fn into_rule(self: Box<Self>) -> BaseRule;
-}
-
-pub(super) struct MakeErasedHandler<H, M> {
-    pub(super) handler: H,
-    pub(super) into_route: fn(H) -> BaseRule,
-    _marker: PhantomData<M>,
-}
-
-impl<H, M> ErasedIntoRule for MakeErasedHandler<H, M>
-where
-    H: Rule<M> + Clone,
-    M: 'static,
-{
-    fn clone_box(&self) -> Box<dyn ErasedIntoRule> {
-        Box::new(self.clone())
-    }
-    fn into_rule(self: Box<Self>) -> BaseRule {
-        (self.into_route)(self.handler)
-    }
-}
-
-impl<H: Clone, M> Clone for MakeErasedHandler<H, M> {
-    fn clone(&self) -> Self {
-        Self {
-            handler: self.handler.clone(),
-            into_route: self.into_route,
-            _marker: PhantomData,
-        }
-    }
-}
-
-pub struct BaseRule(pub(super) Box<dyn RuleService>);
-
-impl BaseRule {
+impl ErasedRule {
     pub fn new<H, M>(handler: H) -> Self
     where
         H: Rule<M>,
@@ -76,26 +16,26 @@ impl BaseRule {
     }
 }
 
-impl Clone for BaseRule {
+impl Clone for ErasedRule {
     fn clone(&self) -> Self {
         Self(self.0.clone_box())
     }
 }
 
-pub trait RuleService {
-    fn clone_box(&self) -> Box<dyn RuleService>;
+pub trait BoxedRule {
+    fn clone_box(&self) -> Box<dyn BoxedRule>;
 
     fn call(&mut self, data: &mut ValueMap) -> Result<(), String>;
 
     fn name(&self) -> &'static str;
 }
 
-pub struct RuleIntoService<H, M> {
+pub struct RuleIntoBoxed<H, M> {
     handler: H,
     _marker: PhantomData<fn() -> M>,
 }
 
-impl<H, M> RuleIntoService<H, M> {
+impl<H, M> RuleIntoBoxed<H, M> {
     pub(super) fn new(handler: H) -> Self {
         Self {
             handler,
@@ -104,7 +44,7 @@ impl<H, M> RuleIntoService<H, M> {
     }
 }
 
-impl<H, M> Clone for RuleIntoService<H, M>
+impl<H, M> Clone for RuleIntoBoxed<H, M>
 where
     H: Clone,
 {
@@ -116,12 +56,12 @@ where
     }
 }
 
-impl<H, M> RuleService for RuleIntoService<H, M>
+impl<H, M> BoxedRule for RuleIntoBoxed<H, M>
 where
     H: Rule<M> + Clone,
     M: 'static,
 {
-    fn clone_box(&self) -> Box<dyn RuleService> {
+    fn clone_box(&self) -> Box<dyn BoxedRule> {
         Box::new(self.clone())
     }
     fn call(&mut self, data: &mut ValueMap) -> Result<(), String> {

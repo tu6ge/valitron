@@ -4,7 +4,7 @@ use std::slice::Iter;
 
 use crate::value::{FromValue, Value, ValueMap};
 
-use self::boxed::{BaseRule, RuleIntoService};
+use self::boxed::{ErasedRule, RuleIntoBoxed};
 
 mod boxed;
 
@@ -16,8 +16,8 @@ pub trait Rule<M>: 'static + Sized + Clone {
     /// Rule specific implementation, data is gived type all field's value, and current field index.
     fn call(&mut self, data: &mut ValueMap) -> Result<(), Message>;
 
-    fn into_serve(self) -> RuleIntoService<Self, M> {
-        RuleIntoService::new(self)
+    fn into_serve(self) -> RuleIntoBoxed<Self, M> {
+        RuleIntoBoxed::new(self)
     }
 }
 
@@ -66,7 +66,7 @@ pub trait RuleExt {
 impl<R: Rule<()> + Clone> RuleExt for R {
     fn and<R2: Rule<()> + Clone>(self, other: R2) -> RuleList {
         RuleList {
-            list: vec![BaseRule::new(self), BaseRule::new(other)],
+            list: vec![ErasedRule::new(self), ErasedRule::new(other)],
             ..Default::default()
         }
     }
@@ -77,7 +77,7 @@ impl<R: Rule<()> + Clone> RuleExt for R {
         V: FromValue + 'static,
     {
         RuleList {
-            list: vec![BaseRule::new(self), BaseRule::new(other)],
+            list: vec![ErasedRule::new(self), ErasedRule::new(other)],
             ..Default::default()
         }
     }
@@ -86,13 +86,13 @@ impl<R: Rule<()> + Clone> RuleExt for R {
 /// Rules collection
 #[derive(Default, Clone)]
 pub struct RuleList {
-    list: Vec<BaseRule>,
+    list: Vec<ErasedRule>,
     is_bail: bool,
 }
 
 impl RuleList {
     pub fn and<R: Rule<()> + Clone>(mut self, other: R) -> Self {
-        self.list.push(BaseRule::new(other));
+        self.list.push(ErasedRule::new(other));
         self
     }
     pub fn custom<F, V>(mut self, other: F) -> Self
@@ -101,7 +101,7 @@ impl RuleList {
         F: Rule<V>,
         V: FromValue + 'static,
     {
-        self.list.push(BaseRule::new(other));
+        self.list.push(ErasedRule::new(other));
         self
     }
 
@@ -125,7 +125,7 @@ impl RuleList {
         msg
     }
 
-    fn iter(&self) -> Iter<'_, BaseRule> {
+    fn iter(&self) -> Iter<'_, ErasedRule> {
         self.list.iter()
     }
 
@@ -149,7 +149,7 @@ where
     V: FromValue + 'static,
 {
     RuleList {
-        list: vec![BaseRule::new(f)],
+        list: vec![ErasedRule::new(f)],
         ..Default::default()
     }
 }
@@ -165,7 +165,7 @@ where
 {
     fn into_list(self) -> RuleList {
         RuleList {
-            list: vec![BaseRule::new(self)],
+            list: vec![ErasedRule::new(self)],
             ..Default::default()
         }
     }
