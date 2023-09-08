@@ -4,17 +4,21 @@ use std::{marker::PhantomData, slice::Iter};
 
 use crate::value::{Value, ValueMap};
 
-use boxed::BoxCloneRule;
+use self::boxed::{BaseRule, RuleIntoService};
 
 mod boxed;
 
 /// A Rule trait
-pub trait Rule<M>: 'static {
+pub trait Rule<M>: 'static + Sized {
     /// Named rule type, allow `a-z` | `A-Z` | `0-9` | `_`, and not start with `0-9`
     fn name(&self) -> &'static str;
 
     /// Rule specific implementation, data is gived type all field's value, and current field index.
     fn call(&mut self, data: &mut ValueMap) -> Result<(), Message<M>>;
+
+    fn into_serve(self) -> RuleIntoService<Self, M> {
+        RuleIntoService::new(self)
+    }
 }
 
 /// Error message returned when validation fails
@@ -58,46 +62,20 @@ pub trait RuleExt {
 impl<R: Rule<()> + Clone> RuleExt for R {
     fn and<R2: Rule<()> + Clone>(self, other: R2) -> RuleList {
         RuleList {
-            list: vec![
-                Endpoint::Rule(BoxCloneRule::new(self)),
-                Endpoint::Rule(BoxCloneRule::new(other)),
-            ],
+            list: vec![BaseRule::new(self), BaseRule::new(other)],
             ..Default::default()
         }
     }
     fn custom<R2: Rule<Value> + Clone>(self, other: R2) -> RuleList {
         RuleList {
-            list: vec![
-                Endpoint::Rule(BoxCloneRule::new(self)),
-                Endpoint::HanderRule(BoxCloneRule::new(other)),
-            ],
+            list: vec![BaseRule::new(self), BaseRule::new(other)],
             ..Default::default()
         }
     }
     fn relate<R2: Rule<ValueMap> + Clone>(self, other: R2) -> RuleList {
         RuleList {
-            list: vec![
-                Endpoint::Rule(BoxCloneRule::new(self)),
-                Endpoint::RelateRule(BoxCloneRule::new(other)),
-            ],
+            list: vec![BaseRule::new(self), BaseRule::new(other)],
             ..Default::default()
-        }
-    }
-}
-
-#[derive(Clone)]
-enum Endpoint {
-    Rule(BoxCloneRule<()>),
-    HanderRule(BoxCloneRule<Value>),
-    RelateRule(BoxCloneRule<ValueMap>),
-}
-
-impl Endpoint {
-    fn name(&self) -> &'static str {
-        match self {
-            Endpoint::Rule(b) => b.name(),
-            Endpoint::HanderRule(b) => b.name(),
-            Endpoint::RelateRule(b) => b.name(),
         }
     }
 }
@@ -105,24 +83,22 @@ impl Endpoint {
 /// Rules collection
 #[derive(Default, Clone)]
 pub struct RuleList {
-    list: Vec<Endpoint>,
+    list: Vec<BaseRule>,
     is_bail: bool,
 }
 
 impl RuleList {
     pub fn and<R: Rule<()> + Clone>(mut self, other: R) -> Self {
-        self.list.push(Endpoint::Rule(BoxCloneRule::new(other)));
+        self.list.push(BaseRule::new(other));
         self
     }
     pub fn custom<R: Rule<Value> + Clone>(mut self, other: R) -> Self {
-        self.list
-            .push(Endpoint::HanderRule(BoxCloneRule::new(other)));
+        self.list.push(BaseRule::new(other));
         self
     }
 
     pub fn relate<R: Rule<ValueMap> + Clone>(mut self, other: R) -> Self {
-        self.list
-            .push(Endpoint::RelateRule(BoxCloneRule::new(other)));
+        self.list.push(BaseRule::new(other));
         self
     }
 
@@ -135,23 +111,11 @@ impl RuleList {
     pub(crate) fn call(mut self, data: &mut ValueMap) -> Vec<(&'static str, String)> {
         let mut msg = Vec::new();
         for endpoint in self.list.iter_mut() {
-            match endpoint {
-                Endpoint::Rule(rule) => {
-                    let _ = rule
-                        .call(data)
-                        .map_err(|m| msg.push((rule.name(), m.into())));
-                }
-                Endpoint::HanderRule(handle) => {
-                    let _ = handle
-                        .call(data)
-                        .map_err(|m| msg.push((handle.name(), m.into())));
-                }
-                Endpoint::RelateRule(handle) => {
-                    let _ = handle
-                        .call(data)
-                        .map_err(|m| msg.push((handle.name(), m.into())));
-                }
-            }
+            let _ = endpoint
+                .0
+                 .0
+                .call(data)
+                .map_err(|e| msg.push((endpoint.0 .0.name(), e)));
             if self.is_bail && !msg.is_empty() {
                 return msg;
             }
@@ -159,14 +123,14 @@ impl RuleList {
         msg
     }
 
-    fn iter(&self) -> Iter<'_, Endpoint> {
+    fn iter(&self) -> Iter<'_, BaseRule> {
         self.list.iter()
     }
 
     /// check the rule name is existing
     pub(crate) fn contains(&self, rule: &str) -> bool {
         self.iter()
-            .map(|endpoint| endpoint.name())
+            .map(|endpoint| endpoint.0 .0.name())
             .find(|&name| name == rule)
             .is_some()
     }
@@ -182,7 +146,7 @@ where
     F: Rule<Value>,
 {
     RuleList {
-        list: vec![Endpoint::HanderRule(BoxCloneRule::new(f))],
+        list: vec![BaseRule::new(f)],
         ..Default::default()
     }
 }
@@ -192,7 +156,7 @@ where
     F: Rule<ValueMap>,
 {
     RuleList {
-        list: vec![Endpoint::RelateRule(BoxCloneRule::new(f))],
+        list: vec![BaseRule::new(f)],
         ..Default::default()
     }
 }
@@ -207,7 +171,7 @@ where
 {
     fn into_list(self) -> RuleList {
         RuleList {
-            list: vec![Endpoint::Rule(BoxCloneRule::new(self))],
+            list: vec![BaseRule::new(self)],
             ..Default::default()
         }
     }
