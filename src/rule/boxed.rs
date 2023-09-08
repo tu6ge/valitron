@@ -56,7 +56,7 @@ impl<H: Clone, M> Clone for MakeErasedHandler<H, M> {
     }
 }
 
-pub struct BaseRule(pub(super) BoxCloneService);
+pub struct BaseRule(pub(super) Box<dyn RuleService>);
 
 impl BaseRule {
     pub fn new<H, M>(handler: H) -> Self
@@ -64,13 +64,13 @@ impl BaseRule {
         H: Rule<M> + Clone + 'static,
         M: 'static,
     {
-        Self(BoxCloneService(Box::new(handler.into_serve())))
+        Self(Box::new(handler.into_serve()))
     }
 }
 
 impl Clone for BaseRule {
     fn clone(&self) -> Self {
-        Self(self.0.clone())
+        Self(self.0.clone_box())
     }
 }
 
@@ -80,14 +80,6 @@ pub trait RuleService {
     fn call(&mut self, data: &mut ValueMap) -> Result<(), String>;
 
     fn name(&self) -> &'static str;
-}
-
-pub struct BoxCloneService(pub Box<dyn RuleService>);
-
-impl Clone for BoxCloneService {
-    fn clone(&self) -> Self {
-        Self(self.0.clone_box())
-    }
 }
 
 pub struct RuleIntoService<H, M> {

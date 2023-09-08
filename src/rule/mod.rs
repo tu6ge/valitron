@@ -113,9 +113,8 @@ impl RuleList {
         for endpoint in self.list.iter_mut() {
             let _ = endpoint
                 .0
-                 .0
                 .call(data)
-                .map_err(|e| msg.push((endpoint.0 .0.name(), e)));
+                .map_err(|e| msg.push((endpoint.0.name(), e)));
             if self.is_bail && !msg.is_empty() {
                 return msg;
             }
@@ -130,7 +129,7 @@ impl RuleList {
     /// check the rule name is existing
     pub(crate) fn contains(&self, rule: &str) -> bool {
         self.iter()
-            .map(|endpoint| endpoint.0 .0.name())
+            .map(|endpoint| endpoint.0.name())
             .find(|&name| name == rule)
             .is_some()
     }
