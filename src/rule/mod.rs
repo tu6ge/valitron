@@ -21,7 +21,7 @@ pub trait Rule<M>: 'static + Sized + Clone {
     }
 }
 
-/// Error message returned when validation fails
+/// Error message returned when validate fail
 pub struct Message {
     inner: String,
 }
