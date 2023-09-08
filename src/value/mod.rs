@@ -189,21 +189,25 @@ impl FromValue for Value {
     }
 }
 
-impl FromValue for i8 {
-    fn from_value(value: &mut ValueMap) -> Option<&mut Self> {
-        if let Some(Value::Int8(n)) = value.current_mut() {
-            Some(n)
-        } else {
-            None
+macro_rules! primary_impl {
+    ($val:ident($ty:ty)) => {
+        impl FromValue for $ty {
+            fn from_value(value: &mut ValueMap) -> Option<&mut Self> {
+                if let Some(Value::$val(n)) = value.current_mut() {
+                    Some(n)
+                } else {
+                    None
+                }
+            }
         }
-    }
+    };
 }
-impl FromValue for u8 {
-    fn from_value(value: &mut ValueMap) -> Option<&mut Self> {
-        if let Some(Value::UInt8(n)) = value.current_mut() {
-            Some(n)
-        } else {
-            None
-        }
-    }
-}
+
+primary_impl!(UInt8(u8));
+primary_impl!(Int8(i8));
+primary_impl!(UInt16(u16));
+primary_impl!(Int16(i16));
+primary_impl!(UInt32(u32));
+primary_impl!(Int32(i32));
+primary_impl!(UInt64(u64));
+primary_impl!(Int64(i64));
