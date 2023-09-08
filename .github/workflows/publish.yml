@@ -10,11 +10,30 @@ on:
       - "*"
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    name: 'test'
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Check fmt
+        run: cargo fmt --check
+      
+      - name: Show cargo info
+        run: cargo version --verbose
+
+      - name: Run Test
+        run: |
+          cargo test
+
   publish:
+    needs: [test]
+    if: ${{ github.event_name == 'push' && github.ref_name == 'master'}}
     runs-on: ubuntu-latest
 
     name: 'publish'
-
+ 
     environment: cargo
 
     steps:
@@ -22,29 +41,18 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Check fmt
-        run: cargo fmt --check
-
       # v0.1.15 目前版本
       - name: Cache
         uses: Swatinem/rust-cache@v1
         with:
           key: ${{ runner.os }}-build-v0.2.2
-      
-      - name: Show cargo info
-        run: cargo version --verbose
 
       - name: Install publish-action
         if: steps.cache-publish-action.outputs.cache-hit != 'true'
         run: |
           cargo install publish-action --version=0.2.2
       
-      - name: Run Test
-        run: |
-          cargo test
-      
       - name: Run publish-action
-        if: ${{ github.event_name == 'push' }}
         id: publish-action
         run: 
           publish-action
