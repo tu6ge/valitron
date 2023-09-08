@@ -26,6 +26,12 @@ pub struct Message {
     inner: String,
 }
 
+impl Message {
+    fn new(inner: String) -> Message {
+        Message { inner }
+    }
+}
+
 impl From<String> for Message {
     fn from(inner: String) -> Self {
         Self { inner }
@@ -393,7 +399,7 @@ where
 {
     fn call(&mut self, data: &mut ValueMap) -> Result<(), Message> {
         let val = V::from_value(data).unwrap();
-        self.clone()(val).map_err(|e| e.into())
+        self.clone()(val).map_err(Message::new)
     }
     fn name(&self) -> &'static str {
         "custom"
