@@ -339,7 +339,7 @@ pub fn parse_message(source: &str) -> Result<MessageKey, String> {
 
     Ok(MessageKey::new(
         FieldNames::new(name_str.to_string()),
-        string.to_string(),
+        string,
     ))
 }
 

@@ -28,7 +28,7 @@ use self::field_name::IntoFieldName;
 #[derive(Default)]
 pub struct Validator<'a> {
     rules: HashMap<FieldNames, RuleList>,
-    message: hashbrown::HashMap<MessageKey, &'a str>,
+    message: hashbrown::HashMap<MessageKey<'a>, &'a str>,
 }
 
 macro_rules! panic_on_err {
@@ -115,7 +115,7 @@ impl<'a> Validator<'a> {
         }
     }
 
-    fn get_message(&self, key: &BorrowedMessageKey) -> Option<&&str> {
+    fn get_message(&self, key: &'a BorrowedMessageKey) -> Option<&&str> {
         self.message.get(key)
     }
 }
@@ -199,20 +199,20 @@ impl From<ValidatorError> for Result<(), ValidatorError> {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
-pub struct MessageKey {
+pub struct MessageKey<'key> {
     fields: FieldNames,
-    rule: String,
+    rule: &'key str,
 }
 
-impl Hash for MessageKey {
+impl Hash for MessageKey<'_> {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.fields.hash(state);
         self.rule.hash(state);
     }
 }
 
-impl MessageKey {
-    pub(crate) fn new(fields: FieldNames, rule: String) -> Self {
+impl<'key> MessageKey<'key> {
+    pub(crate) fn new(fields: FieldNames, rule: &'key str) -> Self {
         Self { fields, rule }
     }
 }
@@ -229,7 +229,7 @@ impl<'a> BorrowedMessageKey<'a> {
     }
 }
 
-impl<'a> Equivalent<MessageKey> for BorrowedMessageKey<'a> {
+impl<'a> Equivalent<MessageKey<'a>> for BorrowedMessageKey<'a> {
     fn equivalent(&self, key: &MessageKey) -> bool {
         self.fields == key.fields.string() && self.rule == key.rule
     }
