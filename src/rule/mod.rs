@@ -1,6 +1,6 @@
 //! define Rule trait, inner rule type
 
-use std::{marker::PhantomData, slice::Iter};
+use std::slice::Iter;
 
 use crate::value::{Value, ValueMap};
 
@@ -14,7 +14,7 @@ pub trait Rule<M>: 'static + Sized {
     fn name(&self) -> &'static str;
 
     /// Rule specific implementation, data is gived type all field's value, and current field index.
-    fn call(&mut self, data: &mut ValueMap) -> Result<(), Message<M>>;
+    fn call(&mut self, data: &mut ValueMap) -> Result<(), Message>;
 
     fn into_serve(self) -> RuleIntoService<Self, M> {
         RuleIntoService::new(self)
@@ -22,29 +22,24 @@ pub trait Rule<M>: 'static + Sized {
 }
 
 /// Error message returned when validation fails
-pub struct Message<T> {
+pub struct Message {
     inner: String,
-    _marker: PhantomData<fn() -> T>,
 }
 
-impl<T> From<String> for Message<T> {
+impl From<String> for Message {
     fn from(inner: String) -> Self {
-        Self {
-            inner,
-            _marker: PhantomData,
-        }
+        Self { inner }
     }
 }
-impl<T> From<Message<T>> for String {
-    fn from(msg: Message<T>) -> Self {
+impl From<Message> for String {
+    fn from(msg: Message) -> Self {
         msg.inner
     }
 }
-impl<T> From<&str> for Message<T> {
+impl From<&str> for Message {
     fn from(value: &str) -> Self {
         Self {
             inner: value.to_owned(),
-            _marker: PhantomData,
         }
     }
 }
@@ -216,11 +211,11 @@ mod test_regster {
 #[derive(Clone, Debug)]
 pub struct Required;
 
-impl<M> RuleShortcut<M> for Required {
+impl RuleShortcut for Required {
     fn name(&self) -> &'static str {
         "required"
     }
-    fn message(&self) -> Message<M> {
+    fn message(&self) -> Message {
         "this field is required".into()
     }
 
@@ -244,11 +239,11 @@ impl<M> RuleShortcut<M> for Required {
 #[derive(Clone, Debug)]
 pub struct StartWith<T>(pub T);
 
-impl<M> RuleShortcut<M> for StartWith<&str> {
+impl RuleShortcut for StartWith<&str> {
     fn name(&self) -> &'static str {
         "start_with"
     }
-    fn message(&self) -> Message<M> {
+    fn message(&self) -> Message {
         "this field must be start with {}".into()
     }
     fn call(&mut self, value: &mut Value) -> bool {
@@ -332,12 +327,12 @@ impl<M> RuleShortcut<M> for StartWith<&str> {
 //     }
 // }
 
-pub trait RuleShortcut<T> {
+pub trait RuleShortcut {
     /// Named rule type
     fn name(&self) -> &'static str;
 
     /// Default rule error message, when validate fails, return the message to user
-    fn message(&self) -> Message<T>;
+    fn message(&self) -> Message;
 
     /// Rule specific implementation, data is gived type all field's value, and current field index.
     /// when the method return true, call_message will return Ok(()), or else return Err(String)
@@ -354,13 +349,13 @@ pub trait RuleShortcut<T> {
 
 impl<T> Rule<()> for T
 where
-    T: RuleShortcut<()> + 'static,
+    T: RuleShortcut + 'static,
 {
     fn name(&self) -> &'static str {
         self.name()
     }
     /// Rule specific implementation, data is gived type all field's value, and current field index.
-    fn call(&mut self, data: &mut ValueMap) -> Result<(), Message<()>> {
+    fn call(&mut self, data: &mut ValueMap) -> Result<(), Message> {
         if self.call_with_relate(data) {
             Ok(())
         } else {
@@ -373,7 +368,7 @@ impl<F> Rule<ValueMap> for F
 where
     F: for<'a> FnOnce(&'a mut ValueMap) -> Result<(), String> + 'static + Clone,
 {
-    fn call(&mut self, data: &mut ValueMap) -> Result<(), Message<ValueMap>> {
+    fn call(&mut self, data: &mut ValueMap) -> Result<(), Message> {
         self.clone()(data).map_err(|s| s.into())
     }
 
@@ -388,7 +383,7 @@ where
 {
     /// *Panic*
     /// when not found value
-    fn call(&mut self, data: &mut ValueMap) -> Result<(), Message<Value>> {
+    fn call(&mut self, data: &mut ValueMap) -> Result<(), Message> {
         let value = data.current_mut().expect("not found value with fields");
         self.clone()(value).map_err(|e| e.into())
     }
