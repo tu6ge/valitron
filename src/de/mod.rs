@@ -67,15 +67,20 @@ impl std::fmt::Display for MyErr {
     }
 }
 
-// impl<'de> Deserialize<'de> for Value {
-//     #[inline]
-//     fn deserialize<D>(deserializer: D) -> Result<Value, D::Error>
-//     where
-//         D: serde::Deserializer<'de>,
-//     {
-//         deserializer.deserialize_any(ValueVisitor)
-//     }
-// }
+macro_rules! deserialize_primitive {
+    ($method:ident, $type:ident, $visit:ident) => {
+        fn $method<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+        where
+            V: Visitor<'de>,
+        {
+            if let Value::$type(n) = self {
+                visitor.$visit(n)
+            } else {
+                Err(self.invalid_type(&visitor))
+            }
+        }
+    };
+}
 
 impl<'de> Deserializer<'de> for Value {
     type Error = MyErr;
@@ -124,93 +129,15 @@ impl<'de> Deserializer<'de> for Value {
         todo!()
     }
 
-    fn deserialize_i8<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: Visitor<'de>,
-    {
-        if let Value::Int8(n) = self {
-            visitor.visit_i8(n)
-        } else {
-            Err(self.invalid_type(&visitor))
-        }
-    }
+    deserialize_primitive!(deserialize_i8, Int8, visit_i8);
+    deserialize_primitive!(deserialize_i16, Int16, visit_i16);
+    deserialize_primitive!(deserialize_i32, Int32, visit_i32);
+    deserialize_primitive!(deserialize_i64, Int64, visit_i64);
 
-    fn deserialize_i16<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: Visitor<'de>,
-    {
-        if let Value::Int16(n) = self {
-            visitor.visit_i16(n)
-        } else {
-            Err(self.invalid_type(&visitor))
-        }
-    }
-
-    fn deserialize_i32<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: Visitor<'de>,
-    {
-        if let Value::Int32(n) = self {
-            visitor.visit_i32(n)
-        } else {
-            Err(self.invalid_type(&visitor))
-        }
-    }
-
-    fn deserialize_i64<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: Visitor<'de>,
-    {
-        if let Value::Int64(n) = self {
-            visitor.visit_i64(n)
-        } else {
-            Err(self.invalid_type(&visitor))
-        }
-    }
-
-    fn deserialize_u8<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: Visitor<'de>,
-    {
-        if let Value::UInt8(n) = self {
-            visitor.visit_u8(n)
-        } else {
-            Err(self.invalid_type(&visitor))
-        }
-    }
-
-    fn deserialize_u16<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: Visitor<'de>,
-    {
-        if let Value::UInt16(n) = self {
-            visitor.visit_u16(n)
-        } else {
-            Err(self.invalid_type(&visitor))
-        }
-    }
-
-    fn deserialize_u32<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: Visitor<'de>,
-    {
-        if let Value::UInt32(n) = self {
-            visitor.visit_u32(n)
-        } else {
-            Err(self.invalid_type(&visitor))
-        }
-    }
-
-    fn deserialize_u64<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: Visitor<'de>,
-    {
-        if let Value::UInt64(n) = self {
-            visitor.visit_u64(n)
-        } else {
-            Err(self.invalid_type(&visitor))
-        }
-    }
+    deserialize_primitive!(deserialize_u8, UInt8, visit_u8);
+    deserialize_primitive!(deserialize_u16, UInt16, visit_u16);
+    deserialize_primitive!(deserialize_u32, UInt32, visit_u32);
+    deserialize_primitive!(deserialize_u64, UInt64, visit_u64);
 
     fn deserialize_f32<V>(self, visitor: V) -> Result<V::Value, Self::Error>
     where
