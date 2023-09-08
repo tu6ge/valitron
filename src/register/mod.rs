@@ -74,7 +74,7 @@ impl<'a> Validator<'a> {
         let mut message = ValidatorError::with_capacity(self.rules.len());
 
         for (names, rules) in self.rules.iter() {
-            value_map.index(names.clone());
+            value_map.index(&names);
             let rule_resp = rules.clone().call(&mut value_map);
 
             let mut field_msg = Vec::with_capacity(rule_resp.len());

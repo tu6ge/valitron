@@ -41,30 +41,33 @@ pub enum Value {
     StructVariant(&'static str, BTreeMap<Value, Value>),
 }
 
-pub struct ValueMap {
+pub struct ValueMap<'a> {
     value: Value,
-    index: FieldNames,
+    index: Option<&'a FieldNames>,
 }
 
 pub trait FromValue {
-    fn from_value(value: &mut ValueMap) -> Option<&mut Self>;
+    fn from_value<'a>(value: &'a mut ValueMap) -> Option<&'a mut Self>;
 }
 
-impl ValueMap {
+impl<'a> ValueMap<'a> {
     pub(crate) fn new(value: Value) -> Self {
-        Self {
-            value,
-            index: FieldNames::default(),
-        }
+        Self { value, index: None }
     }
-    pub fn index(&mut self, index: FieldNames) {
-        self.index = index;
+    pub fn index(&mut self, index: &'a FieldNames) {
+        self.index = Some(index);
     }
     pub fn current(&self) -> Option<&Value> {
-        self.value.get_with_names(&self.index)
+        match self.index {
+            Some(index) => self.value.get_with_names(index),
+            None => None,
+        }
     }
     pub fn current_mut(&mut self) -> Option<&mut Value> {
-        self.value.get_with_names_mut(&self.index)
+        match self.index {
+            Some(index) => self.value.get_with_names_mut(index),
+            None => None,
+        }
     }
     pub fn get(&self, key: &FieldName) -> Option<&Value> {
         self.value.get_with_name(key)
@@ -177,14 +180,16 @@ impl Value {
     }
 }
 
-impl FromValue for ValueMap {
-    fn from_value(value: &mut ValueMap) -> Option<&mut Self> {
-        Some(value)
-    }
-}
+// impl<'b> FromValue for ValueMap<'b> {
+//     fn from_value<'a>(value: &'a mut ValueMap) -> Option<&'a mut Self>
+//     where 'b:'a
+//     {
+//         Some(value)
+//     }
+// }
 
 impl FromValue for Value {
-    fn from_value(value: &mut ValueMap) -> Option<&mut Self> {
+    fn from_value<'a>(value: &'a mut ValueMap) -> Option<&'a mut Self> {
         value.current_mut()
     }
 }
@@ -192,7 +197,7 @@ impl FromValue for Value {
 macro_rules! primitive_impl {
     ($val:ident($ty:ty)) => {
         impl FromValue for $ty {
-            fn from_value(value: &mut ValueMap) -> Option<&mut Self> {
+            fn from_value<'a>(value: &'a mut ValueMap) -> Option<&'a mut Self> {
                 if let Some(Value::$val(n)) = value.current_mut() {
                     Some(n)
                 } else {
@@ -213,7 +218,7 @@ primitive_impl!(UInt64(u64));
 primitive_impl!(Int64(i64));
 
 impl FromValue for f32 {
-    fn from_value(value: &mut ValueMap) -> Option<&mut Self> {
+    fn from_value<'a>(value: &'a mut ValueMap) -> Option<&'a mut Self> {
         if let Some(Value::Float32(float::Float32(n))) = value.current_mut() {
             Some(n)
         } else {
@@ -223,7 +228,7 @@ impl FromValue for f32 {
 }
 
 impl FromValue for f64 {
-    fn from_value(value: &mut ValueMap) -> Option<&mut Self> {
+    fn from_value<'a>(value: &'a mut ValueMap) -> Option<&'a mut Self> {
         if let Some(Value::Float64(float::Float64(n))) = value.current_mut() {
             Some(n)
         } else {

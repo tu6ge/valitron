@@ -198,7 +198,7 @@ mod test_regster {
     use super::*;
     fn register<R: IntoRuleList>(rule: R) {}
 
-    fn hander(_val: &mut ValueMap) -> Result<(), String> {
+    fn hander(_val: &mut u16) -> Result<(), String> {
         Ok(())
     }
     fn hander2(_val: &mut Value) -> Result<(), String> {
