@@ -7,6 +7,7 @@ use crate::value::Value;
 #[cfg(test)]
 mod test;
 
+#[cfg(test)]
 pub fn to_value<T>(value: T) -> Result<Value, MyErr>
 where
     T: ser::Serialize,
@@ -52,7 +53,7 @@ impl serde::ser::Serializer for Serializer {
     type SerializeStructVariant = SerializeStructVariant;
 
     fn serialize_bool(self, v: bool) -> Result<Self::Ok, Self::Error> {
-        todo!()
+        Ok(Value::Boolean(v))
     }
 
     fn serialize_str(self, v: &str) -> Result<Self::Ok, Self::Error> {
@@ -70,7 +71,7 @@ impl serde::ser::Serializer for Serializer {
         Ok(Value::Unit)
     }
 
-    fn serialize_unit_struct(self, name: &'static str) -> Result<Self::Ok, Self::Error> {
+    fn serialize_unit_struct(self, _name: &'static str) -> Result<Self::Ok, Self::Error> {
         self.serialize_unit()
     }
 
@@ -199,15 +200,19 @@ impl serde::ser::Serializer for Serializer {
     }
 
     fn serialize_char(self, v: char) -> Result<Self::Ok, Self::Error> {
-        todo!()
+        Ok(Value::Char(v))
     }
 
     fn serialize_bytes(self, v: &[u8]) -> Result<Self::Ok, Self::Error> {
-        todo!()
+        Ok(Value::Bytes(v.to_vec()))
     }
 
     fn serialize_none(self) -> Result<Self::Ok, Self::Error> {
         Ok(Value::Option(Box::new(None)))
+    }
+
+    fn is_human_readable(&self) -> bool {
+        false
     }
 }
 
@@ -244,9 +249,6 @@ impl serde::ser::SerializeSeq for SerializeSeq {
 pub struct SerializeTuple(Vec<Value>);
 
 impl SerializeTuple {
-    fn new() -> Self {
-        Self::default()
-    }
     fn with_capacity(capacity: usize) -> Self {
         Self(Vec::with_capacity(capacity))
     }
@@ -273,9 +275,6 @@ impl ser::SerializeTuple for SerializeTuple {
 pub struct SerializeTupleStruct(Vec<Value>);
 
 impl SerializeTupleStruct {
-    fn new() -> Self {
-        Self::default()
-    }
     fn with_capacity(capacity: usize) -> Self {
         Self(Vec::with_capacity(capacity))
     }
@@ -304,12 +303,6 @@ pub(crate) struct SerializeTupleVariant {
 }
 
 impl SerializeTupleVariant {
-    fn new(variant: &'static str) -> Self {
-        Self {
-            variant,
-            map: Vec::new(),
-        }
-    }
     fn with_capacity(variant: &'static str, len: usize) -> Self {
         Self {
             variant,

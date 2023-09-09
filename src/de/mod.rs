@@ -26,13 +26,18 @@ impl Value {
             Value::UInt16(n) => Unexpected::Unsigned(*n as u64),
             Value::UInt32(n) => Unexpected::Unsigned(*n as u64),
             Value::UInt64(n) => Unexpected::Unsigned(*n),
+            //Value::USize(n) => Unexpected::Unsigned(*n as u64),
             Value::Int8(n) => Unexpected::Signed(*n as i64),
             Value::Int16(n) => Unexpected::Signed(*n as i64),
             Value::Int32(n) => Unexpected::Signed(*n as i64),
             Value::Int64(n) => Unexpected::Signed(*n),
+            //Value::ISize(n) => Unexpected::Signed(*n as i64),
             Value::Float32(n) => Unexpected::Float(n.get() as f64),
             Value::Float64(n) => Unexpected::Float(n.get()),
+            Value::Boolean(b) => Unexpected::Bool(*b),
+            Value::Char(ch) => Unexpected::Char(*ch),
             Value::String(s) => Unexpected::Str(s),
+            Value::Bytes(n) => Unexpected::Bytes(n),
             Value::StructKey(_s) => Unexpected::Other("struct field name"),
             Value::StructVariantKey(_s) => Unexpected::Other("struct variant"),
             Value::Unit => Unexpected::Unit,
@@ -85,59 +90,26 @@ macro_rules! deserialize_primitive {
 impl<'de> Deserializer<'de> for Value {
     type Error = MyErr;
 
-    fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    fn deserialize_any<V>(self, _visitor: V) -> Result<V::Value, Self::Error>
     where
         V: Visitor<'de>,
     {
-        match self {
-            Value::UInt8(n) => visitor.visit_u8(n),
-            Value::UInt16(n) => visitor.visit_u16(n),
-            Value::UInt32(n) => visitor.visit_u32(n),
-            Value::UInt64(n) => visitor.visit_u64(n),
-            Value::Int8(n) => visitor.visit_i8(n),
-            Value::Int16(n) => visitor.visit_i16(n),
-            Value::Int32(n) => visitor.visit_i32(n),
-            Value::Int64(n) => visitor.visit_i64(n),
-            Value::String(s) => visitor.visit_string(s),
-            Value::Option(val) => match *val {
-                Some(s) => visitor.visit_some(s),
-                None => visitor.visit_none(),
-            },
-            Value::Unit => visitor.visit_unit(),
-            Value::Tuple(vec) => visit_array(vec, visitor),
-            Value::Array(vec) => visit_array(vec, visitor),
-            Value::TupleStruct(vec) => visit_array(vec, visitor),
-            // Value::EnumUnit(variant) => visitor.visit_enum(EnumDeserializer {
-            //     variant: variant.to_string(),
-            //     value: vec![].into_iter(),
-            // }),
-            // Value::Enum(name, val) | Value::TupleVariant(name, val) => {
-            //     visitor.visit_enum(EnumDeserializer {
-            //         variant: name.to_string(),
-            //         value: val.into_iter(),
-            //     })
-            // }
-            //Value::Map(tree) => visitor.visit_map(MapValue::from_map(tree)),
-            _ => todo!(),
-        }
+        unreachable!()
     }
 
-    fn deserialize_bool<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: Visitor<'de>,
-    {
-        todo!()
-    }
+    deserialize_primitive!(deserialize_bool, Boolean, visit_bool);
 
     deserialize_primitive!(deserialize_i8, Int8, visit_i8);
     deserialize_primitive!(deserialize_i16, Int16, visit_i16);
     deserialize_primitive!(deserialize_i32, Int32, visit_i32);
     deserialize_primitive!(deserialize_i64, Int64, visit_i64);
+    //deserialize_primitive!(deserialize_isize, ISize, visit_isize);
 
     deserialize_primitive!(deserialize_u8, UInt8, visit_u8);
     deserialize_primitive!(deserialize_u16, UInt16, visit_u16);
     deserialize_primitive!(deserialize_u32, UInt32, visit_u32);
     deserialize_primitive!(deserialize_u64, UInt64, visit_u64);
+    //deserialize_primitive!(deserialize_i64, Int64, visit_);
 
     fn deserialize_f32<V>(self, visitor: V) -> Result<V::Value, Self::Error>
     where
@@ -161,12 +133,7 @@ impl<'de> Deserializer<'de> for Value {
         }
     }
 
-    fn deserialize_char<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: Visitor<'de>,
-    {
-        todo!()
-    }
+    deserialize_primitive!(deserialize_char, Char, visit_char);
 
     fn deserialize_str<V>(self, visitor: V) -> Result<V::Value, Self::Error>
     where
@@ -194,14 +161,18 @@ impl<'de> Deserializer<'de> for Value {
     where
         V: Visitor<'de>,
     {
-        todo!()
+        if let Value::Bytes(n) = self {
+            visitor.visit_bytes(n.as_slice())
+        } else {
+            Err(self.invalid_type(&visitor))
+        }
     }
 
-    fn deserialize_byte_buf<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    fn deserialize_byte_buf<V>(self, _visitor: V) -> Result<V::Value, Self::Error>
     where
         V: Visitor<'de>,
     {
-        todo!()
+        unreachable!()
     }
 
     fn deserialize_option<V>(self, visitor: V) -> Result<V::Value, Self::Error>
@@ -266,7 +237,7 @@ impl<'de> Deserializer<'de> for Value {
         }
     }
 
-    fn deserialize_tuple<V>(self, len: usize, visitor: V) -> Result<V::Value, Self::Error>
+    fn deserialize_tuple<V>(self, _len: usize, visitor: V) -> Result<V::Value, Self::Error>
     where
         V: Visitor<'de>,
     {
@@ -307,8 +278,8 @@ impl<'de> Deserializer<'de> for Value {
 
     fn deserialize_struct<V>(
         self,
-        name: &'static str,
-        fields: &'static [&'static str],
+        _name: &'static str,
+        _fields: &'static [&'static str],
         visitor: V,
     ) -> Result<V::Value, Self::Error>
     where
@@ -324,8 +295,8 @@ impl<'de> Deserializer<'de> for Value {
 
     fn deserialize_enum<V>(
         self,
-        name: &'static str,
-        variants: &'static [&'static str],
+        _name: &'static str,
+        _variants: &'static [&'static str],
         visitor: V,
     ) -> Result<V::Value, Self::Error>
     where
@@ -362,11 +333,15 @@ impl<'de> Deserializer<'de> for Value {
         }
     }
 
-    fn deserialize_ignored_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    fn deserialize_ignored_any<V>(self, _visitor: V) -> Result<V::Value, Self::Error>
     where
         V: Visitor<'de>,
     {
-        todo!()
+        unreachable!()
+    }
+
+    fn is_human_readable(&self) -> bool {
+        false
     }
 }
 
@@ -407,7 +382,6 @@ fn visit_array<'de, V>(array: Vec<Value>, visitor: V) -> Result<V::Value, MyErr>
 where
     V: Visitor<'de>,
 {
-    let len = array.len();
     let mut deserializer = SeqDeserializer::new(array);
     visitor.visit_seq(&mut deserializer)
 }
@@ -559,14 +533,14 @@ struct MapRefDeserializer<'de> {
     value: Option<&'de Value>,
 }
 
-impl<'de> MapRefDeserializer<'de> {
-    fn new(map: &'de BTreeMap<Value, Value>) -> Self {
-        MapRefDeserializer {
-            iter: map.into_iter(),
-            value: None,
-        }
-    }
-}
+// impl<'de> MapRefDeserializer<'de> {
+//     fn new(map: &'de BTreeMap<Value, Value>) -> Self {
+//         MapRefDeserializer {
+//             iter: map.into_iter(),
+//             value: None,
+//         }
+//     }
+// }
 
 // TODO  &Value need to implement Deserializer
 impl<'de> MapAccess<'de> for MapRefDeserializer<'de> {

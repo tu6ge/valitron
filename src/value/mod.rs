@@ -18,8 +18,15 @@ pub enum Value {
     Float64(float::Float64),
     String(String),
     Unit,
-    // Boolean(bool),
-    // Char(char),
+    Boolean(bool),
+    Char(char),
+    Bytes(Vec<u8>),
+
+    // fn unimplemented
+    // i128 u128 unimplemented
+    // ISize(isize), unimplemented
+    // USize(usize), unimplemented
+    // pointer, Raw pointer unimplemented
     Option(Box<Option<Value>>),
     Array(Vec<Value>),
     Tuple(Vec<Value>),
@@ -211,6 +218,8 @@ primitive_impl!(UInt32(u32));
 primitive_impl!(Int32(i32));
 primitive_impl!(UInt64(u64));
 primitive_impl!(Int64(i64));
+primitive_impl!(Boolean(bool));
+primitive_impl!(Char(char));
 
 impl FromValue for f32 {
     fn from_value(value: &mut ValueMap) -> Option<&mut Self> {
@@ -226,6 +235,18 @@ impl FromValue for f64 {
     fn from_value(value: &mut ValueMap) -> Option<&mut Self> {
         if let Some(Value::Float64(float::Float64(n))) = value.current_mut() {
             Some(n)
+        } else {
+            None
+        }
+    }
+}
+
+pub type Bytes = Vec<u8>;
+
+impl FromValue for Bytes {
+    fn from_value(value: &mut ValueMap) -> Option<&mut Bytes> {
+        if let Some(Value::Bytes(bytes)) = value.current_mut() {
+            Some(bytes)
         } else {
             None
         }
