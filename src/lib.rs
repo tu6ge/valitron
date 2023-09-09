@@ -8,5 +8,5 @@ mod ser;
 pub mod value;
 
 pub use register::Validator;
-pub use rule::{custom, Rule, RuleExt, RuleShortcut};
+pub use rule::{available, custom, Rule, RuleExt, RuleShortcut};
 pub use value::Value;

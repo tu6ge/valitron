@@ -6,6 +6,7 @@ use crate::value::{FromValue, Value, ValueMap};
 
 use self::boxed::{ErasedRule, RuleIntoBoxed};
 
+pub mod available;
 mod boxed;
 
 /// A Rule trait
@@ -195,6 +196,7 @@ where
 
 #[cfg(test)]
 mod test_regster {
+    use super::available::*;
     use super::*;
     fn register<R: IntoRuleList>(_: R) {}
 
@@ -228,125 +230,6 @@ mod test_regster {
         register(custom(|_a: &mut u8| Ok(())));
     }
 }
-
-#[derive(Clone, Debug)]
-pub struct Required;
-
-impl RuleShortcut for Required {
-    fn name(&self) -> &'static str {
-        "required"
-    }
-    fn message(&self) -> Message {
-        "this field is required".into()
-    }
-
-    fn call(&mut self, value: &mut Value) -> bool {
-        match value {
-            Value::UInt8(_)
-            | Value::UInt16(_)
-            | Value::UInt32(_)
-            | Value::UInt64(_)
-            | Value::Int8(_)
-            | Value::Int16(_)
-            | Value::Int32(_)
-            | Value::Int64(_) => true,
-            Value::String(s) => !s.is_empty(),
-            Value::Struct(_) => true,
-            _ => todo!(),
-        }
-    }
-}
-
-#[derive(Clone, Debug)]
-pub struct StartWith<T>(pub T);
-
-impl RuleShortcut for StartWith<&str> {
-    fn name(&self) -> &'static str {
-        "start_with"
-    }
-    fn message(&self) -> Message {
-        "this field must be start with {}".into()
-    }
-    fn call(&mut self, value: &mut Value) -> bool {
-        match value {
-            Value::String(s) => s.starts_with(self.0),
-            _ => false,
-        }
-    }
-}
-
-// impl Rule for StartWith<char> {
-//     fn name(&self) -> &'static str {
-//         "start_with"
-//     }
-//     fn message(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-//         write!(f, "this field must be start with {}", self.0)
-//     }
-//     fn call(&mut self, value: &Value, all_data: &Value) -> bool {
-//         match value {
-//             Value::Int8(_) => false,
-//             Value::String(s) => s.starts_with(self.0),
-//             Value::Struct(_) => false,
-//         }
-//     }
-// }
-
-// #[derive(Clone)]
-// struct Confirm(&'static str);
-
-// impl<M> RuleShortcut<M> for Confirm {
-//     fn name(&self) -> &'static str {
-//         "confirm"
-//     }
-//     fn message(&self) -> Message<M> {
-//         "this field value must be eq {} field value".into()
-//     }
-//     fn call_with_relate(&mut self, value: &mut ValueMap) -> bool {
-//         let target = value.get(self.0);
-//         let target = match target {
-//             Some(target) if target.is_leaf() => target,
-//             _ => return false,
-//         };
-//         match (value.current().unwrap(), target) {
-//             (Value::Int8(v), Value::Int8(ref t)) if v == t => true,
-//             (Value::String(v), Value::String(ref t)) if v == t => true,
-//             _ => false,
-//         }
-//     }
-//     fn call(&mut self, _value: &mut Value) -> bool {
-//         unreachable!()
-//     }
-// }
-
-// #[cfg(test)]
-// mod tests {
-//     use serde::Serialize;
-
-//     use crate::{
-//         rule::{Confirm, Rule},
-//         ser::{to_value, Value},
-//     };
-
-//     #[test]
-//     fn test_confirm() {
-//         #[derive(Serialize)]
-//         struct MyType {
-//             name: String,
-//             age: u8,
-//         }
-//         let my_struct = MyType {
-//             name: "wang".into(),
-//             age: 18,
-//         };
-
-//         let all_value = to_value(my_struct).unwrap();
-
-//         let confirm = Confirm("name");
-//         let name = Value::String("wang".into());
-//         let res = confirm.call(&name, &all_value);
-//         assert!(res);
-//     }
-// }
 
 pub trait RuleShortcut {
     /// Named rule type
