@@ -9,4 +9,4 @@ pub mod value;
 
 pub use register::Validator;
 pub use rule::{available, custom, Rule, RuleExt, RuleShortcut};
-pub use value::{Value, ValueMap, FromValue};
+pub use value::{FromValue, Value, ValueMap};
