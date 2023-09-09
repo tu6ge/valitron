@@ -268,35 +268,6 @@ where
     }
 }
 
-// impl<F> Rule<ValueMap> for F
-// where
-//     F: for<'a> FnOnce(&'a mut ValueMap) -> Result<(), String> + 'static + Clone,
-// {
-//     fn call(&mut self, data: &mut ValueMap) -> Result<(), Message> {
-//         self.clone()(data).map_err(|s| s.into())
-//     }
-
-//     fn name(&self) -> &'static str {
-//         "relate"
-//     }
-// }
-
-// impl<F> Rule<Value> for F
-// where
-//     F: for<'a> FnOnce(&'a mut Value) -> Result<(), String> + 'static + Clone,
-// {
-//     /// *Panic*
-//     /// when not found value
-//     fn call(&mut self, data: &mut ValueMap) -> Result<(), Message> {
-//         let value = data.current_mut().expect("not found value with fields");
-//         self.clone()(value).map_err(|e| e.into())
-//     }
-
-//     fn name(&self) -> &'static str {
-//         "custom"
-//     }
-// }
-
 impl<F, V> Rule<V> for F
 where
     F: for<'a> FnOnce(&'a mut V) -> Result<(), String> + 'static + Clone,
