@@ -196,7 +196,7 @@ where
 #[cfg(test)]
 mod test_regster {
     use super::*;
-    fn register<R: IntoRuleList>(rule: R) {}
+    fn register<R: IntoRuleList>(_: R) {}
 
     fn hander(_val: &mut ValueMap) -> Result<(), String> {
         Ok(())

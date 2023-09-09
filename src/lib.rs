@@ -1,3 +1,6 @@
+#![cfg_attr(test, allow(unused_imports))]
+#![cfg_attr(test, allow(dead_code))]
+
 mod de;
 pub mod register;
 pub mod rule;

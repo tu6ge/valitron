@@ -21,7 +21,7 @@ pub(crate) struct Serializer;
 pub struct MyErr;
 
 impl serde::ser::Error for MyErr {
-    fn custom<T>(msg: T) -> Self {
+    fn custom<T>(_msg: T) -> Self {
         todo!()
     }
 }

@@ -136,6 +136,7 @@ pub struct ValidatorError {
 // }
 
 impl ValidatorError {
+    #[cfg(test)]
     fn new() -> Self {
         Self {
             message: HashMap::new(),

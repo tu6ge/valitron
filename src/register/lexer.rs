@@ -34,12 +34,7 @@ impl Token {
     pub fn kind(&self) -> &TokenKind {
         &self.kind
     }
-    fn eof() -> Self {
-        Self {
-            kind: TokenKind::Eof,
-            len: 0,
-        }
-    }
+
     fn new(kind: TokenKind, len: usize) -> Self {
         Self { kind, len }
     }

@@ -320,6 +320,7 @@ impl<'a> Parser<'a> {
     }
 }
 
+#[cfg(test)]
 pub fn parse(source: &str) -> Result<Vec<FieldName>, String> {
     let mut parser = Parser::new(source);
 
