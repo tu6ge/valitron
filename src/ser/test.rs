@@ -30,7 +30,7 @@ fn test_get_value() {
 
     let name1 = FieldName::Literal("foo".into());
     let val1 = value.get_with_name(&name1).unwrap();
-    assert_eq!(val1, &Value::UInt8(11));
+    assert_eq!(val1, &Value::Uint8(11));
 
     let name2 = vec![
         FieldName::Literal("b".into()),
@@ -45,7 +45,7 @@ fn test_get_value() {
         FieldName::Tuple(0),
     ];
     let val = value.get_with_names(&name.into()).unwrap();
-    assert_eq!(val, &Value::UInt8(37));
+    assert_eq!(val, &Value::Uint8(37));
 }
 
 #[test]
@@ -70,7 +70,7 @@ fn test_struct() {
                 Value::StructKey("name".to_string()),
                 Value::String("wang".into()),
             );
-            map.insert(Value::StructKey("age".to_string()), Value::UInt8(18));
+            map.insert(Value::StructKey("age".to_string()), Value::Uint8(18));
             map
         })
     )
@@ -106,7 +106,7 @@ fn test_struct_nest() {
         value,
         Value::Struct({
             let mut map = BTreeMap::new();
-            map.insert(Value::StructKey("foo".to_string()), Value::UInt8(11));
+            map.insert(Value::StructKey("foo".to_string()), Value::Uint8(11));
             map.insert(
                 Value::StructKey("b".to_string()),
                 Value::Struct({
@@ -117,7 +117,7 @@ fn test_struct_nest() {
                     );
                     map.insert(
                         Value::StructKey("c".to_string()),
-                        Value::NewtypeStruct(vec![Value::UInt8(37)]),
+                        Value::NewtypeStruct(vec![Value::Uint8(37)]),
                     );
                     map
                 }),
@@ -148,7 +148,7 @@ fn test_newtype_variant() {
             "A",
             vec![Value::Struct({
                 let mut map = BTreeMap::new();
-                map.insert(Value::StructKey("age".to_string()), Value::UInt8(10));
+                map.insert(Value::StructKey("age".to_string()), Value::Uint8(10));
                 map
             })]
         )
@@ -161,10 +161,10 @@ fn test_newtype_variant() {
         Value::TupleVariant(
             "Foo",
             vec![
-                Value::UInt8(11),
+                Value::Uint8(11),
                 Value::Struct({
                     let mut map = BTreeMap::new();
-                    map.insert(Value::StructKey("age".to_string()), Value::UInt8(10));
+                    map.insert(Value::StructKey("age".to_string()), Value::Uint8(10));
                     map
                 })
             ]
@@ -201,10 +201,10 @@ fn test_int() {
         value,
         Value::Struct({
             let mut map = BTreeMap::new();
-            map.insert(Value::StructKey("v1".to_string()), Value::UInt8(u8::MAX));
-            map.insert(Value::StructKey("v2".to_string()), Value::UInt16(u16::MAX));
-            map.insert(Value::StructKey("v3".to_string()), Value::UInt32(u32::MAX));
-            map.insert(Value::StructKey("v4".to_string()), Value::UInt64(u64::MAX));
+            map.insert(Value::StructKey("v1".to_string()), Value::Uint8(u8::MAX));
+            map.insert(Value::StructKey("v2".to_string()), Value::Uint16(u16::MAX));
+            map.insert(Value::StructKey("v3".to_string()), Value::Uint32(u32::MAX));
+            map.insert(Value::StructKey("v4".to_string()), Value::Uint64(u64::MAX));
             map.insert(Value::StructKey("v5".to_string()), Value::Int8(i8::MIN));
             map.insert(Value::StructKey("v6".to_string()), Value::Int16(i16::MIN));
             map.insert(Value::StructKey("v7".to_string()), Value::Int32(i32::MIN));
@@ -233,7 +233,7 @@ fn test_float() {
         value,
         Value::Struct({
             let mut map = BTreeMap::new();
-            map.insert(Value::StructKey("v1".to_string()), Value::UInt8(u8::MAX));
+            map.insert(Value::StructKey("v1".to_string()), Value::Uint8(u8::MAX));
             map.insert(
                 Value::StructKey("v2".to_string()),
                 Value::Float32(f32::MAX.into()),
@@ -268,7 +268,7 @@ fn test_enum() {
 
     let val = EnumB::A(34);
     let value = to_value(val).unwrap();
-    assert_eq!(value, Value::Enum("A", vec![Value::UInt8(34)]));
+    assert_eq!(value, Value::Enum("A", vec![Value::Uint8(34)]));
 
     let val = EnumB::B {
         r: 22,
@@ -280,9 +280,9 @@ fn test_enum() {
         value,
         Value::StructVariant("B", {
             let mut map = BTreeMap::new();
-            map.insert(Value::StructVariantKey("r".to_string()), Value::UInt8(22));
-            map.insert(Value::StructVariantKey("g".to_string()), Value::UInt8(33));
-            map.insert(Value::StructVariantKey("b".to_string()), Value::UInt8(44));
+            map.insert(Value::StructVariantKey("r".to_string()), Value::Uint8(22));
+            map.insert(Value::StructVariantKey("g".to_string()), Value::Uint8(33));
+            map.insert(Value::StructVariantKey("b".to_string()), Value::Uint8(44));
             map
         })
     );
@@ -307,10 +307,10 @@ fn test_option() {
         value,
         Value::Struct({
             let mut map = BTreeMap::new();
-            map.insert(Value::StructKey("v1".to_string()), Value::UInt8(10));
+            map.insert(Value::StructKey("v1".to_string()), Value::Uint8(10));
             map.insert(
                 Value::StructKey("v2".to_string()),
-                Value::Option(Box::new(Some(Value::UInt8(20)))),
+                Value::Option(Box::new(Some(Value::Uint8(20)))),
             );
             map.insert(
                 Value::StructKey("v3".to_string()),
@@ -331,7 +331,7 @@ fn test_option() {
         value,
         Value::Struct({
             let mut map = BTreeMap::new();
-            map.insert(Value::StructKey("v1".to_string()), Value::UInt8(10));
+            map.insert(Value::StructKey("v1".to_string()), Value::Uint8(10));
             map.insert(
                 Value::StructKey("v2".to_string()),
                 Value::Option(Box::new(None)),

@@ -176,19 +176,19 @@ impl serde::ser::Serializer for Serializer {
     }
 
     fn serialize_u8(self, v: u8) -> Result<Self::Ok, Self::Error> {
-        Ok(Value::UInt8(v))
+        Ok(Value::Uint8(v))
     }
 
     fn serialize_u16(self, v: u16) -> Result<Self::Ok, Self::Error> {
-        Ok(Value::UInt16(v))
+        Ok(Value::Uint16(v))
     }
 
     fn serialize_u32(self, v: u32) -> Result<Self::Ok, Self::Error> {
-        Ok(Value::UInt32(v))
+        Ok(Value::Uint32(v))
     }
 
     fn serialize_u64(self, v: u64) -> Result<Self::Ok, Self::Error> {
-        Ok(Value::UInt64(v))
+        Ok(Value::Uint64(v))
     }
 
     fn serialize_f32(self, v: f32) -> Result<Self::Ok, Self::Error> {

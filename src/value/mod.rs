@@ -11,10 +11,10 @@
 //! ```
 //! # use valitron::Value;
 //! # fn main() {
-//! assert!(Value::UInt8(9) == 9_u8);
-//! assert!(10_u8 == Value::UInt8(10));
-//! assert_eq!(Value::UInt8(10) > 9_u8, true);
-//! assert_eq!(9_u8 < Value::UInt8(10), true);
+//! assert!(Value::Uint8(9) == 9_u8);
+//! assert!(10_u8 == Value::Uint8(10));
+//! assert_eq!(Value::Uint8(10) > 9_u8, true);
+//! assert_eq!(9_u8 < Value::Uint8(10), true);
 //! # }
 //! ```
 
@@ -27,13 +27,13 @@ mod float;
 
 #[derive(Debug, PartialEq, Eq, Clone, Ord, PartialOrd)]
 pub enum Value {
-    UInt8(u8),
+    Uint8(u8),
     Int8(i8),
-    UInt16(u16),
+    Uint16(u16),
     Int16(i16),
-    UInt32(u32),
+    Uint32(u32),
     Int32(i32),
-    UInt64(u64),
+    Uint64(u64),
     Int64(i64),
     Float32(float::Float32),
     Float64(float::Float64),
@@ -194,10 +194,10 @@ impl Value {
     }
     pub fn is_leaf(&self) -> bool {
         match self {
-            Self::UInt8(_)
-            | Self::UInt16(_)
-            | Self::UInt32(_)
-            | Self::UInt64(_)
+            Self::Uint8(_)
+            | Self::Uint16(_)
+            | Self::Uint32(_)
+            | Self::Uint64(_)
             | Self::Int8(_)
             | Self::Int16(_)
             | Self::Int32(_)
@@ -236,13 +236,13 @@ macro_rules! primitive_impl {
     };
 }
 
-primitive_impl!(UInt8(u8));
+primitive_impl!(Uint8(u8));
 primitive_impl!(Int8(i8));
-primitive_impl!(UInt16(u16));
+primitive_impl!(Uint16(u16));
 primitive_impl!(Int16(i16));
-primitive_impl!(UInt32(u32));
+primitive_impl!(Uint32(u32));
 primitive_impl!(Int32(i32));
-primitive_impl!(UInt64(u64));
+primitive_impl!(Uint64(u64));
 primitive_impl!(Int64(i64));
 primitive_impl!(Boolean(bool));
 primitive_impl!(Char(char));

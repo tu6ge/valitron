@@ -21,7 +21,7 @@ struct C(i8, u64, f32, f64);
 fn test_dep() {
     let c_value = Value::TupleStruct(vec![
         Value::Int8(22),
-        Value::UInt64(33),
+        Value::Uint64(33),
         Value::Float32(5.0_f32.into()),
         Value::Float64(100.0_f64.into()),
     ]);
@@ -37,7 +37,7 @@ fn test_dep() {
     let a_value = Value::Struct({
         let mut map = BTreeMap::new();
         map.insert(Value::StructKey("b".to_string()), b_value);
-        map.insert(Value::StructKey("foo".to_string()), Value::UInt8(11));
+        map.insert(Value::StructKey("foo".to_string()), Value::Uint8(11));
         map
     });
 
@@ -67,15 +67,15 @@ fn test_enum() {
     let a = EnumA::deserialize(value).unwrap();
     assert_eq!(a, EnumA::Foo);
 
-    let value = Value::Enum("A", vec![Value::UInt8(11)]);
+    let value = Value::Enum("A", vec![Value::Uint8(11)]);
     let b = EnumB::deserialize(value).unwrap();
     assert!(matches!(b, EnumB::A(11)));
 
     let value = Value::StructVariant("B", {
         let mut map = BTreeMap::new();
-        map.insert(Value::StructVariantKey("r".to_string()), Value::UInt8(22));
-        map.insert(Value::StructVariantKey("g".to_string()), Value::UInt8(33));
-        map.insert(Value::StructVariantKey("b".to_string()), Value::UInt8(44));
+        map.insert(Value::StructVariantKey("r".to_string()), Value::Uint8(22));
+        map.insert(Value::StructVariantKey("g".to_string()), Value::Uint8(33));
+        map.insert(Value::StructVariantKey("b".to_string()), Value::Uint8(44));
         map
     });
     let b = EnumB::deserialize(value).unwrap();
@@ -98,7 +98,7 @@ struct Opt {
 
 #[test]
 fn test_option() {
-    let value = Value::Option(Box::new(Some(Value::UInt32(10))));
+    let value = Value::Option(Box::new(Some(Value::Uint32(10))));
     let a = Option::deserialize(value).unwrap();
     assert_eq!(a, Some(10u32));
 
@@ -110,7 +110,7 @@ fn test_option() {
         let mut map = BTreeMap::new();
         map.insert(
             Value::StructKey("val_u8".to_string()),
-            Value::Option(Box::new(Some(Value::UInt8(22)))),
+            Value::Option(Box::new(Some(Value::Uint8(22)))),
         );
         map.insert(
             Value::StructKey("val_f32".to_string()),

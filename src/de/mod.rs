@@ -22,10 +22,10 @@ impl Value {
     #[cold]
     fn unexpected(&self) -> Unexpected {
         match self {
-            Value::UInt8(n) => Unexpected::Unsigned(*n as u64),
-            Value::UInt16(n) => Unexpected::Unsigned(*n as u64),
-            Value::UInt32(n) => Unexpected::Unsigned(*n as u64),
-            Value::UInt64(n) => Unexpected::Unsigned(*n),
+            Value::Uint8(n) => Unexpected::Unsigned(*n as u64),
+            Value::Uint16(n) => Unexpected::Unsigned(*n as u64),
+            Value::Uint32(n) => Unexpected::Unsigned(*n as u64),
+            Value::Uint64(n) => Unexpected::Unsigned(*n),
             //Value::USize(n) => Unexpected::Unsigned(*n as u64),
             Value::Int8(n) => Unexpected::Signed(*n as i64),
             Value::Int16(n) => Unexpected::Signed(*n as i64),
@@ -105,10 +105,10 @@ impl<'de> Deserializer<'de> for Value {
     deserialize_primitive!(deserialize_i64, Int64, visit_i64);
     //deserialize_primitive!(deserialize_isize, ISize, visit_isize);
 
-    deserialize_primitive!(deserialize_u8, UInt8, visit_u8);
-    deserialize_primitive!(deserialize_u16, UInt16, visit_u16);
-    deserialize_primitive!(deserialize_u32, UInt32, visit_u32);
-    deserialize_primitive!(deserialize_u64, UInt64, visit_u64);
+    deserialize_primitive!(deserialize_u8, Uint8, visit_u8);
+    deserialize_primitive!(deserialize_u16, Uint16, visit_u16);
+    deserialize_primitive!(deserialize_u32, Uint32, visit_u32);
+    deserialize_primitive!(deserialize_u64, Uint64, visit_u64);
     //deserialize_primitive!(deserialize_i64, Int64, visit_);
 
     fn deserialize_f32<V>(self, visitor: V) -> Result<V::Value, Self::Error>

@@ -13,10 +13,10 @@ impl RuleShortcut for Required {
 
     fn call(&mut self, value: &mut Value) -> bool {
         match value {
-            Value::UInt8(_)
-            | Value::UInt16(_)
-            | Value::UInt32(_)
-            | Value::UInt64(_)
+            Value::Uint8(_)
+            | Value::Uint16(_)
+            | Value::Uint32(_)
+            | Value::Uint64(_)
             | Value::Int8(_)
             | Value::Int16(_)
             | Value::Int32(_)

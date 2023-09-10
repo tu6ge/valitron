@@ -51,24 +51,24 @@ macro_rules! primitive_ord {
     };
 }
 
-primitive_eq!(UInt8(u8));
+primitive_eq!(Uint8(u8));
 primitive_eq!(Int8(i8));
-primitive_eq!(UInt16(u16));
+primitive_eq!(Uint16(u16));
 primitive_eq!(Int16(i16));
-primitive_eq!(UInt32(u32));
+primitive_eq!(Uint32(u32));
 primitive_eq!(Int32(i32));
-primitive_eq!(UInt64(u64));
+primitive_eq!(Uint64(u64));
 primitive_eq!(Int64(i64));
 primitive_eq!(Boolean(bool));
 primitive_eq!(Char(char));
 
-primitive_ord!(UInt8(u8));
+primitive_ord!(Uint8(u8));
 primitive_ord!(Int8(i8));
-primitive_ord!(UInt16(u16));
+primitive_ord!(Uint16(u16));
 primitive_ord!(Int16(i16));
-primitive_ord!(UInt32(u32));
+primitive_ord!(Uint32(u32));
 primitive_ord!(Int32(i32));
-primitive_ord!(UInt64(u64));
+primitive_ord!(Uint64(u64));
 primitive_ord!(Int64(i64));
 primitive_ord!(Boolean(bool));
 primitive_ord!(Char(char));
