@@ -32,16 +32,16 @@ fn test_validator() {
 
     assert!(res.len() == 3);
     assert_eq!(
-        res.get("age"),
-        Some(&vec!["age should be between 25 and 45".to_string()])
+        res.get("age").unwrap()[0],
+        "age should be between 25 and 45".into()
     );
     assert_eq!(
-        res.get("weight"),
-        Some(&vec!["weight should be between 40 and 80".to_string()])
+        res.get("weight").unwrap()[0],
+        "weight should be between 40 and 80".into(),
     );
     assert_eq!(
-        res.get("name"),
-        Some(&vec!["name should be starts with `hello`".to_string()])
+        res.get("name").unwrap()[0],
+        "name should be starts with `hello`".into(),
     );
 
     //println!("{res:?}");
@@ -77,8 +77,8 @@ fn test_has_tuple() {
     assert!(res.len() == 1);
 
     assert_eq!(
-        res.get(0),
-        Some(&vec!["first item should be start with `hello`".to_string()])
+        res.get(0).unwrap()[0],
+        "first item should be start with `hello`".into()
     );
 }
 
@@ -90,7 +90,7 @@ fn test_has_array() {
 
     assert!(res.len() == 1);
     assert_eq!(
-        res.get([1]),
-        Some(&vec!["this field must be start with {}".to_string()])
+        res.get([1]).unwrap()[0],
+        "this field must be start with {}".into()
     );
 }
