@@ -65,6 +65,17 @@ impl From<&str> for Message {
     }
 }
 
+impl PartialEq<Message> for String {
+    fn eq(&self, other: &Message) -> bool {
+        self == &other.message
+    }
+}
+impl PartialEq<Message> for u8 {
+    fn eq(&self, other: &Message) -> bool {
+        self == &other.code
+    }
+}
+
 pub trait IntoRuleMessage {
     fn into_message(self) -> Message;
 }
