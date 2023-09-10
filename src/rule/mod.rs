@@ -26,48 +26,48 @@ pub trait Rule<M>: 'static + Sized + Clone {
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Message {
     code: u8,
-    message: String,
+    content: String,
 }
 
 impl Message {
-    pub fn new(code: u8, message: String) -> Message {
-        Message { code, message }
+    pub fn new(code: u8, content: String) -> Self {
+        Message { code, content }
     }
 
-    pub fn from_message(message: String) -> Message {
-        Message { code: 0, message }
+    pub fn from_content(content: String) -> Self {
+        Self { code: 0, content }
     }
 
     pub fn from_code(code: u8) -> Self {
         Self {
             code,
-            message: String::default(),
+            content: String::default(),
         }
     }
 }
 
 impl From<String> for Message {
-    fn from(message: String) -> Self {
-        Self { code: 0, message }
+    fn from(content: String) -> Self {
+        Self { code: 0, content }
     }
 }
 impl From<Message> for String {
     fn from(msg: Message) -> Self {
-        msg.message
+        msg.content
     }
 }
 impl From<&str> for Message {
     fn from(value: &str) -> Self {
         Self {
             code: 0,
-            message: value.to_owned(),
+            content: value.to_owned(),
         }
     }
 }
 
 impl PartialEq<Message> for String {
     fn eq(&self, other: &Message) -> bool {
-        self == &other.message
+        self == &other.content
     }
 }
 impl PartialEq<Message> for u8 {
@@ -84,7 +84,7 @@ impl IntoRuleMessage for (u8, String) {
     fn into_message(self) -> Message {
         Message {
             code: self.0,
-            message: self.1,
+            content: self.1,
         }
     }
 }
@@ -93,7 +93,7 @@ impl IntoRuleMessage for (u8, &str) {
     fn into_message(self) -> Message {
         Message {
             code: self.0,
-            message: self.1.to_owned(),
+            content: self.1.to_owned(),
         }
     }
 }
@@ -102,7 +102,7 @@ impl IntoRuleMessage for u8 {
     fn into_message(self) -> Message {
         Message {
             code: self,
-            message: String::default(),
+            content: String::default(),
         }
     }
 }
@@ -111,7 +111,7 @@ impl IntoRuleMessage for String {
     fn into_message(self) -> Message {
         Message {
             code: 0,
-            message: self,
+            content: self,
         }
     }
 }
@@ -120,7 +120,7 @@ impl IntoRuleMessage for &str {
     fn into_message(self) -> Message {
         Message {
             code: 0,
-            message: self.to_owned(),
+            content: self.to_owned(),
         }
     }
 }
@@ -349,7 +349,7 @@ where
 {
     fn call(&mut self, data: &mut ValueMap) -> Result<(), Message> {
         let val = V::from_value(data).unwrap();
-        self.clone()(val).map_err(Message::from_message)
+        self.clone()(val).map_err(Message::from_content)
     }
     fn name(&self) -> &'static str {
         "custom"
