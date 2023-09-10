@@ -1,7 +1,28 @@
+//! # define `Value`, `ValueMap` types
+//! input data will be converted Value with Serialization,
+//! and Value will be converted new output data with Deserialization
+//!
+//! In any rule, you should be comparing it with primitive type
+//!
+//! ## cmp
+//! `Value` comparing and ordering with primitive type(`u8`,`u16`,`u32`,`u64`,`i8`,`i16`,`i32`,`i64`,`f32`,`f64`,`str`,`bool`,`String`)
+//!
+//! Example:
+//! ```
+//! # use valitron::Value;
+//! # fn main() {
+//! assert!(Value::UInt8(9) == 9_u8);
+//! assert!(10_u8 == Value::UInt8(10));
+//! assert_eq!(Value::UInt8(10) > 9_u8, true);
+//! assert_eq!(9_u8 < Value::UInt8(10), true);
+//! # }
+//! ```
+
 use std::collections::BTreeMap;
 
 use crate::register::{FieldName, FieldNames, Parser};
 
+mod cmp;
 mod float;
 
 #[derive(Debug, PartialEq, Eq, Clone, Ord, PartialOrd)]
