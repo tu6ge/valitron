@@ -73,9 +73,14 @@ impl ValueMap {
     pub fn current_mut(&mut self) -> Option<&mut Value> {
         self.value.get_with_names_mut(&self.index)
     }
-    pub fn get(&self, key: &FieldName) -> Option<&Value> {
-        self.value.get_with_name(key)
+
+    pub fn get(&self, key: &FieldNames) -> Option<&Value> {
+        self.value.get_with_names(key)
     }
+    pub fn get_mut(&mut self, key: &FieldNames) -> Option<&mut Value> {
+        self.value.get_with_names_mut(key)
+    }
+
     pub(crate) fn value(self) -> Value {
         self.value
     }
