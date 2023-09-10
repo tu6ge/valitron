@@ -45,8 +45,3 @@ fn age_limit(n: &mut u8) -> Result<(), String> {
     Err("age should be between 25 and 45".to_owned())
 }
 ```
-
-## Limit
-
-Now, primitive type is only support `u8` and `String` as experiment.
-
