@@ -2,7 +2,7 @@ use std::marker::PhantomData;
 
 use crate::value::ValueMap;
 
-use super::Rule;
+use super::{Message, Rule};
 
 pub struct ErasedRule(pub(super) Box<dyn BoxedRule>);
 
@@ -18,7 +18,7 @@ impl ErasedRule {
     pub fn name(&self) -> &'static str {
         self.0.name()
     }
-    pub fn call(&mut self, data: &mut ValueMap) -> Result<(), String> {
+    pub fn call(&mut self, data: &mut ValueMap) -> Result<(), Message> {
         self.0.call(data)
     }
 }
@@ -32,7 +32,7 @@ impl Clone for ErasedRule {
 pub trait BoxedRule {
     fn clone_box(&self) -> Box<dyn BoxedRule>;
 
-    fn call(&mut self, data: &mut ValueMap) -> Result<(), String>;
+    fn call(&mut self, data: &mut ValueMap) -> Result<(), Message>;
 
     fn name(&self) -> &'static str;
 }
@@ -71,8 +71,8 @@ where
     fn clone_box(&self) -> Box<dyn BoxedRule> {
         Box::new(self.clone())
     }
-    fn call(&mut self, data: &mut ValueMap) -> Result<(), String> {
-        self.handler.call(data).map_err(|e| e.into())
+    fn call(&mut self, data: &mut ValueMap) -> Result<(), Message> {
+        self.handler.call(data)
     }
     fn name(&self) -> &'static str {
         self.handler.name()

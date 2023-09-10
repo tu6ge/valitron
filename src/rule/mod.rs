@@ -23,30 +23,93 @@ pub trait Rule<M>: 'static + Sized + Clone {
 }
 
 /// Error message returned when validate fail
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Message {
-    inner: String,
+    code: u8,
+    message: String,
 }
 
 impl Message {
-    fn new(inner: String) -> Message {
-        Message { inner }
+    pub fn new(code: u8, message: String) -> Message {
+        Message { code, message }
+    }
+
+    pub fn from_message(message: String) -> Message {
+        Message { code: 0, message }
+    }
+
+    pub fn from_code(code: u8) -> Self {
+        Self {
+            code,
+            message: String::default(),
+        }
     }
 }
 
 impl From<String> for Message {
-    fn from(inner: String) -> Self {
-        Self { inner }
+    fn from(message: String) -> Self {
+        Self { code: 0, message }
     }
 }
 impl From<Message> for String {
     fn from(msg: Message) -> Self {
-        msg.inner
+        msg.message
     }
 }
 impl From<&str> for Message {
     fn from(value: &str) -> Self {
         Self {
-            inner: value.to_owned(),
+            code: 0,
+            message: value.to_owned(),
+        }
+    }
+}
+
+pub trait IntoRuleMessage {
+    fn into_message(self) -> Message;
+}
+
+impl IntoRuleMessage for (u8, String) {
+    fn into_message(self) -> Message {
+        Message {
+            code: self.0,
+            message: self.1,
+        }
+    }
+}
+
+impl IntoRuleMessage for (u8, &str) {
+    fn into_message(self) -> Message {
+        Message {
+            code: self.0,
+            message: self.1.to_owned(),
+        }
+    }
+}
+
+impl IntoRuleMessage for u8 {
+    fn into_message(self) -> Message {
+        Message {
+            code: self,
+            message: String::default(),
+        }
+    }
+}
+
+impl IntoRuleMessage for String {
+    fn into_message(self) -> Message {
+        Message {
+            code: 0,
+            message: self,
+        }
+    }
+}
+
+impl IntoRuleMessage for &str {
+    fn into_message(self) -> Message {
+        Message {
+            code: 0,
+            message: self.to_owned(),
         }
     }
 }
@@ -112,7 +175,7 @@ impl RuleList {
     }
 
     #[must_use]
-    pub(crate) fn call(mut self, data: &mut ValueMap) -> Vec<(&'static str, String)> {
+    pub(crate) fn call(mut self, data: &mut ValueMap) -> Vec<(&'static str, Message)> {
         let mut msg = Vec::new();
         for endpoint in self.list.iter_mut() {
             let _ = endpoint
@@ -275,7 +338,7 @@ where
 {
     fn call(&mut self, data: &mut ValueMap) -> Result<(), Message> {
         let val = V::from_value(data).unwrap();
-        self.clone()(val).map_err(Message::new)
+        self.clone()(val).map_err(Message::from_message)
     }
     fn name(&self) -> &'static str {
         "custom"

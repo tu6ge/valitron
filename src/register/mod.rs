@@ -9,7 +9,7 @@ use std::{
 };
 
 use crate::{
-    rule::{IntoRuleList, RuleList},
+    rule::{IntoRuleList, IntoRuleMessage, Message, RuleList},
     ser::Serializer,
     value::ValueMap,
 };
@@ -23,9 +23,9 @@ pub use field_name::{FieldName, FieldNames};
 use self::field_name::IntoFieldName;
 
 #[derive(Default)]
-pub struct Validator<'a> {
+pub struct Validator {
     rules: HashMap<FieldNames, RuleList>,
-    message: HashMap<MessageKey, &'a str>,
+    message: HashMap<MessageKey, Message>,
 }
 
 macro_rules! panic_on_err {
@@ -37,7 +37,7 @@ macro_rules! panic_on_err {
     };
 }
 
-impl<'a> Validator<'a> {
+impl<'a> Validator {
     pub fn new() -> Self {
         Self::default()
     }
@@ -53,12 +53,12 @@ impl<'a> Validator<'a> {
         self
     }
 
-    pub fn message<const N: usize>(mut self, list: [(&'a str, &'a str); N]) -> Self {
+    pub fn message<const N: usize, M: IntoRuleMessage>(mut self, list: [(&'a str, M); N]) -> Self {
         self.message = HashMap::from_iter(
             list.map(|(key_str, v)| {
                 let msg_key = panic_on_err!(field_name::parse_message(key_str));
                 panic_on_err!(self.exit_message(&msg_key));
-                (msg_key, v)
+                (msg_key, v.into_message())
             })
             .into_iter(),
         );
@@ -81,7 +81,7 @@ impl<'a> Validator<'a> {
             for (rule, msg) in rule_resp.into_iter() {
                 let final_msg =
                     match self.get_message(&MessageKey::new(names.clone(), rule.to_string())) {
-                        Some(s) => s.to_string(),
+                        Some(s) => s.clone(),
                         None => msg,
                     };
                 field_msg.push(final_msg);
@@ -118,14 +118,14 @@ impl<'a> Validator<'a> {
         }
     }
 
-    fn get_message(&self, key: &MessageKey) -> Option<&&str> {
+    fn get_message(&self, key: &MessageKey) -> Option<&Message> {
         self.message.get(key)
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ValidatorError {
-    message: HashMap<FieldNames, Vec<String>>,
+    message: HashMap<FieldNames, Vec<Message>>,
 }
 
 // impl Deref for ValidatorError {
@@ -148,7 +148,7 @@ impl ValidatorError {
         }
     }
 
-    fn push(&mut self, field_name: FieldNames, message: Vec<String>) {
+    fn push(&mut self, field_name: FieldNames, message: Vec<Message>) {
         if !message.is_empty() {
             self.message.insert(field_name, message);
         }
@@ -158,12 +158,12 @@ impl ValidatorError {
         self.message.shrink_to_fit()
     }
 
-    pub fn get<K: IntoFieldName>(&self, key: K) -> Option<&Vec<String>> {
+    pub fn get<K: IntoFieldName>(&self, key: K) -> Option<&Vec<Message>> {
         let k = key.into_field().ok()?;
         self.message.get(&k)
     }
 
-    pub fn get_key_value<K: IntoFieldName>(&self, key: K) -> Option<(&FieldNames, &Vec<String>)> {
+    pub fn get_key_value<K: IntoFieldName>(&self, key: K) -> Option<(&FieldNames, &Vec<Message>)> {
         let k = key.into_field().ok()?;
         self.message.get_key_value(&k)
     }
@@ -175,11 +175,11 @@ impl ValidatorError {
         }
     }
 
-    pub fn iter(&self) -> Iter<'_, FieldNames, Vec<String>> {
+    pub fn iter(&self) -> Iter<'_, FieldNames, Vec<Message>> {
         self.message.iter()
     }
 
-    pub fn iter_mut(&mut self) -> IterMut<'_, FieldNames, Vec<String>> {
+    pub fn iter_mut(&mut self) -> IterMut<'_, FieldNames, Vec<Message>> {
         self.message.iter_mut()
     }
 
