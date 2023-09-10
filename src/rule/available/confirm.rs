@@ -1,13 +1,15 @@
-use crate::{register::FieldNames, rule::Message, value::ValueMap, RuleShortcut, Value};
+use crate::{register::FieldNames, value::ValueMap, RuleShortcut, Value};
 
 #[derive(Clone)]
 pub struct Confirm<T>(pub T);
 
 impl RuleShortcut for Confirm<&str> {
+    type Message = String;
+
     fn name(&self) -> &'static str {
         "confirm"
     }
-    fn message(&self) -> Message {
+    fn message(&self) -> Self::Message {
         "this field value must be eq {} field value".into()
     }
     fn call_with_relate(&mut self, value: &mut ValueMap) -> bool {

@@ -3,10 +3,10 @@
 
 mod de;
 pub mod register;
-mod rule;
+pub mod rule;
 mod ser;
 pub mod value;
 
 pub use register::Validator;
-pub use rule::{available, custom, Rule, RuleExt, RuleShortcut};
+pub use rule::{available, custom, IntoRuleMessage, Message, Rule, RuleExt, RuleShortcut};
 pub use value::{FromValue, Value, ValueMap};

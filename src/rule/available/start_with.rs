@@ -1,13 +1,15 @@
-use crate::{rule::Message, RuleShortcut, Value};
+use crate::{RuleShortcut, Value};
 
 #[derive(Clone, Debug)]
 pub struct StartWith<T>(pub T);
 
 impl RuleShortcut for StartWith<&str> {
+    type Message = String;
+
     fn name(&self) -> &'static str {
         "start_with"
     }
-    fn message(&self) -> Message {
+    fn message(&self) -> String {
         "this field must be start with {}".into()
     }
     fn call(&mut self, value: &mut Value) -> bool {

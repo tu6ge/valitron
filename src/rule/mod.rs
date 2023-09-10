@@ -11,11 +11,14 @@ mod boxed;
 
 /// A Rule trait
 pub trait Rule<M>: 'static + Sized + Clone {
+    /// custom define returning message type
+    type Message: IntoRuleMessage;
+
     /// Named rule type, allow `a-z` | `A-Z` | `0-9` | `_`, and not start with `0-9`
     fn name(&self) -> &'static str;
 
     /// Rule specific implementation, data is gived type all field's value, and current field index.
-    fn call(&mut self, data: &mut ValueMap) -> Result<(), Message>;
+    fn call(&mut self, data: &mut ValueMap) -> Result<(), Self::Message>;
 
     fn into_boxed(self) -> RuleIntoBoxed<Self, M> {
         RuleIntoBoxed::new(self)
@@ -131,11 +134,12 @@ impl IntoRuleMessage for &str {
 /// ```
 pub trait RuleExt {
     fn and<R: Rule<()> + Clone>(self, other: R) -> RuleList;
-    fn custom<F, V>(self, other: F) -> RuleList
+    fn custom<F, V, M>(self, other: F) -> RuleList
     where
-        F: for<'a> FnOnce(&'a mut V) -> Result<(), String> + 'static + Clone,
+        F: for<'a> FnOnce(&'a mut V) -> Result<(), M> + 'static + Clone,
         F: Rule<V>,
-        V: FromValue + 'static;
+        V: FromValue + 'static,
+        M: IntoRuleMessage;
 }
 
 impl<R: Rule<()> + Clone> RuleExt for R {
@@ -145,11 +149,12 @@ impl<R: Rule<()> + Clone> RuleExt for R {
             ..Default::default()
         }
     }
-    fn custom<F, V>(self, other: F) -> RuleList
+    fn custom<F, V, M>(self, other: F) -> RuleList
     where
-        F: for<'a> FnOnce(&'a mut V) -> Result<(), String> + 'static + Clone,
+        F: for<'a> FnOnce(&'a mut V) -> Result<(), M> + 'static + Clone,
         F: Rule<V>,
         V: FromValue + 'static,
+        M: IntoRuleMessage,
     {
         RuleList {
             list: vec![ErasedRule::new(self), ErasedRule::new(other)],
@@ -239,11 +244,12 @@ pub trait IntoRuleList {
     fn into_list(self) -> RuleList;
 }
 
-pub fn custom<F, V>(f: F) -> RuleList
+pub fn custom<F, V, M>(f: F) -> RuleList
 where
-    F: for<'a> FnOnce(&'a mut V) -> Result<(), String> + 'static + Clone,
+    F: for<'a> FnOnce(&'a mut V) -> Result<(), M> + 'static + Clone,
     F: Rule<V>,
     V: FromValue + 'static,
+    M: IntoRuleMessage,
 {
     RuleList {
         list: vec![ErasedRule::new(f)],
@@ -300,17 +306,20 @@ mod test_regster {
         register(custom(hander));
         register(custom(hander).and(StartWith("foo")));
         register(custom(hander).and(StartWith("foo")).bail());
-        register(custom(|_a: &mut u8| Ok(())));
-        register(custom(|_a: &mut u8| Ok(())));
+        register(custom(|_a: &mut u8| Ok::<_, u8>(())));
+        register(custom(|_a: &mut u8| Ok::<_, u8>(())));
     }
 }
 
 pub trait RuleShortcut {
+    /// custom define returning message type
+    type Message: IntoRuleMessage;
+
     /// Named rule type
     fn name(&self) -> &'static str;
 
     /// Default rule error message, when validate fails, return the message to user
-    fn message(&self) -> Message;
+    fn message(&self) -> Self::Message;
 
     /// Rule specific implementation, data is gived type all field's value, and current field index.
     /// when the method return true, call_message will return Ok(()), or else return Err(String)
@@ -329,11 +338,13 @@ impl<T> Rule<()> for T
 where
     T: RuleShortcut + 'static + Clone,
 {
+    type Message = T::Message;
+
     fn name(&self) -> &'static str {
         self.name()
     }
     /// Rule specific implementation, data is gived type all field's value, and current field index.
-    fn call(&mut self, data: &mut ValueMap) -> Result<(), Message> {
+    fn call(&mut self, data: &mut ValueMap) -> Result<(), Self::Message> {
         if self.call_with_relate(data) {
             Ok(())
         } else {
@@ -342,14 +353,16 @@ where
     }
 }
 
-impl<F, V> Rule<V> for F
+impl<F, V, M> Rule<V> for F
 where
-    F: for<'a> FnOnce(&'a mut V) -> Result<(), String> + 'static + Clone,
+    F: for<'a> FnOnce(&'a mut V) -> Result<(), M> + 'static + Clone,
     V: FromValue,
+    M: IntoRuleMessage,
 {
-    fn call(&mut self, data: &mut ValueMap) -> Result<(), Message> {
+    type Message = M;
+    fn call(&mut self, data: &mut ValueMap) -> Result<(), Self::Message> {
         let val = V::from_value(data).unwrap();
-        self.clone()(val).map_err(Message::from_content)
+        self.clone()(val)
     }
     fn name(&self) -> &'static str {
         "custom"

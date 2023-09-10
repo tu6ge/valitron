@@ -2,7 +2,7 @@ use std::marker::PhantomData;
 
 use crate::value::ValueMap;
 
-use super::{Message, Rule};
+use super::{IntoRuleMessage, Message, Rule};
 
 pub struct ErasedRule(pub(super) Box<dyn BoxedRule>);
 
@@ -72,7 +72,9 @@ where
         Box::new(self.clone())
     }
     fn call(&mut self, data: &mut ValueMap) -> Result<(), Message> {
-        self.handler.call(data)
+        self.handler
+            .call(data)
+            .map_err(IntoRuleMessage::into_message)
     }
     fn name(&self) -> &'static str {
         self.handler.name()
