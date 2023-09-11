@@ -43,6 +43,10 @@
 //! }
 //! ```
 //!
+//! ## Prerequisite
+//!
+//! input data needs implementation `serde::Serialize` and `serde::Deserialize`
+//!
 //! ## Available Rule
 //!
 //! - Required
