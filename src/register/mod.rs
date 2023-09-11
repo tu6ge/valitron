@@ -69,7 +69,10 @@ impl<'a> Validator {
     /// # Panic
     ///
     /// When registering not existing ,this will panic
-    pub fn message<const N: usize, M: IntoRuleMessage>(mut self, list: [(&'a str, M); N]) -> Self {
+    pub fn message<const N: usize, M>(mut self, list: [(&'a str, M); N]) -> Self
+    where
+        M: IntoRuleMessage,
+    {
         self.message = HashMap::from_iter(
             list.map(|(key_str, v)| {
                 let msg_key = panic_on_err!(field_name::parse_message(key_str));
@@ -84,7 +87,7 @@ impl<'a> Validator {
     }
 
     /// Validate without modifiable
-    pub fn validate<'de, T>(self, data: T) -> Result<(), ValidatorError>
+    pub fn validate<T>(self, data: T) -> Result<(), ValidatorError>
     where
         T: serde::ser::Serialize,
     {
