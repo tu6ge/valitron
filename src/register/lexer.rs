@@ -59,12 +59,12 @@ impl<'a> From<&'a str> for Error {
     }
 }
 // Mimics the behaviour of `Symbol::can_be_raw` from `rustc_span`
-fn can_be_raw(string: &str) -> bool {
-    match string {
-        "_" | "super" | "self" | "Self" | "crate" => false,
-        _ => true,
-    }
-}
+// fn can_be_raw(string: &str) -> bool {
+//     match string {
+//         "_" | "super" | "self" | "Self" | "crate" => false,
+//         _ => true,
+//     }
+// }
 
 #[derive(Clone)]
 pub struct Cursor<'a> {
