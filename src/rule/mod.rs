@@ -383,7 +383,7 @@ where
 {
     type Message = M;
     fn call(&mut self, data: &mut ValueMap) -> Result<(), Self::Message> {
-        let val = V::from_value(data).unwrap();
+        let val = V::from_value(data).expect("argument type can not be matched");
         self.clone()(val)
     }
     fn name(&self) -> &'static str {
