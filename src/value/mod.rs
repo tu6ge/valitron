@@ -137,7 +137,7 @@ impl Value {
                     }
                 }
                 Ok(None) => break value,
-                Err(_) => return None,
+                Err(e) => panic!("{e}"),
             }
         }
     }
@@ -170,7 +170,7 @@ impl Value {
                     }
                 }
                 Ok(None) => break value,
-                Err(_) => break None,
+                Err(e) => panic!("{e}"),
             }
         }
     }
