@@ -56,6 +56,13 @@
 //! - Trim (soon)
 //! - customizable
 //!
+//! To get started using all of Valitron's optional rule, add this to your
+//! `Cargo.toml`:
+//!
+//! ```toml
+//! valitron = { version = "0.1", features = ["full"] }
+//! ```
+//!
 //! ## Closure Rule
 //!
 //! This is support closure with a primitive type mutable reference arguments and returns something that can be converted into a [`Message`].
@@ -72,6 +79,7 @@
 
 #![cfg_attr(test, allow(unused_imports))]
 #![cfg_attr(test, allow(dead_code))]
+#![cfg_attr(docsrs, feature(doc_auto_cfg, doc_cfg))]
 
 mod de;
 pub mod register;
@@ -80,5 +88,8 @@ mod ser;
 pub mod value;
 
 pub use register::Validator;
-pub use rule::{available, custom, IntoRuleMessage, Message, Rule, RuleExt, RuleShortcut};
+pub use rule::{custom, IntoRuleMessage, Message, Rule, RuleExt, RuleShortcut};
 pub use value::{FromValue, Value, ValueMap};
+
+#[cfg(feature = "full")]
+pub use rule::available;

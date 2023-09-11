@@ -6,6 +6,20 @@ license = "MIT OR Apache-2.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[features]
+full = []
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[package.metadata.playground]
+features = ["full"]
+
+# [[example]]
+# name = "sample"
+# required-features = ["full"]
+
 [dependencies]
 serde = { version = "^1.0" }
 

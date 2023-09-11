@@ -6,6 +6,7 @@ use crate::value::{FromValue, Value, ValueMap};
 
 use self::boxed::{ErasedRule, RuleIntoBoxed};
 
+#[cfg(feature = "full")]
 pub mod available;
 mod boxed;
 
@@ -295,7 +296,7 @@ where
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "full"))]
 mod test_regster {
     use super::available::*;
     use super::*;

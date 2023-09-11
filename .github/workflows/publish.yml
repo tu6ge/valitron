@@ -25,7 +25,8 @@ jobs:
 
       - name: Run Test
         run: |
-          cargo test
+          cargo test --lib
+          cargo test --features="full"
 
   publish:
     needs: [test]

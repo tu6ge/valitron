@@ -1,3 +1,5 @@
+#![cfg(feature = "full")]
+
 use serde::{Deserialize, Serialize};
 use valitron::{
     available::{Required, StartWith},
