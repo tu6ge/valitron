@@ -53,7 +53,7 @@
 //! - Required
 //! - StartWith
 //! - Confirm
-//! - Trim (soon)
+//! - Trim
 //! - customizable
 //!
 //! To get started using all of Valitron's optional rule, add this to your

@@ -49,7 +49,7 @@ pub trait Rule<M>: 'static + Sized + Clone {
 }
 
 /// Error message returned when validate fail
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Default)]
 pub struct Message {
     code: u8,
     content: String,
