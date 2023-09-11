@@ -124,7 +124,7 @@ pub trait IntoFieldName {
 }
 
 impl IntoFieldName for &str {
-    type Error = String;
+    type Error = Infallible;
     fn into_field(self) -> Result<FieldNames, Self::Error> {
         Ok(FieldNames {
             string: self.to_string(),

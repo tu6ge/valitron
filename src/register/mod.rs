@@ -41,7 +41,11 @@ impl<'a> Validator {
     pub fn new() -> Self {
         Self::default()
     }
-    pub fn rule<F: IntoFieldName, R: IntoRuleList>(mut self, field: F, rule: R) -> Self {
+    pub fn rule<F, R>(mut self, field: F, rule: R) -> Self
+    where
+        F: IntoFieldName,
+        R: IntoRuleList,
+    {
         let names = panic_on_err!(field.into_field());
         let rules = rule.into_list();
 
