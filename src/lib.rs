@@ -77,9 +77,9 @@
 //! [`Message`]: crate::rule::Message
 //! [`IntoRuleMessage`]: crate::rule::IntoRuleMessage
 
-#![cfg_attr(test, allow(unused_imports))]
-#![cfg_attr(test, allow(dead_code))]
-#![cfg_attr(docsrs, feature(doc_auto_cfg, doc_cfg))]
+#![cfg_attr(test, allow(unused_imports, dead_code))]
+//#![cfg_attr(docsrs, feature(doc_auto_cfg, doc_cfg))]
+//#![warn(clippy::unwrap_used)]
 
 mod de;
 pub mod register;

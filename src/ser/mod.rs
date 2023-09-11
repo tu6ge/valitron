@@ -358,7 +358,7 @@ impl ser::SerializeMap for SerializeMap {
     where
         T: serde::Serialize,
     {
-        let key = self.next_key.take().unwrap();
+        let key = self.next_key.take().ok_or(MyErr)?;
         self.map.insert(key, value.serialize(Serializer)?);
 
         Ok(())
