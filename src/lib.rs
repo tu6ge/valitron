@@ -8,7 +8,7 @@
 //! # available::{Required, StartWith},
 //! # custom, Message, RuleExt, Validator
 //! # };
-//! #[derive(Serialize, Deserialize, Debug)]
+//! #[derive(Serialize, Debug)]
 //! struct Person {
 //!     introduce: &'static str,
 //!     age: u8,
@@ -45,7 +45,8 @@
 //!
 //! ## Prerequisite
 //!
-//! input data needs implementation `serde::Serialize` and `serde::Deserialize`
+//! input data needs implementation `serde::Serialize`, and if you want to modify data,
+//! it should be also implementation `serde::Deserialize`
 //!
 //! ## Available Rule
 //!

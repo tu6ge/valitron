@@ -41,6 +41,12 @@ impl<'a> Validator {
     pub fn new() -> Self {
         Self::default()
     }
+
+    /// register rules
+    ///
+    /// # Panic
+    ///
+    /// field format error will be panic
     pub fn rule<F, R>(mut self, field: F, rule: R) -> Self
     where
         F: IntoFieldName,
@@ -57,6 +63,11 @@ impl<'a> Validator {
         self
     }
 
+    /// custom validate error message
+    ///
+    /// # Panic
+    ///
+    /// when registering not existing ,this will panic
     pub fn message<const N: usize, M: IntoRuleMessage>(mut self, list: [(&'a str, M); N]) -> Self {
         self.message = HashMap::from_iter(
             list.map(|(key_str, v)| {
@@ -69,17 +80,48 @@ impl<'a> Validator {
         self
     }
 
-    pub fn validate<'de, T>(self, data: T) -> Result<T, ValidatorError>
+    /// validate without change
+    pub fn validate<'de, T>(self, data: T) -> Result<(), ValidatorError>
+    where
+        T: serde::ser::Serialize,
+    {
+        let value = data.serialize(Serializer).unwrap();
+
+        let mut value_map = ValueMap::new(value);
+
+        let message = self.inner_validate(&mut value_map);
+
+        if message.is_empty() {
+            Ok(())
+        } else {
+            Err(message)
+        }
+    }
+
+    /// validate with changeable
+    pub fn validate_mut<'de, T>(self, data: T) -> Result<T, ValidatorError>
     where
         T: serde::ser::Serialize + serde::de::Deserialize<'de>,
     {
         let value = data.serialize(Serializer).unwrap();
-        let mut value_map: ValueMap = ValueMap::new(value);
+
+        let mut value_map = ValueMap::new(value);
+
+        let message = self.inner_validate(&mut value_map);
+
+        if message.is_empty() {
+            Ok(T::deserialize(value_map.value()).unwrap())
+        } else {
+            Err(message)
+        }
+    }
+
+    fn inner_validate(self, value_map: &mut ValueMap) -> ValidatorError {
         let mut message = ValidatorError::with_capacity(self.rules.len());
 
         for (names, rules) in self.rules.iter() {
             value_map.index(names.clone());
-            let rule_resp = rules.clone().call(&mut value_map);
+            let rule_resp = rules.clone().call(value_map);
 
             let mut field_msg = Vec::with_capacity(rule_resp.len());
             for (rule, msg) in rule_resp.into_iter() {
@@ -98,11 +140,7 @@ impl<'a> Validator {
 
         message.shrink_to_fit();
 
-        if message.is_empty() {
-            Ok(T::deserialize(value_map.value()).unwrap())
-        } else {
-            Err(message)
-        }
+        message
     }
 
     fn rule_get(&self, names: &FieldNames) -> Option<&RuleList> {
