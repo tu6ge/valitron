@@ -106,6 +106,12 @@ pub trait IntoRuleMessage {
     fn into_message(self) -> Message;
 }
 
+impl IntoRuleMessage for Message {
+    fn into_message(self) -> Message {
+        self
+    }
+}
+
 impl IntoRuleMessage for (u8, String) {
     fn into_message(self) -> Message {
         Message {
