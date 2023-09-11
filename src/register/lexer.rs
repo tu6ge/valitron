@@ -112,7 +112,7 @@ impl<'a> Cursor<'a> {
                     match iter.next() {
                         Some((last_usize, con)) => {
                             current_usize = last_usize;
-                            if !matches!(con, '0'..='9') {
+                            if !con.is_ascii_digit() {
                                 break (TokenKind::Index, current_usize - start_usize);
                             } else {
                                 self.char.next();

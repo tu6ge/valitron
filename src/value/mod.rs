@@ -193,20 +193,23 @@ impl Value {
         self.get(key).cloned()
     }
     pub fn is_leaf(&self) -> bool {
-        match self {
+        matches!(
+            self,
             Self::Uint8(_)
-            | Self::Uint16(_)
-            | Self::Uint32(_)
-            | Self::Uint64(_)
-            | Self::Int8(_)
-            | Self::Int16(_)
-            | Self::Int32(_)
-            | Self::Int64(_) => true,
-            Self::Float32(_) | Self::Float64(_) => true,
-            Self::Unit => true,
-            Self::String(_) => true,
-            _ => false,
-        }
+                | Self::Uint16(_)
+                | Self::Uint32(_)
+                | Self::Uint64(_)
+                | Self::Int8(_)
+                | Self::Int16(_)
+                | Self::Int32(_)
+                | Self::Int64(_)
+                | Self::Boolean(_)
+                | Self::Char(_)
+                | Self::Float32(_)
+                | Self::Float64(_)
+                | Self::Unit
+                | Self::String(_)
+        )
     }
 }
 

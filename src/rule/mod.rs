@@ -234,8 +234,7 @@ impl RuleList {
     pub(crate) fn contains(&self, rule: &str) -> bool {
         self.iter()
             .map(|endpoint| endpoint.name())
-            .find(|&name| name == rule)
-            .is_some()
+            .any(|name| name == rule)
     }
 
     /// check all rule names is valid or not

@@ -40,7 +40,7 @@ impl Display for FieldName {
     }
 }
 
-fn names_to_string(vec: &Vec<FieldName>) -> String {
+fn names_to_string(vec: &[FieldName]) -> String {
     let mut string = String::new();
     for item in vec.iter() {
         match item {
