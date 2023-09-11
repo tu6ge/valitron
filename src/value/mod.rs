@@ -175,23 +175,6 @@ impl Value {
         }
     }
 
-    pub(crate) fn get(&self, key: &str) -> Option<&Value> {
-        if let Self::Struct(map) = self {
-            map.get(&Value::StructKey(key.to_string()))
-        } else {
-            None
-        }
-    }
-    pub(crate) fn get_mut(&mut self, key: &str) -> Option<&mut Value> {
-        if let Self::Struct(map) = self {
-            map.get_mut(&Value::StructKey(key.to_string()))
-        } else {
-            None
-        }
-    }
-    pub(crate) fn get_clone(&self, key: &str) -> Option<Value> {
-        self.get(key).cloned()
-    }
     pub fn is_leaf(&self) -> bool {
         matches!(
             self,
