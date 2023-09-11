@@ -42,11 +42,12 @@ impl<'a> Validator {
         Self::default()
     }
 
-    /// register rules
+    /// Register rules
     ///
     /// # Panic
     ///
-    /// field format error will be panic
+    /// - Field format error will be panic
+    /// - Invalid rule name will be panic
     pub fn rule<F, R>(mut self, field: F, rule: R) -> Self
     where
         F: IntoFieldName,
@@ -55,24 +56,26 @@ impl<'a> Validator {
         let names = panic_on_err!(field.into_field());
         let rules = rule.into_list();
 
-        // if !rules.valid_name() {
-        //     panic!("")
-        // }
+        if !rules.valid_name() {
+            panic!("invalid rule name")
+        }
 
         self.rules.insert(names, rules);
         self
     }
 
-    /// custom validate error message
+    /// Custom validate error message
     ///
     /// # Panic
     ///
-    /// when registering not existing ,this will panic
+    /// When registering not existing ,this will panic
     pub fn message<const N: usize, M: IntoRuleMessage>(mut self, list: [(&'a str, M); N]) -> Self {
         self.message = HashMap::from_iter(
             list.map(|(key_str, v)| {
                 let msg_key = panic_on_err!(field_name::parse_message(key_str));
+
                 panic_on_err!(self.exit_message(&msg_key));
+
                 (msg_key, v.into_message())
             })
             .into_iter(),
@@ -80,7 +83,7 @@ impl<'a> Validator {
         self
     }
 
-    /// validate without change
+    /// Validate without modifiable
     pub fn validate<'de, T>(self, data: T) -> Result<(), ValidatorError>
     where
         T: serde::ser::Serialize,
@@ -98,7 +101,7 @@ impl<'a> Validator {
         }
     }
 
-    /// validate with changeable
+    /// Validate with modifiable
     pub fn validate_mut<'de, T>(self, data: T) -> Result<T, ValidatorError>
     where
         T: serde::ser::Serialize + serde::de::Deserialize<'de>,
