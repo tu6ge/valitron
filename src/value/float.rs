@@ -11,6 +11,9 @@ impl Float32 {
     pub fn get(&self) -> f32 {
         self.0
     }
+    pub fn as_ref(&self) -> &f32 {
+        &self.0
+    }
 
     pub fn set(&mut self, val: f32) {
         self.0 = val;
@@ -62,6 +65,9 @@ impl std::fmt::Debug for Float32 {
 impl Float64 {
     pub fn get(&self) -> f64 {
         self.0
+    }
+    pub fn as_ref(&self) -> &f64 {
+        &self.0
     }
 
     pub fn set(&mut self, val: f64) {
