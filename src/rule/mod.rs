@@ -9,7 +9,28 @@ use self::boxed::{ErasedRule, RuleIntoBoxed};
 pub mod available;
 mod boxed;
 
-/// A Rule trait
+/// Trait used by creating Rule
+///
+/// # Example
+/// ```rust
+/// # use valitron::{Rule, ValueMap};
+/// #[derive(Clone)]
+/// struct HelloWorld;
+///
+/// impl Rule<()> for HelloWorld {
+///     type Message = String;
+///
+///     fn name(&self) -> &'static str {
+///         "hello"
+///     }
+///
+///     fn call(&mut self, data: &mut ValueMap) -> Result<(), Self::Message> {
+///         Ok(())
+///     }
+/// }
+/// ```
+///
+/// TODO! introduce ValueMap
 pub trait Rule<M>: 'static + Sized + Clone {
     /// custom define returning message type
     type Message: IntoRuleMessage;
@@ -20,6 +41,7 @@ pub trait Rule<M>: 'static + Sized + Clone {
     /// Rule specific implementation, data is gived type all field's value, and current field index.
     fn call(&mut self, data: &mut ValueMap) -> Result<(), Self::Message>;
 
+    #[doc(hidden)]
     fn into_boxed(self) -> RuleIntoBoxed<Self, M> {
         RuleIntoBoxed::new(self)
     }

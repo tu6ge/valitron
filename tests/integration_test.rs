@@ -44,11 +44,11 @@ fn test_validator() {
     //println!("{res:?}");
 }
 
-fn age_limit(n: &mut u8) -> Result<(), String> {
+fn age_limit(n: &mut u8) -> Result<(), &'static str> {
     if *n >= 25 && *n <= 45 {
         return Ok(());
     }
-    Err("age should be between 25 and 45".to_owned())
+    Err("age should be between 25 and 45")
 }
 
 fn weight_limit(v: &mut Value) -> Result<(), u8> {

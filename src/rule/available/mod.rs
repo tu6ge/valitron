@@ -1,4 +1,4 @@
-//# available rules collection
+//! available rules collection
 
 mod confirm;
 mod required;
