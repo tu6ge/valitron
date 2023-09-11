@@ -90,6 +90,6 @@ fn test_has_array() {
     assert!(res.len() == 1);
     assert_eq!(
         res.get([1]).unwrap()[0],
-        "this field must be start with {}".into()
+        "this field must be start with `hello`".into()
     );
 }
