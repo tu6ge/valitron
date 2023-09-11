@@ -1,16 +1,33 @@
+use std::fmt::Display;
+
 use crate::{RuleShortcut, Value};
 
 #[derive(Clone, Debug)]
 pub struct StartWith<T>(pub T);
 
+impl<T> StartWith<T> {
+    fn name_in(&self) -> &'static str {
+        "start_with"
+    }
+}
+
+impl<T> StartWith<T>
+where
+    T: Display,
+{
+    fn message_in(&self) -> String {
+        format!("this field must be start with `{}`", self.0)
+    }
+}
+
 impl RuleShortcut for StartWith<&str> {
     type Message = String;
 
     fn name(&self) -> &'static str {
-        "start_with"
+        self.name_in()
     }
-    fn message(&self) -> String {
-        "this field must be start with {}".into()
+    fn message(&self) -> Self::Message {
+        self.message_in()
     }
     fn call(&mut self, value: &mut Value) -> bool {
         match value {
@@ -20,18 +37,19 @@ impl RuleShortcut for StartWith<&str> {
     }
 }
 
-// impl Rule for StartWith<char> {
-//     fn name(&self) -> &'static str {
-//         "start_with"
-//     }
-//     fn message(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-//         write!(f, "this field must be start with {}", self.0)
-//     }
-//     fn call(&mut self, value: &Value, all_data: &Value) -> bool {
-//         match value {
-//             Value::Int8(_) => false,
-//             Value::String(s) => s.starts_with(self.0),
-//             Value::Struct(_) => false,
-//         }
-//     }
-// }
+impl RuleShortcut for StartWith<char> {
+    type Message = String;
+
+    fn name(&self) -> &'static str {
+        self.name_in()
+    }
+    fn message(&self) -> Self::Message {
+        self.message_in()
+    }
+    fn call(&mut self, value: &mut Value) -> bool {
+        match value {
+            Value::String(s) => s.starts_with(self.0),
+            _ => false,
+        }
+    }
+}

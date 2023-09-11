@@ -1,29 +1,77 @@
+use std::fmt::Display;
+
 use crate::{register::FieldNames, value::ValueMap, RuleShortcut, Value};
 
 #[derive(Clone)]
 pub struct Confirm<T>(pub T);
 
+impl<T> Confirm<T> {
+    fn name_in(&self) -> &'static str {
+        "confirm"
+    }
+}
+
+impl<T> Confirm<T>
+where
+    T: ToString,
+{
+    fn get_target_value<'v>(&self, value: &'v ValueMap) -> Option<&'v Value> {
+        let target = value.get(&FieldNames::new(self.0.to_string()));
+        match target {
+            Some(target) if target.is_leaf() => Some(target),
+            _ => None,
+        }
+    }
+}
+
+impl<T> Confirm<T>
+where
+    T: Display,
+{
+    fn message_in(&self) -> String {
+        format!("this field value must be equal to `{}` field", self.0)
+    }
+}
+
+impl RuleShortcut for Confirm<String> {
+    type Message = String;
+
+    fn name(&self) -> &'static str {
+        self.name_in()
+    }
+
+    fn message(&self) -> Self::Message {
+        self.message_in()
+    }
+
+    fn call_with_relate(&mut self, value: &mut ValueMap) -> bool {
+        let target = self.get_target_value(value);
+
+        value.current().unwrap() == target.unwrap()
+    }
+
+    fn call(&mut self, _value: &mut Value) -> bool {
+        unreachable!()
+    }
+}
+
 impl RuleShortcut for Confirm<&str> {
     type Message = String;
 
     fn name(&self) -> &'static str {
-        "confirm"
+        self.name_in()
     }
+
     fn message(&self) -> Self::Message {
-        "this field value must be eq {} field value".into()
+        self.message_in()
     }
+
     fn call_with_relate(&mut self, value: &mut ValueMap) -> bool {
-        let target = value.get(&FieldNames::new(self.0.to_string()));
-        let target = match target {
-            Some(target) if target.is_leaf() => target,
-            _ => return false,
-        };
-        match (value.current().unwrap(), target) {
-            (Value::Int8(v), Value::Int8(ref t)) if v == t => true,
-            (Value::String(v), Value::String(ref t)) if v == t => true,
-            _ => false,
-        }
+        let target = self.get_target_value(value);
+
+        value.current().unwrap() == target.unwrap()
     }
+
     fn call(&mut self, _value: &mut Value) -> bool {
         unreachable!()
     }

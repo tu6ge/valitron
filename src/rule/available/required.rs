@@ -24,8 +24,7 @@ impl RuleShortcut for Required {
             | Value::Int32(_)
             | Value::Int64(_) => true,
             Value::String(s) => !s.is_empty(),
-            Value::Struct(_) => true,
-            _ => todo!(),
+            _ => unreachable!("invalid Value variant"),
         }
     }
 }
