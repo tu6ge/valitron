@@ -24,7 +24,7 @@ features = ["full"]
 # required-features = ["full"]
 
 [dependencies]
-serde = { version = "^1.0", default-features = false }
+serde = { version = "^1.0" }
 
 [dev-dependencies]
 serde = { version = "^1.0", features = ["derive"] }
