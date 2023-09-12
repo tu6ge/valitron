@@ -1,3 +1,5 @@
+//! Usual used by password confirm input
+
 use std::fmt::Display;
 
 use crate::{register::FieldNames, value::ValueMap, RuleShortcut, Value};

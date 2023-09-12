@@ -1,3 +1,5 @@
+//! Require string to start with provided parameters
+
 use std::fmt::Display;
 
 use crate::{RuleShortcut, Value};

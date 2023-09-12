@@ -37,7 +37,7 @@
 //! fn age_range(age: &mut u8) -> Result<(), &'static str> {
 //!     if *age >= 25 && *age <= 45 {
 //!         Ok(())
-//!     }else {
+//!     } else {
 //!         Err("age should be between 25 and 45")
 //!     }
 //! }
@@ -54,6 +54,7 @@
 //! - StartWith
 //! - Confirm
 //! - Trim
+//! - Range
 //! - customizable
 //!
 //! To get started using all of Valitron's optional rule, add this to your
@@ -71,15 +72,17 @@
 //!
 //! ## Custom Rule
 //!
-//! anything types implemented [`Rule`] trait can be used as a rule
+//! anything types implemented [`RuleShortcut`] trait can be used as a rule
 //!
 //! [`Rule`]: crate::Rule
+//! [`RuleShortcut`]: crate::RuleShortcut
 //! [`Message`]: crate::rule::Message
 //! [`IntoRuleMessage`]: crate::rule::IntoRuleMessage
 
 #![cfg_attr(test, allow(unused_imports, dead_code))]
 //#![cfg_attr(docsrs, feature(doc_auto_cfg, doc_cfg))]
 //#![warn(clippy::unwrap_used)]
+//#![doc(html_playground_url = "https://play.rust-lang.org/")]
 
 mod de;
 pub mod register;

@@ -25,6 +25,7 @@ use crate::register::{FieldName, FieldNames, Parser};
 mod cmp;
 mod float;
 
+/// seralized resultant
 #[derive(Debug, PartialEq, Eq, Clone, Ord, PartialOrd)]
 pub enum Value {
     Uint8(u8),
@@ -48,27 +49,47 @@ pub enum Value {
     // ISize(isize), unimplemented
     // USize(usize), unimplemented
     // pointer, Raw pointer unimplemented
+    #[doc(hidden)]
     Option(Box<Option<Value>>),
+
+    #[doc(hidden)]
     Array(Vec<Value>),
+
+    #[doc(hidden)]
     Tuple(Vec<Value>),
+
+    #[doc(hidden)]
     TupleStruct(Vec<Value>),
+
+    #[doc(hidden)]
     NewtypeStruct(Vec<Value>),
 
+    #[doc(hidden)]
     Enum(&'static str, Vec<Value>),
+    #[doc(hidden)]
     EnumUnit(&'static str),
+    #[doc(hidden)]
     TupleVariant(&'static str, Vec<Value>),
 
+    #[doc(hidden)]
     Map(BTreeMap<Value, Value>),
 
+    #[doc(hidden)]
     StructKey(String),
     /// the BtreeMap key only be StructKey(_)
+    #[doc(hidden)]
     Struct(BTreeMap<Value, Value>),
 
+    #[doc(hidden)]
     StructVariantKey(String),
     /// the BtreeMap key only be StructVariantKey(_)
+    #[doc(hidden)]
     StructVariant(&'static str, BTreeMap<Value, Value>),
 }
 
+/// contain full [`Value`] and cursor
+///
+/// [`Value`]: self::Value
 pub struct ValueMap {
     value: Value,
     index: FieldNames,
@@ -88,16 +109,23 @@ impl ValueMap {
     pub fn index(&mut self, index: FieldNames) {
         self.index = index;
     }
+
+    /// get current field value
     pub fn current(&self) -> Option<&Value> {
         self.value.get_with_names(&self.index)
     }
+
+    /// get current field mutable value
     pub fn current_mut(&mut self) -> Option<&mut Value> {
         self.value.get_with_names_mut(&self.index)
     }
 
+    /// get field value by field names
     pub fn get(&self, key: &FieldNames) -> Option<&Value> {
         self.value.get_with_names(key)
     }
+
+    /// get field mutable value by field names
     pub fn get_mut(&mut self, key: &FieldNames) -> Option<&mut Value> {
         self.value.get_with_names_mut(key)
     }
@@ -108,6 +136,7 @@ impl ValueMap {
 }
 
 impl Value {
+    /// get field value by field name
     pub fn get_with_name(&self, name: &FieldName) -> Option<&Value> {
         match (name, self) {
             (FieldName::Array(i), Value::Array(vec)) => vec.get(*i),
@@ -125,6 +154,8 @@ impl Value {
             _ => None,
         }
     }
+
+    /// get field value by field names
     pub fn get_with_names(&self, names: &FieldNames) -> Option<&Value> {
         let mut value = Some(self);
         let mut parser = Parser::new(names.string());
@@ -141,6 +172,8 @@ impl Value {
             }
         }
     }
+
+    /// get field mutable value by field name
     pub fn get_with_name_mut(&mut self, name: &FieldName) -> Option<&mut Value> {
         match (name, self) {
             (FieldName::Array(i), Value::Array(vec)) => vec.get_mut(*i),
@@ -158,6 +191,8 @@ impl Value {
             _ => None,
         }
     }
+
+    /// get field mutable value by field names
     pub fn get_with_names_mut(&mut self, names: &FieldNames) -> Option<&mut Value> {
         let mut value = Some(self);
         let mut parser = Parser::new(names.string());

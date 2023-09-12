@@ -1,3 +1,5 @@
+//! Modifies a string by leading and trailing whitespace removed
+
 use crate::{Message, RuleShortcut, Value};
 
 #[derive(Clone)]

@@ -34,12 +34,17 @@ mod boxed;
 /// TODO! introduce ValueMap
 pub trait Rule<M>: 'static + Sized + Clone {
     /// custom define returning message type
+    ///
+    /// u8 or String or both
     type Message: IntoRuleMessage;
 
-    /// Named rule type, allow `a-z` | `A-Z` | `0-9` | `_`, and not start with `0-9`
+    /// Named rule type, used to distinguish between different rule.
+    /// allow `a-z` | `A-Z` | `0-9` | `_`, and not start with `0-9`
     fn name(&self) -> &'static str;
 
     /// Rule specific implementation, data is gived type all field's value, and current field index.
+    ///
+    /// success returning Ok(()), or else returning message.
     fn call(&mut self, data: &mut ValueMap) -> Result<(), Self::Message>;
 
     #[doc(hidden)]
@@ -339,6 +344,7 @@ mod test_regster {
     }
 }
 
+/// used by convenient implementation custom rules.
 pub trait RuleShortcut {
     /// custom define returning message type
     type Message: IntoRuleMessage;

@@ -1,10 +1,10 @@
 //! available rules collection
 
-mod confirm;
-mod range;
-mod required;
-mod start_with;
-mod trim;
+pub mod confirm;
+pub mod range;
+pub mod required;
+pub mod start_with;
+pub mod trim;
 
 pub use confirm::Confirm;
 pub use range::Range;

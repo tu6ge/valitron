@@ -1,3 +1,5 @@
+//! Value can not be empty
+
 use crate::{RuleShortcut, Value};
 
 #[derive(Clone, Debug)]
