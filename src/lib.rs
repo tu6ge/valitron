@@ -85,7 +85,7 @@
 //! [`Range`]: crate::available::range
 
 #![cfg_attr(test, allow(unused_imports, dead_code))]
-//#![cfg_attr(docsrs, feature(doc_auto_cfg, doc_cfg))]
+#![cfg_attr(docsrs, feature(doc_auto_cfg, doc_cfg))]
 //#![warn(clippy::unwrap_used)]
 //#![doc(html_playground_url = "https://play.rust-lang.org/")]
 
