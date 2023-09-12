@@ -50,11 +50,11 @@
 //!
 //! ## Available Rule
 //!
-//! - Required
-//! - StartWith
-//! - Confirm
-//! - Trim
-//! - Range
+//! - [`Required`]
+//! - [`StartWith`]
+//! - [`Confirm`]
+//! - [`Trim`]
+//! - [`Range`]
 //! - customizable
 //!
 //! To get started using all of Valitron's optional rule, add this to your
@@ -78,6 +78,11 @@
 //! [`RuleShortcut`]: crate::RuleShortcut
 //! [`Message`]: crate::rule::Message
 //! [`IntoRuleMessage`]: crate::rule::IntoRuleMessage
+//! [`Required`]: crate::available::required
+//! [`StartWith`]: crate::available::start_with
+//! [`Confirm`]: crate::available::confirm
+//! [`Trim`]: crate::available::trim
+//! [`Range`]: crate::available::range
 
 #![cfg_attr(test, allow(unused_imports, dead_code))]
 //#![cfg_attr(docsrs, feature(doc_auto_cfg, doc_cfg))]

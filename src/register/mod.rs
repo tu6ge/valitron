@@ -42,12 +42,49 @@ impl Validator {
         Self::default()
     }
 
-    /// Register rules
+    /// # Register rules
+    ///
+    /// **Feild support multiple formats:**
+    /// - `field1` used to matching struct field
+    /// - `0`,`1`.. used to matching tuple item or tuple struct field
+    /// - `[0]`,`[1]` used to matching array item
+    /// - `[foo]` used to matching struct variant, e.g. `enum Foo{ Color { r: u8, g: u8, b: u8 } }`
+    ///
+    /// The above can also be combined:
+    /// - `field1.0`
+    /// - `0.color`
+    /// - `[12].1`
+    /// - `foo.1[color]`
+    /// - more combine
+    ///
+    /// TODO add BNF
+    ///
+    /// **Rule also support multiple formats:**
+    /// - `RuleFoo`
+    /// - `RuleFoo.and(RuleBar)` combineable
+    /// - `custom(handler)` closure usage
+    /// - `RuleFoo.custom(handler)` type and closure
+    /// - `custom(handler).and(RuleFoo)` closure and type
+    /// - `RuleFoo.and(RuleBar).bail()` when first validate error, immediately return error with one message.
+    ///
+    /// *Available Rules*
+    /// - [`Required`]
+    /// - [`StartWith`]
+    /// - [`Confirm`]
+    /// - [`Trim`]
+    /// - [`Range`]
+    /// - customizable
     ///
     /// # Panic
     ///
     /// - Field format error will be panic
     /// - Invalid rule name will be panic
+    ///
+    /// [`Required`]: crate::available::required
+    /// [`StartWith`]: crate::available::start_with
+    /// [`Confirm`]: crate::available::confirm
+    /// [`Trim`]: crate::available::trim
+    /// [`Range`]: crate::available::range
     pub fn rule<F, R>(mut self, field: F, rule: R) -> Self
     where
         F: IntoFieldName,
@@ -66,9 +103,16 @@ impl Validator {
 
     /// Custom validate error message
     ///
+    /// Every rule has a default message, the method should be replace it with your need.
+    ///
+    /// parameter list item format:
+    /// `(field_name.rule_name, message)`
+    ///
+    /// e.g: `("name.required", "name is required")`
+    ///
     /// # Panic
     ///
-    /// When registering not existing ,this will panic
+    /// When field or rule is not existing ,this will panic
     pub fn message<'key, const N: usize, M>(mut self, list: [(&'key str, M); N]) -> Self
     where
         M: IntoRuleMessage,
@@ -86,7 +130,7 @@ impl Validator {
         self
     }
 
-    /// Validate without modifiable
+    /// run validate without modifiable
     pub fn validate<T>(self, data: T) -> Result<(), ValidatorError>
     where
         T: serde::ser::Serialize,
@@ -104,7 +148,7 @@ impl Validator {
         }
     }
 
-    /// Validate with modifiable
+    /// run validate with modifiable
     pub fn validate_mut<'de, T>(self, data: T) -> Result<T, ValidatorError>
     where
         T: serde::ser::Serialize + serde::de::Deserialize<'de>,
@@ -154,9 +198,10 @@ impl Validator {
     }
 
     fn exit_message(&self, MessageKey { fields, rule }: &MessageKey) -> Result<(), String> {
-        let names = self
-            .rule_get(fields)
-            .ok_or({ format!("the field \"{}\" not found in validator", fields.as_str()) })?;
+        let names = self.rule_get(fields).ok_or(format!(
+            "the field \"{}\" not found in validator",
+            fields.as_str()
+        ))?;
 
         if names.contains(rule) {
             Ok(())
