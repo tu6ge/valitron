@@ -66,6 +66,7 @@ impl_range!(Uint32(u32));
 impl_range!(Int32(i32));
 impl_range!(Uint64(u64));
 impl_range!(Int64(i64));
+impl_range!(Char(char));
 
 impl<T> RuleShortcut for Range<T, f32>
 where
