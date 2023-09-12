@@ -167,7 +167,10 @@ impl IntoRuleMessage for &str {
 /// Rule1.and(Rule2).and(Rule3)
 /// ```
 pub trait RuleExt {
-    fn and<R: Rule<()> + Clone>(self, other: R) -> RuleList;
+    fn and<R>(self, other: R) -> RuleList
+    where
+        R: Rule<()> + Clone;
+
     fn custom<F, V, M>(self, other: F) -> RuleList
     where
         F: for<'a> FnOnce(&'a mut V) -> Result<(), M> + 'static + Clone,
@@ -176,13 +179,20 @@ pub trait RuleExt {
         M: IntoRuleMessage;
 }
 
-impl<R: Rule<()> + Clone> RuleExt for R {
-    fn and<R2: Rule<()> + Clone>(self, other: R2) -> RuleList {
+impl<R> RuleExt for R
+where
+    R: Rule<()> + Clone,
+{
+    fn and<R2>(self, other: R2) -> RuleList
+    where
+        R2: Rule<()> + Clone,
+    {
         RuleList {
             list: vec![ErasedRule::new(self), ErasedRule::new(other)],
             ..Default::default()
         }
     }
+
     fn custom<F, V, M>(self, other: F) -> RuleList
     where
         F: for<'a> FnOnce(&'a mut V) -> Result<(), M> + 'static + Clone,
@@ -205,15 +215,20 @@ pub struct RuleList {
 }
 
 impl RuleList {
-    pub fn and<R: Rule<()> + Clone>(mut self, other: R) -> Self {
+    pub fn and<R>(mut self, other: R) -> Self
+    where
+        R: Rule<()> + Clone,
+    {
         self.list.push(ErasedRule::new(other));
         self
     }
-    pub fn custom<F, V>(mut self, other: F) -> Self
+
+    pub fn custom<F, V, M>(mut self, other: F) -> Self
     where
-        F: for<'a> FnOnce(&'a mut V) -> Result<(), String> + 'static + Clone,
+        F: for<'a> FnOnce(&'a mut V) -> Result<(), M> + 'static + Clone,
         F: Rule<V>,
         V: FromValue + 'static,
+        M: IntoRuleMessage,
     {
         self.list.push(ErasedRule::new(other));
         self
