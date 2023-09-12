@@ -158,7 +158,7 @@ impl Value {
     /// get field value by field names
     pub fn get_with_names(&self, names: &FieldNames) -> Option<&Value> {
         let mut value = Some(self);
-        let mut parser = Parser::new(names.string());
+        let mut parser = Parser::new(names.as_str());
         loop {
             match parser.next_name() {
                 Ok(Some(name)) => {
@@ -195,7 +195,7 @@ impl Value {
     /// get field mutable value by field names
     pub fn get_with_names_mut(&mut self, names: &FieldNames) -> Option<&mut Value> {
         let mut value = Some(self);
-        let mut parser = Parser::new(names.string());
+        let mut parser = Parser::new(names.as_str());
         loop {
             match parser.next_name() {
                 Ok(Some(name)) => {

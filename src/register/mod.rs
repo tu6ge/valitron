@@ -154,10 +154,9 @@ impl Validator {
     }
 
     fn exit_message(&self, MessageKey { fields, rule }: &MessageKey) -> Result<(), String> {
-        let names = self.rule_get(fields).ok_or({
-            let field_name = fields.string();
-            format!("the field \"{}\" not found in validator", field_name)
-        })?;
+        let names = self
+            .rule_get(fields)
+            .ok_or({ format!("the field \"{}\" not found in validator", fields.as_str()) })?;
 
         if names.contains(rule) {
             Ok(())

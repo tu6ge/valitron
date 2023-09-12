@@ -90,7 +90,7 @@ impl FieldNames {
     // pub fn iter(&self) -> Iter<'_, FieldName> {
     //     self.vec.iter()
     // }
-    pub fn string(&self) -> &String {
+    pub fn as_str(&self) -> &str {
         &self.string
     }
 }
