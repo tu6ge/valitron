@@ -1,5 +1,6 @@
 use crate::{Message, RuleShortcut, Value};
 
+#[derive(Clone)]
 pub struct Trim;
 
 impl RuleShortcut for Trim {
