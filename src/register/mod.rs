@@ -37,7 +37,7 @@ macro_rules! panic_on_err {
     };
 }
 
-impl<'a> Validator {
+impl Validator {
     pub fn new() -> Self {
         Self::default()
     }
@@ -69,7 +69,7 @@ impl<'a> Validator {
     /// # Panic
     ///
     /// When registering not existing ,this will panic
-    pub fn message<const N: usize, M>(mut self, list: [(&'a str, M); N]) -> Self
+    pub fn message<'key, const N: usize, M>(mut self, list: [(&'key str, M); N]) -> Self
     where
         M: IntoRuleMessage,
     {
