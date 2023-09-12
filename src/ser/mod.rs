@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, fmt::Display};
 
 use serde::ser;
 
@@ -8,7 +8,7 @@ use crate::value::Value;
 mod test;
 
 #[cfg(test)]
-pub fn to_value<T>(value: T) -> Result<Value, MyErr>
+pub fn to_value<T>(value: T) -> Result<Value, Error>
 where
     T: ser::Serialize,
 {
@@ -18,25 +18,25 @@ where
 pub(crate) struct Serializer;
 
 #[derive(Debug)]
-pub struct MyErr;
+pub struct Error;
 
-impl serde::ser::Error for MyErr {
-    fn custom<T>(_msg: T) -> Self {
-        todo!()
+impl serde::ser::Error for Error {
+    fn custom<T: Display>(msg: T) -> Self {
+        todo!("{msg}")
     }
 }
 
-impl std::error::Error for MyErr {}
-impl std::fmt::Display for MyErr {
+impl std::error::Error for Error {}
+impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        "abc".fmt(f)
+        "seralize error".fmt(f)
     }
 }
 
 impl serde::ser::Serializer for Serializer {
     type Ok = Value;
 
-    type Error = MyErr;
+    type Error = Error;
 
     type SerializeSeq = SerializeSeq;
 
@@ -229,7 +229,7 @@ impl SerializeSeq {
 }
 
 impl serde::ser::SerializeSeq for SerializeSeq {
-    type Error = MyErr;
+    type Error = Error;
     type Ok = Value;
 
     fn serialize_element<T: ?Sized>(&mut self, value: &T) -> Result<(), Self::Error>
@@ -255,7 +255,7 @@ impl SerializeTuple {
 }
 
 impl ser::SerializeTuple for SerializeTuple {
-    type Error = MyErr;
+    type Error = Error;
     type Ok = Value;
 
     fn serialize_element<T: ?Sized>(&mut self, value: &T) -> Result<(), Self::Error>
@@ -281,7 +281,7 @@ impl SerializeTupleStruct {
 }
 
 impl ser::SerializeTupleStruct for SerializeTupleStruct {
-    type Error = MyErr;
+    type Error = Error;
     type Ok = Value;
 
     fn serialize_field<T: ?Sized>(&mut self, value: &T) -> Result<(), Self::Error>
@@ -311,7 +311,7 @@ impl SerializeTupleVariant {
     }
 }
 impl ser::SerializeTupleVariant for SerializeTupleVariant {
-    type Error = MyErr;
+    type Error = Error;
     type Ok = Value;
 
     fn serialize_field<T: ?Sized>(&mut self, value: &T) -> Result<(), Self::Error>
@@ -342,7 +342,7 @@ impl SerializeMap {
 }
 
 impl ser::SerializeMap for SerializeMap {
-    type Error = MyErr;
+    type Error = Error;
     type Ok = Value;
 
     fn serialize_key<T: ?Sized>(&mut self, key: &T) -> Result<(), Self::Error>
@@ -358,7 +358,7 @@ impl ser::SerializeMap for SerializeMap {
     where
         T: serde::Serialize,
     {
-        let key = self.next_key.take().ok_or(MyErr)?;
+        let key = self.next_key.take().ok_or(Error)?;
         self.map.insert(key, value.serialize(Serializer)?);
 
         Ok(())
@@ -372,7 +372,7 @@ impl ser::SerializeMap for SerializeMap {
 #[derive(Debug, PartialEq, Eq)]
 pub(crate) struct SerializeStruct(BTreeMap<Value, Value>);
 impl ser::SerializeStruct for SerializeStruct {
-    type Error = MyErr;
+    type Error = Error;
     type Ok = Value;
 
     fn serialize_field<T: ?Sized>(
@@ -411,7 +411,7 @@ impl SerializeStructVariant {
     }
 }
 impl ser::SerializeStructVariant for SerializeStructVariant {
-    type Error = MyErr;
+    type Error = Error;
     type Ok = Value;
 
     fn serialize_field<T: ?Sized>(

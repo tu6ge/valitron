@@ -57,18 +57,18 @@ impl Value {
 }
 
 #[derive(Debug)]
-pub struct MyErr;
+pub struct Error;
 
-impl serde::de::Error for MyErr {
+impl serde::de::Error for Error {
     fn custom<T: Display>(msg: T) -> Self {
         todo!("{msg}")
     }
 }
 
-impl std::error::Error for MyErr {}
-impl std::fmt::Display for MyErr {
+impl std::error::Error for Error {}
+impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        "abc".fmt(f)
+        "deseralize error".fmt(f)
     }
 }
 
@@ -88,7 +88,7 @@ macro_rules! deserialize_primitive {
 }
 
 impl<'de> Deserializer<'de> for Value {
-    type Error = MyErr;
+    type Error = Error;
 
     fn deserialize_any<V>(self, _visitor: V) -> Result<V::Value, Self::Error>
     where
@@ -358,7 +358,7 @@ impl SeqDeserializer {
 }
 
 impl<'de> SeqAccess<'de> for SeqDeserializer {
-    type Error = MyErr;
+    type Error = Error;
 
     fn next_element_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>, Self::Error>
     where
@@ -378,7 +378,7 @@ impl<'de> SeqAccess<'de> for SeqDeserializer {
     }
 }
 
-fn visit_array<'de, V>(array: Vec<Value>, visitor: V) -> Result<V::Value, MyErr>
+fn visit_array<'de, V>(array: Vec<Value>, visitor: V) -> Result<V::Value, Error>
 where
     V: Visitor<'de>,
 {
@@ -410,7 +410,7 @@ impl EnumDeserializer {
 }
 
 impl<'de> EnumAccess<'de> for EnumDeserializer {
-    type Error = MyErr;
+    type Error = Error;
     type Variant = VariantDeserializer;
 
     fn variant_seed<V>(self, seed: V) -> Result<(V::Value, VariantDeserializer), Self::Error>
@@ -432,7 +432,7 @@ struct VariantDeserializer {
 }
 
 impl<'de> VariantAccess<'de> for VariantDeserializer {
-    type Error = MyErr;
+    type Error = Error;
 
     fn unit_variant(self) -> Result<(), Self::Error> {
         // debug_assert!(self.value.len()==0);
@@ -495,7 +495,7 @@ impl MapDeserializer {
 }
 
 impl<'de> MapAccess<'de> for MapDeserializer {
-    type Error = MyErr;
+    type Error = Error;
 
     fn next_key_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>, Self::Error>
     where
@@ -544,7 +544,7 @@ struct MapRefDeserializer<'de> {
 
 // TODO  &Value need to implement Deserializer
 impl<'de> MapAccess<'de> for MapRefDeserializer<'de> {
-    type Error = MyErr;
+    type Error = Error;
 
     fn next_key_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>, Self::Error>
     where
