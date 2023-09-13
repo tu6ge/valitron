@@ -50,14 +50,27 @@ impl Validator {
     /// - `[0]`,`[1]` used to matching array item
     /// - `[foo]` used to matching struct variant, e.g. `enum Foo{ Color { r: u8, g: u8, b: u8 } }`
     ///
-    /// The above can also be combined:
+    /// fields support nest:
     /// - `field1.0`
     /// - `0.color`
     /// - `[12].1`
     /// - `foo.1[color]`
     /// - more combine
     ///
-    /// TODO add BNF
+    /// BNF indicate
+    /// ```bnf
+    /// exp                    ::= <tuple_index>
+    ///                          | <exp> '.' <tuple_index>
+    ///                          | <array_index>
+    ///                          | <exp> <array_index>
+    ///                          | <ident>
+    ///                          | <exp> '.' <ident>
+    ///                          | <struct_variant_index>
+    ///                          | <exp> <struct_variant_index>
+    /// tuple_index            ::= <digit>
+    /// array_index            ::= '[' <digit> ']'
+    /// struct_variant_index   ::= '[' <ident> ']'
+    /// ```
     ///
     /// **Rule also support multiple formats:**
     /// - `RuleFoo`
