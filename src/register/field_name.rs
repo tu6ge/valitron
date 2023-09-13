@@ -197,8 +197,9 @@ impl<'a> Parser<'a> {
         match token.kind() {
             TokenKind::Ident => {
                 //self.current_pos += 1;
-                let res = FieldName::Literal(self.source[..token.len].to_owned());
-                self.source = &self.source[token.len..];
+                let ident;
+                (ident, self.source) = self.source.split_at(token.len);
+                let res = FieldName::Literal(ident.to_owned());
                 self.eat_dot()?;
                 Ok(Some(res))
             }
@@ -209,12 +210,13 @@ impl<'a> Parser<'a> {
             }
             TokenKind::RightBracket => Err(ParserError::BracketRight),
             TokenKind::Index => {
+                let index_str;
+                (index_str, self.source) = self.source.split_at(token.len);
                 let res = FieldName::Tuple(
-                    (self.source[..token.len])
+                    index_str
                         .parse()
                         .map_err(|_| ParserError::ParseTupleIndex)?,
                 );
-                self.source = &self.source[token.len..];
                 if !(self.expect(TokenKind::Dot)
                     || self.expect(TokenKind::LeftBracket)
                     || self.expect(TokenKind::Eof))
@@ -269,10 +271,12 @@ impl<'a> Parser<'a> {
                     ..
                 } = peek.advance()
                 {
-                    let name = FieldName::StructVariant((self.source[..t.len]).to_owned());
+                    let str;
+                    (str, self.source) = self.source.split_at(t.len);
+                    let name = FieldName::StructVariant(str.to_owned());
+
                     // eat ident
                     self.token.advance();
-                    self.source = &self.source[t.len..];
                     // eat `]`
                     self.token.advance();
                     self.source = &self.source[1..];
