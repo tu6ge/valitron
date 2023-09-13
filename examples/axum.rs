@@ -12,18 +12,18 @@
 
 use std::net::SocketAddr;
 
-use async_trait::async_trait;
 use axum::{
-    extract::{rejection::FormRejection, Form, FromRequest},
-    http::{Request, StatusCode},
+    extract::{rejection::FormRejection, Form},
+    http::StatusCode,
     response::{Html, IntoResponse, Response},
     routing::get,
     Router,
 };
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use valitron::{
-    available::{Required, StartWith, Trim},
+    available::{Required, StartWith},
+    register::{AppendValidator, ValidatorError},
     RuleExt, Validator,
 };
 
@@ -45,42 +45,23 @@ pub struct BlogInput {
     pub title: String,
 }
 
-async fn handler(ValidatedForm(input): ValidatedForm<BlogInput>) -> Html<String> {
-    Html(format!("<h1>Hello, {}!</h1>", input.title))
-}
-
-#[derive(Debug, Clone, Copy, Default)]
-pub struct ValidatedForm<T>(pub T);
-
-#[async_trait]
-impl<T, S, B> FromRequest<S, B> for ValidatedForm<T>
-where
-    T: Serialize + DeserializeOwned,
-    S: Send + Sync,
-    Form<T>: FromRequest<S, B, Rejection = FormRejection>,
-    B: Send + 'static,
-{
-    type Rejection = ServerError;
-
-    async fn from_request(req: Request<B>, state: &S) -> Result<Self, Self::Rejection> {
-        let Form(value) = Form::<T>::from_request(req, state).await?;
-        let validate = Validator::new()
-            .rule("title", Trim.and(Required).and(StartWith("hi")))
+async fn handler(Form(input): Form<BlogInput>) -> Result<Html<String>, ServerError> {
+    input.validate(
+        Validator::new()
+            .rule("title", Required.and(StartWith("hi")))
             .message([
                 ("title.required", "title is required"),
                 ("title.start_with", "title should be starts with `hi`"),
-            ]);
+            ]),
+    )?;
 
-        validate.validate(&value)?;
-
-        Ok(ValidatedForm(value))
-    }
+    Ok(Html(format!("<h1>Hello, {}!</h1>", input.title)))
 }
 
 #[derive(Debug, Error)]
 pub enum ServerError {
     #[error(transparent)]
-    ValidationError(#[from] valitron::register::ValidatorError),
+    ValidationError(#[from] ValidatorError),
 
     #[error(transparent)]
     AxumFormRejection(#[from] FormRejection),
