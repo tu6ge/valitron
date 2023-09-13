@@ -19,12 +19,16 @@ rustdoc-args = ["--cfg", "docsrs"]
 [package.metadata.playground]
 features = ["full"]
 
-# [[example]]
-# name = "sample"
-# required-features = ["full"]
+[[example]]
+name = "axum"
+required-features = ["full"]
 
 [dependencies]
 serde = { version = "^1.0" }
 
 [dev-dependencies]
 serde = { version = "^1.0", features = ["derive"] }
+tokio = { version = "1.32.0", features = ["full"] }
+axum = { version = "0.6.20", features = ["tokio", "form"]}
+async-trait = "0.1.67"
+thiserror = "1.0.29"
