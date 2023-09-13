@@ -60,15 +60,15 @@ impl Validator {
     /// BNF indicate
     /// ```bnf
     /// exp                    ::= <tuple_index>
-    ///                          | <exp> '.' <tuple_index>
     ///                          | <array_index>
-    ///                          | <exp> <array_index>
     ///                          | <ident>
-    ///                          | <exp> '.' <ident>
     ///                          | <struct_variant_index>
+    ///                          | <exp> '.' <tuple_index>
+    ///                          | <exp> '.' <ident>
+    ///                          | <exp> <array_index>
     ///                          | <exp> <struct_variant_index>
-    /// tuple_index            ::= <digit>
-    /// array_index            ::= '[' <digit> ']'
+    /// tuple_index            ::= <u8>
+    /// array_index            ::= '[' <usize> ']'
     /// struct_variant_index   ::= '[' <ident> ']'
     /// ```
     ///
