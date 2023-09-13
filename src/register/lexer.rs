@@ -46,18 +46,6 @@ impl From<(TokenKind, usize)> for Token {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
-pub struct Error {
-    message: String,
-}
-
-impl<'a> From<&'a str> for Error {
-    fn from(value: &'a str) -> Self {
-        Self {
-            message: value.to_owned(),
-        }
-    }
-}
 // Mimics the behaviour of `Symbol::can_be_raw` from `rustc_span`
 // fn can_be_raw(string: &str) -> bool {
 //     match string {

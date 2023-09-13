@@ -192,7 +192,7 @@ impl<'a> Parser<'a> {
         Self { source, token }
     }
 
-    pub fn next_name(&mut self) -> Result<Option<FieldName>, String> {
+    pub fn next_name(&mut self) -> Result<Option<FieldName>, ParserError> {
         let token = self.token.advance();
         match token.kind() {
             TokenKind::Ident => {
@@ -202,36 +202,36 @@ impl<'a> Parser<'a> {
                 self.eat_dot()?;
                 Ok(Some(res))
             }
-            TokenKind::Dot => Err("`.` should not be start".into()),
+            TokenKind::Dot => Err(ParserError::DotStart),
             TokenKind::LeftBracket => {
                 self.source = &self.source[token.len..];
                 self.parse_bracket().map(Some)
             }
-            TokenKind::RightBracket => Err("`]` should to stay behind `[`".into()),
+            TokenKind::RightBracket => Err(ParserError::BracketRight),
             TokenKind::Index => {
                 let res = FieldName::Tuple(
                     (self.source[..token.len])
                         .parse()
-                        .map_err(|_| "tuple index is not u8 type".to_string())?,
+                        .map_err(|_| ParserError::ParseTupleIndex)?,
                 );
                 self.source = &self.source[token.len..];
                 if !(self.expect(TokenKind::Dot)
                     || self.expect(TokenKind::LeftBracket)
                     || self.expect(TokenKind::Eof))
                 {
-                    return Err("after tuple index should be `.` or `[` or eof".into());
+                    return Err(ParserError::TupleClose);
                 }
 
                 self.eat_dot()?;
                 Ok(Some(res))
             }
-            TokenKind::Undefined => Err("undefined char".into()),
+            TokenKind::Undefined => Err(ParserError::Undefined),
             TokenKind::Eof => Ok(None),
         }
     }
 
     /// parse `[0]` or `[abc]`
-    fn parse_bracket(&mut self) -> Result<FieldName, String> {
+    fn parse_bracket(&mut self) -> Result<FieldName, ParserError> {
         let mut peek = self.token.clone();
         let t = peek.advance();
         match t.kind() {
@@ -244,7 +244,7 @@ impl<'a> Parser<'a> {
                     let name = FieldName::Array(
                         (self.source[..t.len])
                             .parse()
-                            .map_err(|_| "tuple index is not u8 type".to_string())?,
+                            .map_err(|_| ParserError::ParseArrayIndex)?,
                     );
                     // eat index
                     self.token.advance();
@@ -257,7 +257,7 @@ impl<'a> Parser<'a> {
                         || self.expect(TokenKind::LeftBracket)
                         || self.expect(TokenKind::Eof))
                     {
-                        return Err("after `]` should be `.` or `[` or eof".into());
+                        return Err(ParserError::ArrayClose);
                     }
                     self.eat_dot()?;
                     return Ok(name);
@@ -281,17 +281,17 @@ impl<'a> Parser<'a> {
                         || self.expect(TokenKind::LeftBracket)
                         || self.expect(TokenKind::Eof))
                     {
-                        return Err("after `]` should be `.` or `[` or eof".into());
+                        return Err(ParserError::ArrayClose);
                     }
 
                     self.eat_dot()?;
                     return Ok(name);
                 }
             }
-            _ => return Err("Syntax error".into()),
+            _ => return Err(ParserError::BracketSyntaxError),
         }
 
-        Err("bracket syntax error".into())
+        Err(ParserError::BracketSyntaxError)
     }
 
     fn expect(&self, token: TokenKind) -> bool {
@@ -299,7 +299,7 @@ impl<'a> Parser<'a> {
         token == peek.kind
     }
 
-    fn eat_dot(&mut self) -> Result<(), String> {
+    fn eat_dot(&mut self) -> Result<(), ParserError> {
         let mut peek = self.token.clone();
         if let Token {
             kind: TokenKind::Dot,
@@ -308,8 +308,8 @@ impl<'a> Parser<'a> {
         {
             let Token { kind, .. } = peek.advance();
             match kind {
-                TokenKind::Eof => return Err("`.` should not be end".into()),
-                TokenKind::LeftBracket => return Err("after `.` should not be `[`".into()),
+                TokenKind::Eof => return Err(ParserError::DotIsLast),
+                TokenKind::LeftBracket => return Err(ParserError::DotTieLeftBracket),
                 _ => (),
             }
             self.token.advance();
@@ -321,7 +321,7 @@ impl<'a> Parser<'a> {
 }
 
 #[cfg(test)]
-pub fn parse(source: &str) -> Result<Vec<FieldName>, String> {
+pub(crate) fn parse(source: &str) -> Result<Vec<FieldName>, ParserError> {
     let mut parser = Parser::new(source);
 
     let mut vec = Vec::new();
@@ -342,6 +342,38 @@ pub fn parse_message(source: &str) -> Result<MessageKey, String> {
         FieldNames::new(name_str.to_string()),
         string.to_string(),
     ))
+}
+
+#[derive(Debug)]
+pub(crate) enum ParserError {
+    DotStart,
+    BracketRight,
+    ParseTupleIndex,
+    TupleClose,
+    Undefined,
+    ParseArrayIndex,
+    ArrayClose,
+    BracketSyntaxError,
+    DotIsLast,
+    DotTieLeftBracket,
+}
+
+impl Display for ParserError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        use ParserError::*;
+        match self {
+            DotStart => "`.` should not be start".fmt(f),
+            BracketRight => "`]` should to stay behind `[`".fmt(f),
+            ParseTupleIndex => "tuple index is not u8 type".fmt(f),
+            TupleClose => "after tuple index should be `.` or `[` or eof".fmt(f),
+            Undefined => "undefined character".fmt(f),
+            ParseArrayIndex => "array index is not usize type".fmt(f),
+            ArrayClose => "after `]` should be `.` or `[` or eof".fmt(f),
+            BracketSyntaxError => "bracket syntax error".fmt(f),
+            DotIsLast => "`.` should not be end".fmt(f),
+            DotTieLeftBracket => "after `.` should not be `[`".fmt(f),
+        }
+    }
 }
 
 #[test]
