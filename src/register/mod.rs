@@ -230,6 +230,29 @@ impl Validator {
     }
 }
 
+pub trait AppendValidator {
+    fn validate(&self, validator: Validator) -> Result<(), ValidatorError>;
+    fn validate_mut<'de>(self, validator: Validator) -> Result<Self, ValidatorError>
+    where
+        Self: Sized + serde::de::Deserialize<'de>;
+}
+
+impl<T> AppendValidator for T
+where
+    T: serde::ser::Serialize,
+{
+    fn validate(&self, validator: Validator) -> Result<(), ValidatorError> {
+        validator.validate(self)
+    }
+
+    fn validate_mut<'de>(self, validator: Validator) -> Result<Self, ValidatorError>
+    where
+        Self: Sized + serde::de::Deserialize<'de>,
+    {
+        validator.validate_mut(self)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ValidatorError {
     message: HashMap<FieldNames, Vec<Message>>,
