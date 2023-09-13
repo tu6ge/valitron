@@ -5,6 +5,8 @@ use std::{
         hash_map::{Iter, IterMut},
         HashMap,
     },
+    error::Error,
+    fmt::Display,
     hash::{Hash, Hasher},
 };
 
@@ -232,6 +234,14 @@ impl Validator {
 pub struct ValidatorError {
     message: HashMap<FieldNames, Vec<Message>>,
 }
+
+impl Display for ValidatorError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        "validator error".fmt(f)
+    }
+}
+
+impl Error for ValidatorError {}
 
 // impl Deref for ValidatorError {
 //     type Target = HashMap<FieldNames, Vec<String>>;

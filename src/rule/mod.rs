@@ -75,6 +75,14 @@ impl Message {
             content: String::default(),
         }
     }
+
+    pub fn as_str(&self) -> &str {
+        &self.content
+    }
+
+    pub fn code(&self) -> u8 {
+        self.code
+    }
 }
 
 impl From<String> for Message {
