@@ -16,14 +16,12 @@ use crate::{
     value::ValueMap,
 };
 
-mod field_name;
-mod lexer;
-
-pub(crate) use field_name::Parser;
 pub use field_name::{FieldName, FieldNames};
+pub(crate) use field_name::{IntoFieldName, Parser};
 use serde::{Deserialize, Serialize};
 
-use self::field_name::IntoFieldName;
+mod field_name;
+mod lexer;
 
 #[derive(Default)]
 pub struct Validator {
