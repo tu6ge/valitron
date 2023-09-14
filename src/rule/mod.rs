@@ -43,8 +43,9 @@ pub trait Rule<M>: 'static + Sized + Clone {
     /// u8 or String or both
     type Message: IntoRuleMessage;
 
-    /// Named rule type, used to distinguish between different rule.
-    /// allow `a-z` | `A-Z` | `0-9` | `_`, and not start with `0-9`
+    /// Named rule type, used to distinguish between different rules.
+    ///
+    /// allow `a-z` | `A-Z` | `0-9` | `_` composed string, and not start with `0-9`
     fn name(&self) -> &'static str;
 
     /// Rule specific implementation, data is gived type all field's value, and current field index.
@@ -396,7 +397,9 @@ pub trait RuleShortcut {
     /// custom define returning message type
     type Message: IntoRuleMessage;
 
-    /// Named rule type
+    /// Named rule type, used to distinguish different rules
+    ///
+    /// allow `a-z` | `A-Z` | `0-9` | `_` composed string, and not start with `0-9`
     fn name(&self) -> &'static str;
 
     /// Default rule error message, when validate fails, return the message to user

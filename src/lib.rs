@@ -1,4 +1,4 @@
-//! Valitron is a validator on ergonomics
+//! Valitron is an ergonomics, functional and configurable validator.
 //!
 //! ## This is an example:
 //!
