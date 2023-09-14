@@ -231,8 +231,12 @@ impl Validator {
     }
 }
 
+/// validateable on any types
 pub trait Validatable {
+    /// if not change value
     fn validate(&self, validator: Validator) -> Result<(), ValidatorError>;
+
+    /// if need to change value, e.g. `trim`
     fn validate_mut<'de>(self, validator: Validator) -> Result<Self, ValidatorError>
     where
         Self: Sized + Deserialize<'de>;

@@ -15,11 +15,7 @@ use actix_web::{
 };
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
-use valitron::{
-    available::Required,
-    register::{Validatable, ValidatorError},
-    Validator,
-};
+use valitron::{available::Required, register::ValidatorError, Validatable, Validator};
 
 #[derive(Deserialize, Serialize)]
 struct Info {

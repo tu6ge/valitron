@@ -12,8 +12,7 @@
 
 use valitron::{
     available::{Required, Trim},
-    register::Validatable,
-    RuleExt, Validator,
+    RuleExt, Validatable, Validator,
 };
 
 #[macro_use]

@@ -23,8 +23,8 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use valitron::{
     available::{Required, StartWith},
-    register::{Validatable, ValidatorError},
-    RuleExt, Validator,
+    register::ValidatorError,
+    RuleExt, Validatable, Validator,
 };
 
 #[tokio::main]

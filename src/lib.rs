@@ -95,7 +95,7 @@ pub mod rule;
 mod ser;
 pub mod value;
 
-pub use register::Validator;
+pub use register::{Validatable, Validator};
 pub use rule::{custom, IntoRuleMessage, Message, Rule, RuleExt, RuleShortcut};
 pub use value::{FromValue, Value, ValueMap};
 
