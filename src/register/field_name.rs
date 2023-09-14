@@ -73,9 +73,18 @@ fn names_to_string(vec: &[FieldName]) -> String {
     string
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Default, Serialize)]
+#[derive(Debug, PartialEq, Eq, Clone, Default)]
 pub struct FieldNames {
     string: String,
+}
+
+impl Serialize for FieldNames {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(&self.string)
+    }
 }
 
 impl Hash for FieldNames {

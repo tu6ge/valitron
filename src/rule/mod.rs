@@ -2,7 +2,7 @@
 
 use std::slice::Iter;
 
-use serde::Serialize;
+use serde::{ser::SerializeMap, Serialize};
 
 use crate::value::{FromValue, Value, ValueMap};
 
@@ -11,6 +11,9 @@ use self::boxed::{ErasedRule, RuleIntoBoxed};
 #[cfg(feature = "full")]
 pub mod available;
 mod boxed;
+
+#[cfg(test)]
+mod test;
 
 /// Trait used by creating Rule
 ///
@@ -57,7 +60,7 @@ pub trait Rule<M>: 'static + Sized + Clone {
 }
 
 /// Error message returned when validate fail
-#[derive(Debug, Clone, Eq, PartialEq, Default, Serialize)]
+#[derive(Debug, Clone, Eq, PartialEq, Default)]
 pub struct Message {
     code: u8,
     content: String,
@@ -103,6 +106,24 @@ impl From<&str> for Message {
         Self {
             code: 0,
             content: value.to_owned(),
+        }
+    }
+}
+
+impl Serialize for Message {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        if self.code != 0 && !self.content.is_empty() {
+            let mut map = serializer.serialize_map(Some(2))?;
+            map.serialize_entry("code", &self.code)?;
+            map.serialize_entry("content", &self.content)?;
+            map.end()
+        } else if self.code != 0 {
+            serializer.serialize_u8(self.code)
+        } else {
+            serializer.serialize_str(&self.content)
         }
     }
 }

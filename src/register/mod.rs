@@ -258,14 +258,23 @@ where
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ValidatorError {
     message: HashMap<FieldNames, Vec<Message>>,
 }
 
+impl Serialize for ValidatorError {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        self.message.serialize(serializer)
+    }
+}
+
 impl Display for ValidatorError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        "validator error".fmt(f)
+        "validate error".fmt(f)
     }
 }
 
@@ -371,3 +380,15 @@ impl MessageKey {
 //         ("password.password", "password mut not very simple"),
 //     ]);
 // }
+
+#[test]
+fn test_validator_error_serialize() {
+    let mut error = ValidatorError::new();
+    error.push(
+        FieldNames::new("field1".into()),
+        vec!["message1".into(), "message2".into()],
+    );
+
+    let json = serde_json::to_string(&error).unwrap();
+    assert_eq!(json, r#"{"field1":["message1","message2"]}"#);
+}
