@@ -47,6 +47,7 @@ pub trait Rule<M>: 'static + Sized + Clone {
     /// Rule specific implementation, data is gived type all field's value, and current field index.
     ///
     /// success returning Ok(()), or else returning message.
+    #[must_use]
     fn call(&mut self, data: &mut ValueMap) -> Result<(), Self::Message>;
 
     #[doc(hidden)]
@@ -385,11 +386,13 @@ pub trait RuleShortcut {
     ///
     /// *Panic*
     /// when not found value
+    #[must_use]
     fn call_with_relate(&mut self, data: &mut ValueMap) -> bool {
         self.call(data.current_mut().expect("not found value with fields"))
     }
 
     /// Rule specific implementation, data is current field's value
+    #[must_use]
     fn call(&mut self, data: &mut Value) -> bool;
 }
 

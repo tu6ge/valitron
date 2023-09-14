@@ -30,7 +30,7 @@ impl RuleShortcut for Trim {
 fn test_trim() {
     let mut value = Value::String(" hello ".to_string());
 
-    Trim.call(&mut value);
+    let _ = Trim.call(&mut value);
 
     assert!(matches!(value, Value::String(s) if s == "hello".to_string()));
 }
