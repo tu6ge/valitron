@@ -230,14 +230,14 @@ impl Validator {
     }
 }
 
-pub trait AppendValidator {
+pub trait Validatable {
     fn validate(&self, validator: Validator) -> Result<(), ValidatorError>;
     fn validate_mut<'de>(self, validator: Validator) -> Result<Self, ValidatorError>
     where
         Self: Sized + serde::de::Deserialize<'de>;
 }
 
-impl<T> AppendValidator for T
+impl<T> Validatable for T
 where
     T: serde::ser::Serialize,
 {
