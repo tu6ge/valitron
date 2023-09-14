@@ -2,6 +2,8 @@
 
 use std::slice::Iter;
 
+use serde::Serialize;
+
 use crate::value::{FromValue, Value, ValueMap};
 
 use self::boxed::{ErasedRule, RuleIntoBoxed};
@@ -54,7 +56,7 @@ pub trait Rule<M>: 'static + Sized + Clone {
 }
 
 /// Error message returned when validate fail
-#[derive(Debug, Clone, Eq, PartialEq, Default)]
+#[derive(Debug, Clone, Eq, PartialEq, Default, Serialize)]
 pub struct Message {
     code: u8,
     content: String,

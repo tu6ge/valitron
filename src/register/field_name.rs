@@ -4,6 +4,8 @@ use std::{
     hash::{Hash, Hasher},
 };
 
+use serde::Serialize;
+
 use super::{
     lexer::{Cursor, Token, TokenKind},
     MessageKey,
@@ -71,7 +73,7 @@ fn names_to_string(vec: &[FieldName]) -> String {
     string
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Default)]
+#[derive(Debug, PartialEq, Eq, Clone, Default, Serialize)]
 pub struct FieldNames {
     string: String,
 }

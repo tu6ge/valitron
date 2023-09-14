@@ -21,6 +21,7 @@ mod lexer;
 
 pub(crate) use field_name::Parser;
 pub use field_name::{FieldName, FieldNames};
+use serde::{Deserialize, Serialize};
 
 use self::field_name::IntoFieldName;
 
@@ -148,7 +149,7 @@ impl Validator {
     /// run validate without modifiable
     pub fn validate<T>(self, data: T) -> Result<(), ValidatorError>
     where
-        T: serde::ser::Serialize,
+        T: Serialize,
     {
         let value = data.serialize(Serializer).unwrap();
 
@@ -166,7 +167,7 @@ impl Validator {
     /// run validate with modifiable
     pub fn validate_mut<'de, T>(self, data: T) -> Result<T, ValidatorError>
     where
-        T: serde::ser::Serialize + serde::de::Deserialize<'de>,
+        T: Serialize + serde::de::Deserialize<'de>,
     {
         let value = data.serialize(Serializer).unwrap();
 
@@ -234,12 +235,12 @@ pub trait Validatable {
     fn validate(&self, validator: Validator) -> Result<(), ValidatorError>;
     fn validate_mut<'de>(self, validator: Validator) -> Result<Self, ValidatorError>
     where
-        Self: Sized + serde::de::Deserialize<'de>;
+        Self: Sized + Deserialize<'de>;
 }
 
 impl<T> Validatable for T
 where
-    T: serde::ser::Serialize,
+    T: Serialize,
 {
     fn validate(&self, validator: Validator) -> Result<(), ValidatorError> {
         validator.validate(self)
@@ -247,13 +248,13 @@ where
 
     fn validate_mut<'de>(self, validator: Validator) -> Result<Self, ValidatorError>
     where
-        Self: Sized + serde::de::Deserialize<'de>,
+        Self: Sized + Deserialize<'de>,
     {
         validator.validate_mut(self)
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct ValidatorError {
     message: HashMap<FieldNames, Vec<Message>>,
 }
