@@ -25,7 +25,14 @@ use crate::register::{FieldName, FieldNames, Parser};
 mod cmp;
 mod float;
 
-/// seralized resultant
+/// # serialized resultant
+///
+/// All rust types will be serialized into this, contains nested structures.
+///
+/// This is [`Rule`], [`RuleShortcut`] implementation's basis.
+///
+/// [`Rule`]: crate::rule::Rule
+/// [`RuleShortcut`]: crate::rule::RuleShortcut
 #[derive(Debug, PartialEq, Eq, Clone, Ord, PartialOrd)]
 pub enum Value {
     Uint8(u8),
@@ -106,6 +113,8 @@ impl ValueMap {
             index: FieldNames::default(),
         }
     }
+
+    /// change index
     pub fn index(&mut self, index: FieldNames) {
         self.index = index;
     }
@@ -228,6 +237,34 @@ impl Value {
                 | Self::Unit
                 | Self::String(_)
         )
+    }
+
+    pub fn f32(&self) -> Option<&f32> {
+        match self {
+            Value::Float32(float::Float32(f)) => Some(f),
+            _ => None,
+        }
+    }
+
+    pub fn f32_mut(&mut self) -> Option<&mut f32> {
+        match self {
+            Value::Float32(float::Float32(f)) => Some(f),
+            _ => None,
+        }
+    }
+
+    pub fn f64(&self) -> Option<&f64> {
+        match self {
+            Value::Float64(float::Float64(f)) => Some(f),
+            _ => None,
+        }
+    }
+
+    pub fn f64_mut(&mut self) -> Option<&mut f64> {
+        match self {
+            Value::Float64(float::Float64(f)) => Some(f),
+            _ => None,
+        }
     }
 }
 
