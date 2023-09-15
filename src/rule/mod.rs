@@ -1,4 +1,26 @@
 //! define Rule trait, inner rule type
+//! # A custom rule example
+//! ```rust
+//! # use valitron::{Value, RuleShortcut};
+//! #[derive(Clone)]
+//! struct Gt10;
+//!
+//! impl RuleShortcut for Gt10 {
+//!     type Message = &'static str;
+//!
+//!     fn name(&self) -> &'static str {
+//!         "gt10"
+//!     }
+//!
+//!     fn message(&self) -> Self::Message {
+//!         "the number should be greater than 10"
+//!     }
+//!
+//!     fn call(&mut self, data: &mut Value) -> bool {
+//!         data > 10_u8
+//!     }
+//! }
+//! ```
 
 use std::slice::Iter;
 
@@ -21,17 +43,21 @@ mod test;
 /// ```rust
 /// # use valitron::{Rule, ValueMap};
 /// #[derive(Clone)]
-/// struct HelloWorld;
+/// struct Gt10;
 ///
-/// impl Rule<()> for HelloWorld {
-///     type Message = String;
+/// impl Rule<()> for Gt10 {
+///     type Message = &'static str;
 ///
 ///     fn name(&self) -> &'static str {
-///         "hello"
+///         "gt10"
 ///     }
 ///
 ///     fn call(&mut self, data: &mut ValueMap) -> Result<(), Self::Message> {
-///         Ok(())
+///         if data.current().unwrap() > &10 {
+///             Ok(())
+///         } else {
+///             Err("the number should be greater than 10")
+///         }
 ///     }
 /// }
 /// ```
@@ -325,6 +351,7 @@ pub trait IntoRuleList {
     fn into_list(self) -> RuleList;
 }
 
+/// load closure rule
 pub fn custom<F, V, M>(f: F) -> RuleList
 where
     F: for<'a> FnOnce(&'a mut V) -> Result<(), M> + 'static + Clone,

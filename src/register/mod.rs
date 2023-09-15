@@ -1,4 +1,46 @@
-//! register rules
+//! register validator
+//! ## This is an example:
+//!
+//! ```rust
+//! # use serde::{Deserialize, Serialize};
+//! # use valitron::{
+//! # available::{Required, StartWith},
+//! # custom, Message, RuleExt, Validator
+//! # };
+//! #[derive(Serialize, Debug)]
+//! struct Person {
+//!     introduce: &'static str,
+//!     age: u8,
+//!     weight: f32,
+//! }
+//!
+//! # fn main() {
+//! let validator = Validator::new()
+//!     .rule("introduce", Required.and(StartWith("I am")))
+//!     .rule("age", custom(age_range))
+//!     .message([
+//!         ("introduce.required", "introduce is required"),
+//!         ("introduce.start_with", "introduce should be starts with `I am`"),
+//!     ]);
+//!
+//! let person = Person {
+//!     introduce: "hi",
+//!     age: 18,
+//!     weight: 20.0,
+//! };
+//!
+//! let res = validator.validate(person).unwrap_err();
+//! assert!(res.len() == 2);
+//! # }
+//!
+//! fn age_range(age: &mut u8) -> Result<(), &'static str> {
+//!     if *age >= 25 && *age <= 45 {
+//!         Ok(())
+//!     } else {
+//!         Err("age should be between 25 and 45")
+//!     }
+//! }
+//! ```
 
 use std::{
     collections::{
@@ -23,6 +65,7 @@ use serde::{Deserialize, Serialize};
 mod field_name;
 mod lexer;
 
+/// register a validator
 #[derive(Default)]
 pub struct Validator {
     rules: HashMap<FieldNames, RuleList>,
@@ -229,7 +272,7 @@ impl Validator {
     }
 }
 
-/// validateable on any types
+/// validateable for any types
 pub trait Validatable {
     /// if not change value
     fn validate(&self, validator: Validator) -> Result<(), ValidatorError>;
@@ -256,6 +299,7 @@ where
     }
 }
 
+/// store validate error message
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ValidatorError {
     message: HashMap<FieldNames, Vec<Message>>,
