@@ -159,16 +159,6 @@ impl PartialEq<Value> for f32 {
     }
 }
 
-impl PartialEq<Value> for f64 {
-    fn eq(&self, other: &Value) -> bool {
-        if let Value::Float64(Float64(f)) = other {
-            self == f
-        } else {
-            false
-        }
-    }
-}
-
 impl PartialEq<f32> for Value {
     fn eq(&self, other: &f32) -> bool {
         if let Value::Float32(Float32(f)) = self {
@@ -179,7 +169,96 @@ impl PartialEq<f32> for Value {
     }
 }
 
+impl PartialEq<&Value> for f32 {
+    fn eq(&self, other: &&Value) -> bool {
+        if let Value::Float32(Float32(f)) = other {
+            self == f
+        } else {
+            false
+        }
+    }
+}
+
+impl PartialEq<f32> for &Value {
+    fn eq(&self, other: &f32) -> bool {
+        if let Value::Float32(Float32(f)) = self {
+            f == other
+        } else {
+            false
+        }
+    }
+}
+impl PartialEq<&mut Value> for f32 {
+    fn eq(&self, other: &&mut Value) -> bool {
+        if let Value::Float32(Float32(f)) = other {
+            self == f
+        } else {
+            false
+        }
+    }
+}
+
+impl PartialEq<f32> for &mut Value {
+    fn eq(&self, other: &f32) -> bool {
+        if let Value::Float32(Float32(f)) = self {
+            f == other
+        } else {
+            false
+        }
+    }
+}
+
+impl PartialEq<Value> for f64 {
+    fn eq(&self, other: &Value) -> bool {
+        if let Value::Float64(Float64(f)) = other {
+            self == f
+        } else {
+            false
+        }
+    }
+}
+
 impl PartialEq<f64> for Value {
+    fn eq(&self, other: &f64) -> bool {
+        if let Value::Float64(Float64(f)) = self {
+            f == other
+        } else {
+            false
+        }
+    }
+}
+
+impl PartialEq<&Value> for f64 {
+    fn eq(&self, other: &&Value) -> bool {
+        if let Value::Float64(Float64(f)) = other {
+            self == f
+        } else {
+            false
+        }
+    }
+}
+
+impl PartialEq<f64> for &Value {
+    fn eq(&self, other: &f64) -> bool {
+        if let Value::Float64(Float64(f)) = self {
+            f == other
+        } else {
+            false
+        }
+    }
+}
+
+impl PartialEq<&mut Value> for f64 {
+    fn eq(&self, other: &&mut Value) -> bool {
+        if let Value::Float64(Float64(f)) = other {
+            self == f
+        } else {
+            false
+        }
+    }
+}
+
+impl PartialEq<f64> for &mut Value {
     fn eq(&self, other: &f64) -> bool {
         if let Value::Float64(Float64(f)) = self {
             f == other
