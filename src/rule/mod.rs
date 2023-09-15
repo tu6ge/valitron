@@ -388,42 +388,59 @@ where
     }
 }
 
-// #[cfg(all(test, feature = "full"))]
-// mod test_regster {
-//     use super::available::*;
-//     use super::*;
-//     fn register<R: IntoRuleList<M>, M>(_: R) {}
+#[cfg(all(test, feature = "full"))]
+mod test_regster {
+    use super::available::*;
+    use super::*;
+    fn register<R: IntoRuleList<M>, M>(_: R) {}
 
-//     fn hander(_val: &mut ValueMap) -> Result<(), String> {
-//         Ok(())
-//     }
-//     fn hander2(_val: &mut Value) -> Result<(), String> {
-//         Ok(())
-//     }
+    fn hander(_val: &mut ValueMap) -> Result<(), String> {
+        Ok(())
+    }
+    fn hander2(_val: &mut Value) -> Result<(), String> {
+        Ok(())
+    }
 
-//     #[test]
-//     fn test() {
-//         register(Required);
-//         register(Required.custom(hander2));
-//         register(Required.custom(hander));
-//         register(Required.and(StartWith("foo")));
-//         register(Required.and(StartWith("foo")).bail());
-//         register(Required.and(StartWith("foo")).custom(hander2).bail());
-//         register(
-//             Required
-//                 .and(StartWith("foo"))
-//                 .custom(hander2)
-//                 .custom(hander)
-//                 .bail(),
-//         );
-//         register(custom(hander2));
-//         register(custom(hander));
-//         register(custom(hander).and(StartWith("foo")));
-//         register(custom(hander).and(StartWith("foo")).bail());
-//         register(custom(|_a: &mut u8| Ok::<_, u8>(())));
-//         register(custom(|_a: &mut u8| Ok::<_, u8>(())));
-//     }
-// }
+    #[derive(Clone)]
+    struct Gt10;
+
+    impl RuleShortcut for Gt10 {
+        type Message = u8;
+        fn name(&self) -> &'static str {
+            "gt10"
+        }
+        fn message(&self) -> Self::Message {
+            1
+        }
+        fn call(&mut self, data: &mut Value) -> bool {
+            data > 10_u8
+        }
+    }
+
+    #[test]
+    fn test() {
+        register(Required);
+        register(Required.custom(hander2));
+        register(Required.custom(hander));
+        register(Required.and(StartWith("foo")));
+        register(Required.and(StartWith("foo")).bail());
+        register(Required.and(StartWith("foo")).custom(hander2).bail());
+        register(
+            Required
+                .and(StartWith("foo"))
+                .custom(hander2)
+                .custom(hander)
+                .bail(),
+        );
+        register(custom(hander2));
+        register(custom(hander));
+        register(custom(hander).and(StartWith("foo")));
+        register(custom(hander).and(StartWith("foo")).bail());
+        register(custom(|_a: &mut u8| Ok::<_, u8>(())).and(Gt10));
+        register(Gt10.custom(|_a: &mut u8| Ok::<_, u8>(())));
+        register(custom(|_a: &mut u8| Ok::<_, u8>(())));
+    }
+}
 
 /// used by convenient implementation custom rules.
 pub trait RuleShortcut {

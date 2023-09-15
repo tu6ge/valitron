@@ -3,7 +3,7 @@
 use serde::{Deserialize, Serialize};
 use valitron::{
     available::{Required, StartWith},
-    custom, Message, RuleExt, Validator, Value,
+    custom, RuleExt, Validator, Value,
 };
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -37,13 +37,14 @@ fn test_validator() {
         res.get("age").unwrap()[0],
         "age should be between 25 and 45".into()
     );
-    assert_eq!(res.get("weight").unwrap()[0], Message::from_code(100),);
+    assert_eq!(
+        res.get("weight").unwrap()[0],
+        "weight should be between 40 and 80".into(),
+    );
     assert_eq!(
         res.get("name").unwrap()[0],
         "name should be starts with `hello`".into(),
     );
-
-    //println!("{res:?}");
 }
 
 fn age_limit(n: &mut u8) -> Result<(), String> {
