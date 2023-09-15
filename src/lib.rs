@@ -34,11 +34,11 @@
 //! assert!(res.len() == 2);
 //! # }
 //!
-//! fn age_range(age: &mut u8) -> Result<(), &'static str> {
+//! fn age_range(age: &mut u8) -> Result<(), String> {
 //!     if *age >= 25 && *age <= 45 {
 //!         Ok(())
 //!     } else {
-//!         Err("age should be between 25 and 45")
+//!         Err("age should be between 25 and 45".into())
 //!     }
 //! }
 //! ```
