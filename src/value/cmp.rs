@@ -25,6 +25,44 @@ macro_rules! primitive_eq {
                 }
             }
         }
+
+        impl PartialEq<&Value> for $ty {
+            fn eq(&self, other: &&Value) -> bool {
+                if let Value::$val(n) = other {
+                    self == n
+                } else {
+                    false
+                }
+            }
+        }
+        impl PartialEq<$ty> for &Value {
+            fn eq(&self, other: &$ty) -> bool {
+                if let Value::$val(n) = self {
+                    n == other
+                } else {
+                    false
+                }
+            }
+        }
+
+        impl PartialEq<&mut Value> for $ty {
+            fn eq(&self, other: &&mut Value) -> bool {
+                if let Value::$val(n) = other {
+                    self == n
+                } else {
+                    false
+                }
+            }
+        }
+        impl PartialEq<$ty> for &mut Value {
+            fn eq(&self, other: &$ty) -> bool {
+                if let Value::$val(n) = self {
+                    n == other
+                } else {
+                    false
+                }
+            }
+        }
     };
 }
 
@@ -40,6 +78,44 @@ macro_rules! primitive_ord {
             }
         }
         impl PartialOrd<$ty> for Value {
+            fn partial_cmp(&self, other: &$ty) -> Option<Ordering> {
+                if let Value::$val(n) = self {
+                    n.partial_cmp(other)
+                } else {
+                    None
+                }
+            }
+        }
+
+        impl PartialOrd<&Value> for $ty {
+            fn partial_cmp(&self, other: &&Value) -> Option<Ordering> {
+                if let Value::$val(n) = other {
+                    self.partial_cmp(n)
+                } else {
+                    None
+                }
+            }
+        }
+        impl PartialOrd<$ty> for &Value {
+            fn partial_cmp(&self, other: &$ty) -> Option<Ordering> {
+                if let Value::$val(n) = self {
+                    n.partial_cmp(other)
+                } else {
+                    None
+                }
+            }
+        }
+
+        impl PartialOrd<&mut Value> for $ty {
+            fn partial_cmp(&self, other: &&mut Value) -> Option<Ordering> {
+                if let Value::$val(n) = other {
+                    self.partial_cmp(n)
+                } else {
+                    None
+                }
+            }
+        }
+        impl PartialOrd<$ty> for &mut Value {
             fn partial_cmp(&self, other: &$ty) -> Option<Ordering> {
                 if let Value::$val(n) = self {
                     n.partial_cmp(other)
@@ -111,4 +187,16 @@ impl PartialEq<f64> for Value {
             false
         }
     }
+}
+
+#[test]
+fn all() {
+    let mut value = Value::Uint8(10);
+
+    assert!(value == 10_u8);
+    assert!(value > 9_u8);
+    assert!(&value == 10_u8);
+    assert!(&value > 9_u8);
+    assert!(&mut value == 10_u8);
+    assert!(&mut value > 9_u8);
 }

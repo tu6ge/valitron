@@ -11,10 +11,13 @@
 //! ```
 //! # use valitron::Value;
 //! # fn main() {
-//! assert!(Value::Uint8(9) == 9_u8);
-//! assert!(10_u8 == Value::Uint8(10));
-//! assert_eq!(Value::Uint8(10) > 9_u8, true);
-//! assert_eq!(9_u8 < Value::Uint8(10), true);
+//! let mut value = Value::Uint8(10);
+//! assert!(value == 10_u8);
+//! assert!(value > 9_u8);
+//! assert!(&value == 10_u8);
+//! assert!(&value > 9_u8);
+//! assert!(&mut value == 10_u8);
+//! assert!(&mut value > 9_u8);
 //! # }
 //! ```
 
