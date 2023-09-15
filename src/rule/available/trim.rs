@@ -1,12 +1,12 @@
 //! Modifies a string by leading and trailing whitespace removed
 
-use crate::{Message, RuleShortcut, Value};
+use crate::{RuleShortcut, Value};
 
 #[derive(Clone)]
 pub struct Trim;
 
 impl RuleShortcut for Trim {
-    type Message = Message;
+    type Message = String;
 
     fn call(&mut self, data: &mut crate::Value) -> bool {
         match data {
@@ -18,7 +18,7 @@ impl RuleShortcut for Trim {
     }
 
     fn message(&self) -> Self::Message {
-        Message::default()
+        String::default()
     }
 
     fn name(&self) -> &'static str {

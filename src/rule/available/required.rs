@@ -6,13 +6,13 @@ use crate::{RuleShortcut, Value};
 pub struct Required;
 
 impl RuleShortcut for Required {
-    type Message = &'static str;
+    type Message = String;
 
     fn name(&self) -> &'static str {
         "required"
     }
     fn message(&self) -> Self::Message {
-        "this field is required"
+        "this field is required".into()
     }
 
     fn call(&mut self, value: &mut Value) -> bool {
