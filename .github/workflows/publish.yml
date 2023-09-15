@@ -23,10 +23,13 @@ jobs:
       - name: Show cargo info
         run: cargo version --verbose
 
-      - name: Run Test
+      - name: Run Test Lib
         run: |
           cargo test --lib
-          cargo test --features="full"
+
+      - name: Run Test Full Features
+        run: |
+            cargo test --features="full"
 
   publish:
     needs: [test]
