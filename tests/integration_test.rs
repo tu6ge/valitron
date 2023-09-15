@@ -46,21 +46,21 @@ fn test_validator() {
     //println!("{res:?}");
 }
 
-fn age_limit(n: &mut u8) -> Result<(), &'static str> {
+fn age_limit(n: &mut u8) -> Result<(), String> {
     if *n >= 25 && *n <= 45 {
         return Ok(());
     }
-    Err("age should be between 25 and 45")
+    Err("age should be between 25 and 45".into())
 }
 
-fn weight_limit(v: &mut Value) -> Result<(), u8> {
+fn weight_limit(v: &mut Value) -> Result<(), String> {
     if let Value::Float32(n) = v {
         let n = n.get();
         if n >= 40.0 && n <= 80.0 {
             return Ok(());
         }
     }
-    Err(100)
+    Err("weight should be between 40 and 80".into())
 }
 
 #[test]

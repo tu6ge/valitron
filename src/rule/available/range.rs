@@ -30,8 +30,8 @@ impl<T, Num> Range<T, Num> {
     fn name_in(&self) -> &'static str {
         "range"
     }
-    fn message_in(&self) -> &'static str {
-        "the value not in the range"
+    fn message_in(&self) -> String {
+        "the value not in the range".into()
     }
 }
 
@@ -41,7 +41,7 @@ macro_rules! impl_range {
         where
             T: RangeBounds<$ty> + Clone + 'static,
         {
-            type Message = &'static str;
+            type Message = String;
             fn name(&self) -> &'static str {
                 self.name_in()
             }
@@ -72,7 +72,7 @@ impl<T> RuleShortcut for Range<T, f32>
 where
     T: RangeBounds<f32> + Clone + 'static,
 {
-    type Message = &'static str;
+    type Message = String;
     fn name(&self) -> &'static str {
         self.name_in()
     }
@@ -91,7 +91,7 @@ impl<T> RuleShortcut for Range<T, f64>
 where
     T: RangeBounds<f64> + Clone + 'static,
 {
-    type Message = &'static str;
+    type Message = String;
     fn name(&self) -> &'static str {
         self.name_in()
     }

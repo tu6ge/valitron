@@ -178,9 +178,10 @@ where
     /// # Panic
     ///
     /// When field or rule is not existing ,this will panic
-    pub fn message<'key, const N: usize>(mut self, list: [(&'key str, M); N]) -> Self
+    pub fn message<'key, const N: usize, MSG>(mut self, list: [(&'key str, MSG); N]) -> Self
     where
         M: IntoRuleMessage,
+        MSG: Into<M>,
     {
         self.message = HashMap::from_iter(
             list.map(|(key_str, v)| {
@@ -188,7 +189,7 @@ where
 
                 panic_on_err!(self.exit_message(&msg_key));
 
-                (msg_key, v.into_message())
+                (msg_key, v.into().into_message())
             })
             .into_iter(),
         );
