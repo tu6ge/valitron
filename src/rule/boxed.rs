@@ -4,15 +4,16 @@ use crate::value::ValueMap;
 
 use super::{IntoRuleMessage, Message, Rule};
 
-pub struct ErasedRule(pub(super) Box<dyn BoxedRule>);
+pub struct ErasedRule<M>(pub(super) Box<dyn BoxedRule>, PhantomData<M>);
 
-impl ErasedRule {
-    pub fn new<H, M>(handler: H) -> Self
+impl<M> ErasedRule<M> {
+    pub fn new<H, S>(handler: H) -> Self
     where
-        H: Rule<M>,
-        M: 'static,
+        H: Rule<S, Message = M>,
+        S: 'static,
+        M: IntoRuleMessage + 'static,
     {
-        Self(Box::new(handler.into_boxed()))
+        Self(Box::new(handler.into_boxed()), PhantomData)
     }
 
     pub fn name(&self) -> &'static str {
@@ -23,9 +24,9 @@ impl ErasedRule {
     }
 }
 
-impl Clone for ErasedRule {
+impl<M> Clone for ErasedRule<M> {
     fn clone(&self) -> Self {
-        Self(self.0.clone_box())
+        Self(self.0.clone_box(), PhantomData)
     }
 }
 

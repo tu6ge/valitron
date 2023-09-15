@@ -67,8 +67,8 @@ mod lexer;
 
 /// register a validator
 #[derive(Default)]
-pub struct Validator {
-    rules: HashMap<FieldNames, RuleList>,
+pub struct Validator<M> {
+    rules: HashMap<FieldNames, RuleList<M>>,
     message: HashMap<MessageKey, Message>,
 }
 
@@ -81,11 +81,19 @@ macro_rules! panic_on_err {
     };
 }
 
-impl Validator {
+impl<M> Validator<M>
+where
+    M: Default,
+{
     pub fn new() -> Self {
         Self::default()
     }
+}
 
+impl<M> Validator<M>
+where
+    M: Clone + 'static,
+{
     /// # Register rules
     ///
     /// **Feild support multiple formats:**
@@ -145,7 +153,7 @@ impl Validator {
     pub fn rule<F, R>(mut self, field: F, rule: R) -> Self
     where
         F: IntoFieldName,
-        R: IntoRuleList,
+        R: IntoRuleList<M>,
     {
         let names = panic_on_err!(field.into_field());
         let rules = rule.into_list();
@@ -170,7 +178,7 @@ impl Validator {
     /// # Panic
     ///
     /// When field or rule is not existing ,this will panic
-    pub fn message<'key, const N: usize, M>(mut self, list: [(&'key str, M); N]) -> Self
+    pub fn message<'key, const N: usize>(mut self, list: [(&'key str, M); N]) -> Self
     where
         M: IntoRuleMessage,
     {
@@ -250,7 +258,7 @@ impl Validator {
         message
     }
 
-    fn rule_get(&self, names: &FieldNames) -> Option<&RuleList> {
+    fn rule_get(&self, names: &FieldNames) -> Option<&RuleList<M>> {
         self.rules.get(names)
     }
 
@@ -273,25 +281,26 @@ impl Validator {
 }
 
 /// validateable for any types
-pub trait Validatable {
+pub trait Validatable<M> {
     /// if not change value
-    fn validate(&self, validator: Validator) -> Result<(), ValidatorError>;
+    fn validate(&self, validator: Validator<M>) -> Result<(), ValidatorError>;
 
     /// if need to change value, e.g. `trim`
-    fn validate_mut<'de>(self, validator: Validator) -> Result<Self, ValidatorError>
+    fn validate_mut<'de>(self, validator: Validator<M>) -> Result<Self, ValidatorError>
     where
         Self: Sized + Deserialize<'de>;
 }
 
-impl<T> Validatable for T
+impl<T, M> Validatable<M> for T
 where
     T: Serialize,
+    M: Clone + 'static,
 {
-    fn validate(&self, validator: Validator) -> Result<(), ValidatorError> {
+    fn validate(&self, validator: Validator<M>) -> Result<(), ValidatorError> {
         validator.validate(self)
     }
 
-    fn validate_mut<'de>(self, validator: Validator) -> Result<Self, ValidatorError>
+    fn validate_mut<'de>(self, validator: Validator<M>) -> Result<Self, ValidatorError>
     where
         Self: Sized + Deserialize<'de>,
     {
