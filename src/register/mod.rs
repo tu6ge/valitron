@@ -81,12 +81,12 @@ macro_rules! panic_on_err {
     };
 }
 
-impl<M> Validator<M>
-where
-    M: Default,
-{
+impl<M> Validator<M> {
     pub fn new() -> Self {
-        Self::default()
+        Self {
+            rules: HashMap::new(),
+            message: HashMap::new(),
+        }
     }
 }
 
