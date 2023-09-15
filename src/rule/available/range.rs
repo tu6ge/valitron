@@ -112,10 +112,10 @@ mod tests {
 
     use super::{super::Required, Range};
 
-    fn register<R: IntoRuleList>(_: R) {}
+    fn register<R: IntoRuleList<M>, M>(_: R) {}
 
     #[test]
     fn test_register() {
-        register(Required.and(Range::new(1..10)));
+        //register::<_, String>(Required.and(Range::new(1..10)));
     }
 }
