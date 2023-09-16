@@ -44,7 +44,7 @@
 
 use std::{
     collections::{
-        hash_map::{IntoIter, Iter, IterMut},
+        hash_map::{IntoIter, Iter, IterMut, Keys},
         HashMap,
     },
     error::Error,
@@ -367,6 +367,10 @@ impl ValidatorError {
             Ok(k) => self.message.contains_key(&k),
             Err(_) => false,
         }
+    }
+
+    pub fn keys(&self) -> Keys<'_, FieldNames, Vec<Message>> {
+        self.message.keys()
     }
 
     pub fn iter(&self) -> Iter<'_, FieldNames, Vec<Message>> {
