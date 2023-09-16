@@ -44,7 +44,7 @@
 
 use std::{
     collections::{
-        hash_map::{Iter, IterMut},
+        hash_map::{IntoIter, Iter, IterMut},
         HashMap,
     },
     error::Error,
@@ -383,6 +383,22 @@ impl ValidatorError {
 
     pub fn len(&self) -> usize {
         self.message.len()
+    }
+}
+
+impl<'a> IntoIterator for &'a mut ValidatorError {
+    type Item = (&'a FieldNames, &'a mut Vec<Message>);
+    type IntoIter = IterMut<'a, FieldNames, Vec<Message>>;
+    fn into_iter(self) -> Self::IntoIter {
+        self.message.iter_mut()
+    }
+}
+
+impl IntoIterator for ValidatorError {
+    type Item = (FieldNames, Vec<Message>);
+    type IntoIter = IntoIter<FieldNames, Vec<Message>>;
+    fn into_iter(self) -> Self::IntoIter {
+        self.message.into_iter()
     }
 }
 
