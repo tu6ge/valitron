@@ -53,7 +53,7 @@ use std::{
 };
 
 use crate::{
-    rule::{IntoRuleList, IntoRuleMessage, Message, RuleList},
+    rule::{IntoRuleList, RuleList},
     ser::Serializer,
     value::ValueMap,
 };
@@ -67,9 +67,9 @@ mod lexer;
 
 /// register a validator
 #[derive(Default)]
-pub struct Validator<M> {
+pub struct Validator<M = String> {
     rules: HashMap<FieldNames, RuleList<M>>,
-    message: HashMap<MessageKey, Message>,
+    message: HashMap<MessageKey, M>,
 }
 
 macro_rules! panic_on_err {
@@ -180,7 +180,6 @@ where
     /// When field or rule is not existing ,this will panic
     pub fn message<'key, const N: usize, MSG>(mut self, list: [(&'key str, MSG); N]) -> Self
     where
-        M: IntoRuleMessage,
         MSG: Into<M>,
     {
         self.message = HashMap::from_iter(
@@ -189,7 +188,7 @@ where
 
                 panic_on_err!(self.exit_message(&msg_key));
 
-                (msg_key, v.into().into_message())
+                (msg_key, v.into())
             })
             .into_iter(),
         );
@@ -197,7 +196,7 @@ where
     }
 
     /// run validate without modifiable
-    pub fn validate<T>(self, data: T) -> Result<(), ValidatorError>
+    pub fn validate<T>(self, data: T) -> Result<(), ValidatorError<M>>
     where
         T: Serialize,
     {
@@ -215,7 +214,7 @@ where
     }
 
     /// run validate with modifiable
-    pub fn validate_mut<'de, T>(self, data: T) -> Result<T, ValidatorError>
+    pub fn validate_mut<'de, T>(self, data: T) -> Result<T, ValidatorError<M>>
     where
         T: Serialize + serde::de::Deserialize<'de>,
     {
@@ -232,7 +231,7 @@ where
         }
     }
 
-    fn inner_validate(self, value_map: &mut ValueMap) -> ValidatorError {
+    fn inner_validate(self, value_map: &mut ValueMap) -> ValidatorError<M> {
         let mut message = ValidatorError::with_capacity(self.rules.len());
 
         for (names, rules) in self.rules.iter() {
@@ -276,7 +275,7 @@ where
         }
     }
 
-    fn get_message(&self, key: &MessageKey) -> Option<&Message> {
+    fn get_message(&self, key: &MessageKey) -> Option<&M> {
         self.message.get(key)
     }
 }
@@ -284,10 +283,10 @@ where
 /// validateable for any types
 pub trait Validatable<M> {
     /// if not change value
-    fn validate(&self, validator: Validator<M>) -> Result<(), ValidatorError>;
+    fn validate(&self, validator: Validator<M>) -> Result<(), ValidatorError<M>>;
 
     /// if need to change value, e.g. `trim`
-    fn validate_mut<'de>(self, validator: Validator<M>) -> Result<Self, ValidatorError>
+    fn validate_mut<'de>(self, validator: Validator<M>) -> Result<Self, ValidatorError<M>>
     where
         Self: Sized + Deserialize<'de>;
 }
@@ -297,11 +296,11 @@ where
     T: Serialize,
     M: Clone + 'static,
 {
-    fn validate(&self, validator: Validator<M>) -> Result<(), ValidatorError> {
+    fn validate(&self, validator: Validator<M>) -> Result<(), ValidatorError<M>> {
         validator.validate(self)
     }
 
-    fn validate_mut<'de>(self, validator: Validator<M>) -> Result<Self, ValidatorError>
+    fn validate_mut<'de>(self, validator: Validator<M>) -> Result<Self, ValidatorError<M>>
     where
         Self: Sized + Deserialize<'de>,
     {
@@ -311,11 +310,14 @@ where
 
 /// store validate error message
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ValidatorError {
-    message: HashMap<FieldNames, Vec<Message>>,
+pub struct ValidatorError<M = String> {
+    message: HashMap<FieldNames, Vec<M>>,
 }
 
-impl Serialize for ValidatorError {
+impl<M> Serialize for ValidatorError<M>
+where
+    M: serde::Serialize,
+{
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
@@ -324,13 +326,13 @@ impl Serialize for ValidatorError {
     }
 }
 
-impl Display for ValidatorError {
+impl<M> Display for ValidatorError<M> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         "validate error".fmt(f)
     }
 }
 
-impl Error for ValidatorError {}
+impl<M> Error for ValidatorError<M> where M: std::fmt::Debug {}
 
 // impl Deref for ValidatorError {
 //     type Target = HashMap<FieldNames, Vec<String>>;
@@ -339,7 +341,7 @@ impl Error for ValidatorError {}
 //     }
 // }
 
-impl ValidatorError {
+impl<M> ValidatorError<M> {
     #[cfg(test)]
     fn new() -> Self {
         Self {
@@ -352,7 +354,7 @@ impl ValidatorError {
         }
     }
 
-    fn push(&mut self, field_name: FieldNames, message: Vec<Message>) {
+    fn push(&mut self, field_name: FieldNames, message: Vec<M>) {
         if !message.is_empty() {
             self.message.insert(field_name, message);
         }
@@ -362,12 +364,12 @@ impl ValidatorError {
         self.message.shrink_to_fit()
     }
 
-    pub fn get<K: IntoFieldName>(&self, key: K) -> Option<&Vec<Message>> {
+    pub fn get<K: IntoFieldName>(&self, key: K) -> Option<&Vec<M>> {
         let k = key.into_field().ok()?;
         self.message.get(&k)
     }
 
-    pub fn get_key_value<K: IntoFieldName>(&self, key: K) -> Option<(&FieldNames, &Vec<Message>)> {
+    pub fn get_key_value<K: IntoFieldName>(&self, key: K) -> Option<(&FieldNames, &Vec<M>)> {
         let k = key.into_field().ok()?;
         self.message.get_key_value(&k)
     }
@@ -379,11 +381,11 @@ impl ValidatorError {
         }
     }
 
-    pub fn iter(&self) -> Iter<'_, FieldNames, Vec<Message>> {
+    pub fn iter(&self) -> Iter<'_, FieldNames, Vec<M>> {
         self.message.iter()
     }
 
-    pub fn iter_mut(&mut self) -> IterMut<'_, FieldNames, Vec<Message>> {
+    pub fn iter_mut(&mut self) -> IterMut<'_, FieldNames, Vec<M>> {
         self.message.iter_mut()
     }
 
@@ -396,15 +398,15 @@ impl ValidatorError {
     }
 }
 
-impl From<ValidatorError> for Result<(), ValidatorError> {
-    fn from(value: ValidatorError) -> Self {
-        if value.is_empty() {
-            Ok(())
-        } else {
-            Err(value)
-        }
-    }
-}
+// impl From<ValidatorError> for Result<(), ValidatorError> {
+//     fn from(value: ValidatorError) -> Self {
+//         if value.is_empty() {
+//             Ok(())
+//         } else {
+//             Err(value)
+//         }
+//     }
+// }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct MessageKey {
@@ -435,7 +437,7 @@ impl MessageKey {
 
 #[test]
 fn test_validator_error_serialize() {
-    let mut error = ValidatorError::new();
+    let mut error = ValidatorError::<String>::new();
     error.push(
         FieldNames::new("field1".into()),
         vec!["message1".into(), "message2".into()],
