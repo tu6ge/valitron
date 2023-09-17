@@ -35,15 +35,15 @@ fn test_validator() {
     assert!(res.len() == 3);
     assert_eq!(
         res.get("age").unwrap()[0],
-        "age should be between 25 and 45".into()
+        "age should be between 25 and 45".to_string()
     );
     assert_eq!(
         res.get("weight").unwrap()[0],
-        "weight should be between 40 and 80".into(),
+        "weight should be between 40 and 80".to_string(),
     );
     assert_eq!(
         res.get("name").unwrap()[0],
-        "name should be starts with `hello`".into(),
+        "name should be starts with `hello`".to_string(),
     );
 }
 
@@ -51,7 +51,7 @@ fn age_limit(n: &mut u8) -> Result<(), String> {
     if *n >= 25 && *n <= 45 {
         return Ok(());
     }
-    Err("age should be between 25 and 45".into())
+    Err("age should be between 25 and 45".to_string())
 }
 
 fn weight_limit(v: &mut Value) -> Result<(), String> {
@@ -78,7 +78,7 @@ fn test_has_tuple() {
 
     assert_eq!(
         res.get(0).unwrap()[0],
-        "first item should be start with `hello`".into()
+        "first item should be start with `hello`".to_string()
     );
 }
 
@@ -91,6 +91,6 @@ fn test_has_array() {
     assert!(res.len() == 1);
     assert_eq!(
         res.get([1]).unwrap()[0],
-        "this field must be start with `hello`".into()
+        "this field must be start with `hello`".to_string()
     );
 }

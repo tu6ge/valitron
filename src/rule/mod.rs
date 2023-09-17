@@ -63,11 +63,11 @@ mod test;
 /// ```
 ///
 /// TODO! introduce ValueMap
-pub trait Rule<M>: 'static + Sized + Clone {
+pub trait Rule<T>: 'static + Sized + Clone {
     /// custom define returning message type
     ///
     /// u8 or String or both
-    type Message: IntoRuleMessage;
+    type Message;
 
     /// Named rule type, used to distinguish between different rules.
     ///
@@ -81,11 +81,12 @@ pub trait Rule<M>: 'static + Sized + Clone {
     fn call(&mut self, data: &mut ValueMap) -> Result<(), Self::Message>;
 
     #[doc(hidden)]
-    fn into_boxed(self) -> RuleIntoBoxed<Self, M> {
+    fn into_boxed(self) -> RuleIntoBoxed<Self, Self::Message, T> {
         RuleIntoBoxed::new(self)
     }
 }
 
+#[deprecated]
 /// Error message returned when validate fail
 #[derive(Debug, Clone, Eq, PartialEq, Default)]
 pub struct Message {
@@ -166,6 +167,7 @@ impl PartialEq<Message> for u8 {
     }
 }
 
+#[deprecated]
 pub trait IntoRuleMessage {
     fn into_message(self) -> Message;
 }
@@ -234,14 +236,13 @@ pub trait RuleExt<M> {
     where
         F: for<'a> FnOnce(&'a mut V) -> Result<(), M> + 'static + Clone,
         F: Rule<V, Message = M>,
-        V: FromValue + 'static,
-        M: IntoRuleMessage;
+        V: FromValue + 'static;
 }
 
 impl<R, M> RuleExt<M> for R
 where
     R: Rule<(), Message = M> + Clone,
-    M: IntoRuleMessage + Default + 'static,
+    M: Default + 'static,
 {
     fn and<R2>(self, other: R2) -> RuleList<M>
     where
@@ -258,7 +259,6 @@ where
         F: for<'a> FnOnce(&'a mut V) -> Result<(), M> + 'static + Clone,
         F: Rule<V, Message = M>,
         V: FromValue + 'static,
-        M: IntoRuleMessage,
     {
         RuleList {
             list: vec![ErasedRule::new(self), ErasedRule::new(other)],
@@ -281,7 +281,6 @@ where
     pub fn and<R>(mut self, other: R) -> Self
     where
         R: Rule<(), Message = M> + Clone,
-        M: IntoRuleMessage,
     {
         self.list.push(ErasedRule::new(other));
         self
@@ -292,7 +291,6 @@ where
         F: for<'a> FnOnce(&'a mut V) -> Result<(), M> + 'static + Clone,
         F: Rule<V, Message = M>,
         V: FromValue + 'static,
-        M: IntoRuleMessage,
     {
         self.list.push(ErasedRule::new(other));
         self
@@ -304,7 +302,7 @@ where
     }
 
     #[must_use]
-    pub(crate) fn call(mut self, data: &mut ValueMap) -> Vec<(&'static str, Message)> {
+    pub(crate) fn call(mut self, data: &mut ValueMap) -> Vec<(&'static str, M)> {
         let mut msg = Vec::new();
         for endpoint in self.list.iter_mut() {
             let _ = endpoint
@@ -362,7 +360,7 @@ where
     F: for<'a> FnOnce(&'a mut V) -> Result<(), M> + 'static + Clone,
     F: Rule<V, Message = M>,
     V: FromValue + 'static,
-    M: IntoRuleMessage + Default + 'static,
+    M: Default + 'static,
 {
     RuleList {
         list: vec![ErasedRule::new(f)],
@@ -378,7 +376,7 @@ impl<M> IntoRuleList<M> for RuleList<M> {
 impl<R, M> IntoRuleList<M> for R
 where
     R: Rule<(), Message = M> + Clone,
-    M: IntoRuleMessage + Default + 'static,
+    M: Default + 'static,
 {
     fn into_list(self) -> RuleList<M> {
         RuleList {
@@ -445,7 +443,7 @@ mod test_regster {
 /// used by convenient implementation custom rules.
 pub trait RuleShortcut {
     /// custom define returning message type
-    type Message: IntoRuleMessage;
+    type Message;
 
     /// Named rule type, used to distinguish different rules
     ///
@@ -493,7 +491,6 @@ impl<F, V, M> Rule<V> for F
 where
     F: for<'a> FnOnce(&'a mut V) -> Result<(), M> + 'static + Clone,
     V: FromValue,
-    M: IntoRuleMessage,
 {
     type Message = M;
     fn call(&mut self, data: &mut ValueMap) -> Result<(), Self::Message> {
