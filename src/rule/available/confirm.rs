@@ -4,6 +4,8 @@ use std::fmt::Display;
 
 use crate::{register::FieldNames, value::ValueMap, RuleShortcut, Value};
 
+use super::{Message, MessageKind};
+
 #[derive(Clone)]
 pub struct Confirm<T>(pub T);
 
@@ -30,13 +32,16 @@ impl<T> Confirm<T>
 where
     T: Display,
 {
-    fn message_in(&self) -> String {
-        format!("this field value must be equal to `{}` field", self.0)
+    fn message_in(&self) -> Message {
+        Message::new(
+            MessageKind::Confirm,
+            format!("this field value must be equal to `{}` field", self.0),
+        )
     }
 }
 
 impl RuleShortcut for Confirm<String> {
-    type Message = String;
+    type Message = Message;
 
     fn name(&self) -> &'static str {
         self.name_in()
@@ -58,7 +63,7 @@ impl RuleShortcut for Confirm<String> {
 }
 
 impl RuleShortcut for Confirm<&str> {
-    type Message = String;
+    type Message = Message;
 
     fn name(&self) -> &'static str {
         self.name_in()

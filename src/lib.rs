@@ -16,7 +16,7 @@
 //! }
 //!
 //! # fn main() {
-//! let validator = Validator::new()
+//! let validator = Validator::<String>::new()
 //!     .rule("introduce", Required.and(StartWith("I am")))
 //!     .rule("age", custom(age_range))
 //!     .message([

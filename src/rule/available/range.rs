@@ -11,6 +11,7 @@
 
 use std::{marker::PhantomData, ops::RangeBounds};
 
+use super::Message;
 use crate::{RuleShortcut, Value};
 
 #[derive(Clone)]
@@ -30,8 +31,11 @@ impl<T, Num> Range<T, Num> {
     fn name_in(&self) -> &'static str {
         "range"
     }
-    fn message_in(&self) -> String {
-        "the value not in the range".into()
+    fn message_in(&self) -> Message {
+        Message::new(
+            super::MessageKind::Range,
+            "the value not in the range".into(),
+        )
     }
 }
 
@@ -41,7 +45,7 @@ macro_rules! impl_range {
         where
             T: RangeBounds<$ty> + Clone + 'static,
         {
-            type Message = String;
+            type Message = Message;
             fn name(&self) -> &'static str {
                 self.name_in()
             }
@@ -72,7 +76,7 @@ impl<T> RuleShortcut for Range<T, f32>
 where
     T: RangeBounds<f32> + Clone + 'static,
 {
-    type Message = String;
+    type Message = Message;
     fn name(&self) -> &'static str {
         self.name_in()
     }
@@ -91,7 +95,7 @@ impl<T> RuleShortcut for Range<T, f64>
 where
     T: RangeBounds<f64> + Clone + 'static,
 {
-    type Message = String;
+    type Message = Message;
     fn name(&self) -> &'static str {
         self.name_in()
     }
