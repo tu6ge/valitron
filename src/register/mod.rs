@@ -1,46 +1,4 @@
 //! register validator
-//! ## This is an example:
-//!
-//! ```rust
-//! # use serde::{Deserialize, Serialize};
-//! # use valitron::{
-//! # available::{Required, StartWith},
-//! # custom, RuleExt, Validator
-//! # };
-//! #[derive(Serialize, Debug)]
-//! struct Person {
-//!     introduce: &'static str,
-//!     age: u8,
-//!     weight: f32,
-//! }
-//!
-//! # fn main() {
-//! let validator = Validator::new()
-//!     .rule("introduce", Required.and(StartWith("I am")))
-//!     .rule("age", custom(age_range))
-//!     .message([
-//!         ("introduce.required", "introduce is required"),
-//!         ("introduce.start_with", "introduce should be starts with `I am`"),
-//!     ]);
-//!
-//! let person = Person {
-//!     introduce: "hi",
-//!     age: 18,
-//!     weight: 20.0,
-//! };
-//!
-//! let res = validator.validate(person).unwrap_err();
-//! assert!(res.len() == 2);
-//! # }
-//!
-//! fn age_range(age: &mut u8) -> Result<(), String> {
-//!     if *age >= 25 && *age <= 45 {
-//!         Ok(())
-//!     } else {
-//!         Err("age should be between 25 and 45".into())
-//!     }
-//! }
-//! ```
 
 use std::{
     collections::{
@@ -68,6 +26,7 @@ mod field_name;
 mod lexer;
 
 /// register a validator
+#[cfg_attr(docsrs, doc(cfg(feature = "full")))]
 #[derive(Default)]
 #[cfg(feature = "full")]
 pub struct Validator<M1, M = Message> {
@@ -76,6 +35,49 @@ pub struct Validator<M1, M = Message> {
 }
 
 /// register a validator
+/// ## This is an example:
+///
+/// ```rust
+/// # use serde::{Deserialize, Serialize};
+/// # use valitron::{
+/// # available::{Required, StartWith},
+/// # custom, RuleExt, Validator
+/// # };
+/// #[derive(Serialize, Debug)]
+/// struct Person {
+///     introduce: &'static str,
+///     age: u8,
+///     weight: f32,
+/// }
+///
+/// # fn main() {
+/// let validator = Validator::new()
+///     .rule("introduce", Required.and(StartWith("I am")))
+///     .rule("age", custom(age_range))
+///     .message([
+///         ("introduce.required", "introduce is required"),
+///         ("introduce.start_with", "introduce should be starts with `I am`"),
+///     ]);
+///
+/// let person = Person {
+///     introduce: "hi",
+///     age: 18,
+///     weight: 20.0,
+/// };
+///
+/// let res = validator.validate(person).unwrap_err();
+/// assert!(res.len() == 2);
+/// # }
+///
+/// fn age_range(age: &mut u8) -> Result<(), String> {
+///     if *age >= 25 && *age <= 45 {
+///         Ok(())
+///     } else {
+///         Err("age should be between 25 and 45".into())
+///     }
+/// }
+/// ```
+#[cfg_attr(docsrs, doc(cfg(not(feature = "full"))))]
 #[derive(Default)]
 #[cfg(not(feature = "full"))]
 pub struct Validator<M = String> {
