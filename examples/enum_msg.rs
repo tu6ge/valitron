@@ -8,10 +8,8 @@ fn main() {
         .message([("num.gt10", MyMessage::Gt10), ("num.lt20", MyMessage::Lt20)]);
 }
 
-#[derive(Clone, Default)]
+#[derive(Clone)]
 enum MyMessage {
-    #[default]
-    NameRequierd,
     Gt10,
     Lt20,
 }

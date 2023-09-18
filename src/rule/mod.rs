@@ -105,7 +105,7 @@ pub trait RuleExt<M> {
 impl<R, M> RuleExt<M> for R
 where
     R: Rule<(), Message = M> + Clone,
-    M: Default + 'static,
+    M: 'static,
 {
     fn and<R2>(self, other: R2) -> RuleList<M>
     where
@@ -132,11 +132,19 @@ where
 }
 
 /// Rules collection
-/// TODO remove Default
-#[derive(Default, Clone)]
+#[derive(Clone)]
 pub struct RuleList<M> {
     list: Vec<ErasedRule<M>>,
     is_bail: bool,
+}
+
+impl<M> Default for RuleList<M> {
+    fn default() -> Self {
+        Self {
+            list: Vec::new(),
+            is_bail: false,
+        }
+    }
 }
 
 impl<M> RuleList<M>
@@ -237,7 +245,7 @@ where
     F: for<'a> FnOnce(&'a mut V) -> Result<(), M1> + 'static + Clone,
     F: Rule<(V, M), Message = M>,
     V: FromValue + 'static,
-    M: Default + 'static + From<M1>,
+    M: 'static + From<M1>,
 {
     RuleList {
         list: vec![ErasedRule::new(f)],
@@ -253,7 +261,7 @@ impl<M> IntoRuleList<M> for RuleList<M> {
 impl<R, M> IntoRuleList<M> for R
 where
     R: Rule<(), Message = M> + Clone,
-    M: Default + 'static,
+    M: 'static,
 {
     fn into_list(self) -> RuleList<M> {
         RuleList {

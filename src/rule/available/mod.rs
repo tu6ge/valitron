@@ -16,7 +16,7 @@ pub use start_with::StartWith;
 pub use trim::Trim;
 
 /// Error message returned when validate fail
-#[derive(Debug, Clone, Eq, PartialEq, Default, Serialize)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize)]
 pub struct Message {
     kind: MessageKind,
 }
@@ -29,12 +29,6 @@ pub enum MessageKind {
     Trim,
     Range,
     Undefined(String),
-}
-
-impl Default for MessageKind {
-    fn default() -> Self {
-        Self::Undefined(String::new())
-    }
 }
 
 impl Message {
