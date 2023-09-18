@@ -25,10 +25,12 @@ jobs:
       - name: Run Test Lib
         run: |
           cargo test --lib
+          cargo test --example enum_msg
 
       - name: Run Test Full Features
         run: |
-            cargo test --features="full"
+          cargo test --doc --features="full"
+          cargo test --example axum --example actix --example rocket --example enum_msg_full --features="full"
 
   publish:
     needs: [test]
