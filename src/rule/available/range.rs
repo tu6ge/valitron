@@ -31,11 +31,9 @@ impl<T, Num> Range<T, Num> {
     fn name_in(&self) -> &'static str {
         "range"
     }
+
     fn message_in(&self) -> Message {
-        Message::new(
-            super::MessageKind::Range,
-            "the value not in the range".into(),
-        )
+        Message::new(super::MessageKind::Range)
     }
 }
 

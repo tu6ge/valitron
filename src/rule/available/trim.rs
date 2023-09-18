@@ -20,7 +20,7 @@ impl RuleShortcut for Trim {
     }
 
     fn message(&self) -> Self::Message {
-        Message::new(super::MessageKind::Trim, String::new())
+        Message::new(super::MessageKind::Trim)
     }
 
     fn name(&self) -> &'static str {

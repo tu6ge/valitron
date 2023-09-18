@@ -12,11 +12,9 @@ impl RuleShortcut for Required {
     fn name(&self) -> &'static str {
         "required"
     }
+
     fn message(&self) -> Self::Message {
-        Message::new(
-            super::MessageKind::Required,
-            "this field is required".into(),
-        )
+        Message::new(super::MessageKind::Required)
     }
 
     fn call(&mut self, value: &mut Value) -> bool {

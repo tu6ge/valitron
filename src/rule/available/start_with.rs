@@ -20,10 +20,7 @@ where
     T: Display,
 {
     fn message_in(&self) -> Message {
-        Message::new(
-            super::MessageKind::StartWith,
-            format!("this field must be start with `{}`", self.0),
-        )
+        Message::new(super::MessageKind::StartWith(self.0.to_string()))
     }
 }
 
@@ -33,9 +30,11 @@ impl RuleShortcut for StartWith<&str> {
     fn name(&self) -> &'static str {
         self.name_in()
     }
+
     fn message(&self) -> Self::Message {
         self.message_in()
     }
+
     fn call(&mut self, value: &mut Value) -> bool {
         match value {
             Value::String(s) => s.starts_with(self.0),
@@ -50,9 +49,11 @@ impl RuleShortcut for StartWith<char> {
     fn name(&self) -> &'static str {
         self.name_in()
     }
+
     fn message(&self) -> Self::Message {
         self.message_in()
     }
+
     fn call(&mut self, value: &mut Value) -> bool {
         match value {
             Value::String(s) => s.starts_with(self.0),

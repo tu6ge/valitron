@@ -24,7 +24,7 @@ enum MyMessage {
 
 impl From<Message> for MyMessage {
     fn from(value: Message) -> Self {
-        if value.as_str() == GT_10_MESSAGE {
+        if value.to_string() == GT_10_MESSAGE {
             Self::Gt10
         } else {
             Self::Undefined
@@ -43,10 +43,7 @@ impl RuleShortcut for Gt10 {
     }
 
     fn message(&self) -> Self::Message {
-        Message::new(
-            valitron::available::MessageKind::Undefined,
-            GT_10_MESSAGE.into(),
-        )
+        Message::undefined(GT_10_MESSAGE.into())
     }
 
     fn call(&mut self, data: &mut Value) -> bool {

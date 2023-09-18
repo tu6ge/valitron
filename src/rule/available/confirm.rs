@@ -17,7 +17,7 @@ impl<T> Confirm<T> {
 
 impl<T> Confirm<T>
 where
-    T: ToString,
+    T: Display,
 {
     fn get_target_value<'v>(&self, value: &'v ValueMap) -> Option<&'v Value> {
         let target = value.get(&FieldNames::new(self.0.to_string()));
@@ -26,17 +26,9 @@ where
             _ => None,
         }
     }
-}
 
-impl<T> Confirm<T>
-where
-    T: Display,
-{
     fn message_in(&self) -> Message {
-        Message::new(
-            MessageKind::Confirm,
-            format!("this field value must be equal to `{}` field", self.0),
-        )
+        Message::new(MessageKind::Confirm(self.0.to_string()))
     }
 }
 

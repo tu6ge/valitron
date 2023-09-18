@@ -6,39 +6,46 @@ pub mod required;
 pub mod start_with;
 pub mod trim;
 
+use std::fmt::Display;
+
 pub use confirm::Confirm;
 pub use range::Range;
 pub use required::Required;
-use serde::{ser::SerializeMap, Serialize};
+use serde::Serialize;
 pub use start_with::StartWith;
 pub use trim::Trim;
 
 /// Error message returned when validate fail
-#[derive(Debug, Clone, Eq, PartialEq, Default)]
+#[derive(Debug, Clone, Eq, PartialEq, Default, Serialize)]
 pub struct Message {
     kind: MessageKind,
-    content: String,
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Default)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize)]
 pub enum MessageKind {
     Required,
-    Confirm,
-    StartWith,
+    Confirm(String),
+    StartWith(String),
     Trim,
     Range,
+    Undefined(String),
+}
 
-    #[default]
-    Undefined,
+impl Default for MessageKind {
+    fn default() -> Self {
+        Self::Undefined(String::new())
+    }
 }
 
 impl Message {
-    pub fn new(kind: MessageKind, content: String) -> Self {
-        Message { kind, content }
+    pub fn new(kind: MessageKind) -> Self {
+        Message { kind }
     }
 
-    pub fn as_str(&self) -> &str {
-        &self.content
+    pub fn undefined(content: String) -> Self {
+        Message {
+            kind: MessageKind::Undefined(content),
+        }
     }
 
     pub fn kind(&self) -> &MessageKind {
@@ -48,40 +55,41 @@ impl Message {
 
 impl From<Message> for String {
     fn from(msg: Message) -> Self {
-        msg.content
+        msg.to_string()
     }
 }
 impl From<String> for Message {
     fn from(content: String) -> Self {
         Self {
-            kind: MessageKind::Undefined,
-            content,
+            kind: MessageKind::Undefined(content),
         }
     }
 }
 
-impl Serialize for Message {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        // if self.kind != 0 && !self.content.is_empty() {
-        //     let mut map = serializer.serialize_map(Some(2))?;
-        //     map.serialize_entry("code", &self.code)?;
-        //     map.serialize_entry("content", &self.content)?;
-        //     map.end()
-        // } else if self.code != 0 {
-        //     serializer.serialize_u8(self.code)
-        // } else {
+impl Display for Message {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.kind.fmt(f)
+    }
+}
 
-        // }
-        serializer.serialize_str(&self.content)
+impl Display for MessageKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            MessageKind::Confirm(str) => {
+                write!(f, "this field value must be equal to `{}` field", str)
+            }
+            MessageKind::Required => "this field is required".fmt(f),
+            MessageKind::StartWith(str) => write!(f, "this field must be start with `{}`", str),
+            MessageKind::Trim => unreachable!(),
+            MessageKind::Range => "the value not in the range".fmt(f),
+            MessageKind::Undefined(s) => s.fmt(f),
+        }
     }
 }
 
 impl PartialEq<Message> for String {
     fn eq(&self, other: &Message) -> bool {
-        self == &other.content
+        self == &other.to_string()
     }
 }
 
