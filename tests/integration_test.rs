@@ -15,7 +15,7 @@ struct Person {
 
 #[test]
 fn test_validator() {
-    let validator = Validator::new()
+    let validator = Validator::<String>::new()
         .rule("name", Required.and(StartWith("hello")))
         .rule("age", custom(age_limit))
         .rule("weight", custom(weight_limit))
@@ -66,7 +66,7 @@ fn weight_limit(v: &mut Value) -> Result<(), String> {
 
 #[test]
 fn test_has_tuple() {
-    let validator = Validator::new()
+    let validator = Validator::<String>::new()
         .rule(0, StartWith("hello"))
         .message([("0.start_with", "first item should be start with `hello`")]);
 
@@ -84,7 +84,7 @@ fn test_has_tuple() {
 
 #[test]
 fn test_has_array() {
-    let validator = Validator::new().rule([1], StartWith("hello"));
+    let validator = Validator::<String>::new().rule([1], StartWith("hello"));
 
     let res = validator.validate(vec!["foo", "bar"]).unwrap_err();
 

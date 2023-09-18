@@ -4,6 +4,8 @@ use std::fmt::Display;
 
 use crate::{RuleShortcut, Value};
 
+use super::Message;
+
 #[derive(Clone, Debug)]
 pub struct StartWith<T>(pub T);
 
@@ -17,13 +19,16 @@ impl<T> StartWith<T>
 where
     T: Display,
 {
-    fn message_in(&self) -> String {
-        format!("this field must be start with `{}`", self.0)
+    fn message_in(&self) -> Message {
+        Message::new(
+            super::MessageKind::StartWith,
+            format!("this field must be start with `{}`", self.0),
+        )
     }
 }
 
 impl RuleShortcut for StartWith<&str> {
-    type Message = String;
+    type Message = Message;
 
     fn name(&self) -> &'static str {
         self.name_in()
@@ -40,7 +45,7 @@ impl RuleShortcut for StartWith<&str> {
 }
 
 impl RuleShortcut for StartWith<char> {
-    type Message = String;
+    type Message = Message;
 
     fn name(&self) -> &'static str {
         self.name_in()

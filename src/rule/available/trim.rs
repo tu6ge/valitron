@@ -2,11 +2,13 @@
 
 use crate::{RuleShortcut, Value};
 
+use super::Message;
+
 #[derive(Clone)]
 pub struct Trim;
 
 impl RuleShortcut for Trim {
-    type Message = String;
+    type Message = Message;
 
     fn call(&mut self, data: &mut crate::Value) -> bool {
         match data {
@@ -18,7 +20,7 @@ impl RuleShortcut for Trim {
     }
 
     fn message(&self) -> Self::Message {
-        String::default()
+        Message::default()
     }
 
     fn name(&self) -> &'static str {
