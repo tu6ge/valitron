@@ -1,18 +1,22 @@
 //! Value can not be empty
 
+use super::Message;
 use crate::{RuleShortcut, Value};
 
 #[derive(Clone, Debug)]
 pub struct Required;
 
 impl RuleShortcut for Required {
-    type Message = String;
+    type Message = Message;
 
     fn name(&self) -> &'static str {
         "required"
     }
     fn message(&self) -> Self::Message {
-        "this field is required".into()
+        Message::new(
+            super::MessageKind::Required,
+            "this field is required".into(),
+        )
     }
 
     fn call(&mut self, value: &mut Value) -> bool {

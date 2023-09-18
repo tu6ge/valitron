@@ -6,7 +6,7 @@
 //! # use serde::{Deserialize, Serialize};
 //! # use valitron::{
 //! # available::{Required, StartWith},
-//! # custom, Message, RuleExt, Validator
+//! # custom, RuleExt, Validator
 //! # };
 //! #[derive(Serialize, Debug)]
 //! struct Person {
@@ -96,7 +96,7 @@ mod ser;
 pub mod value;
 
 pub use register::{Validatable, Validator};
-pub use rule::{custom, IntoRuleMessage, Message, Rule, RuleExt, RuleShortcut};
+pub use rule::{custom, Rule, RuleExt, RuleShortcut};
 pub use value::{FromValue, Value, ValueMap};
 
 #[cfg(feature = "full")]

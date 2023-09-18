@@ -24,8 +24,6 @@
 
 use std::slice::Iter;
 
-use serde::{ser::SerializeMap, Serialize};
-
 use crate::value::{FromValue, Value, ValueMap};
 
 use self::boxed::{ErasedRule, RuleIntoBoxed};
@@ -86,157 +84,22 @@ pub trait Rule<T>: 'static + Sized + Clone {
     }
 }
 
-#[deprecated]
-/// Error message returned when validate fail
-#[derive(Debug, Clone, Eq, PartialEq, Default)]
-pub struct Message {
-    code: u8,
-    content: String,
-}
-
-impl Message {
-    pub fn new(code: u8, content: String) -> Self {
-        Message { code, content }
-    }
-
-    pub fn from_content(content: String) -> Self {
-        Self { code: 0, content }
-    }
-
-    pub fn from_code(code: u8) -> Self {
-        Self {
-            code,
-            content: String::default(),
-        }
-    }
-
-    pub fn as_str(&self) -> &str {
-        &self.content
-    }
-
-    pub fn code(&self) -> u8 {
-        self.code
-    }
-}
-
-impl From<String> for Message {
-    fn from(content: String) -> Self {
-        Self { code: 0, content }
-    }
-}
-impl From<Message> for String {
-    fn from(msg: Message) -> Self {
-        msg.content
-    }
-}
-impl From<&str> for Message {
-    fn from(value: &str) -> Self {
-        Self {
-            code: 0,
-            content: value.to_owned(),
-        }
-    }
-}
-
-impl Serialize for Message {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        if self.code != 0 && !self.content.is_empty() {
-            let mut map = serializer.serialize_map(Some(2))?;
-            map.serialize_entry("code", &self.code)?;
-            map.serialize_entry("content", &self.content)?;
-            map.end()
-        } else if self.code != 0 {
-            serializer.serialize_u8(self.code)
-        } else {
-            serializer.serialize_str(&self.content)
-        }
-    }
-}
-
-impl PartialEq<Message> for String {
-    fn eq(&self, other: &Message) -> bool {
-        self == &other.content
-    }
-}
-impl PartialEq<Message> for u8 {
-    fn eq(&self, other: &Message) -> bool {
-        self == &other.code
-    }
-}
-
-#[deprecated]
-pub trait IntoRuleMessage {
-    fn into_message(self) -> Message;
-}
-
-impl IntoRuleMessage for Message {
-    fn into_message(self) -> Message {
-        self
-    }
-}
-
-impl IntoRuleMessage for (u8, String) {
-    fn into_message(self) -> Message {
-        Message {
-            code: self.0,
-            content: self.1,
-        }
-    }
-}
-
-impl IntoRuleMessage for (u8, &str) {
-    fn into_message(self) -> Message {
-        Message {
-            code: self.0,
-            content: self.1.to_owned(),
-        }
-    }
-}
-
-impl IntoRuleMessage for u8 {
-    fn into_message(self) -> Message {
-        Message {
-            code: self,
-            content: String::default(),
-        }
-    }
-}
-
-impl IntoRuleMessage for String {
-    fn into_message(self) -> Message {
-        Message {
-            code: 0,
-            content: self,
-        }
-    }
-}
-
-impl IntoRuleMessage for &str {
-    fn into_message(self) -> Message {
-        Message {
-            code: 0,
-            content: self.to_owned(),
-        }
-    }
-}
-
 /// Rule extension, it contains some rules, such as
 /// ```rust,ignore
 /// Rule1.and(Rule2).and(Rule3)
 /// ```
+/// TODO `Clone` should be removed ?
 pub trait RuleExt<M> {
     fn and<R>(self, other: R) -> RuleList<M>
     where
         R: Rule<(), Message = M> + Clone;
 
-    fn custom<F, V>(self, other: F) -> RuleList<M>
+    fn custom<F, V, M1>(self, other: F) -> RuleList<M>
     where
-        F: for<'a> FnOnce(&'a mut V) -> Result<(), M> + 'static + Clone,
-        F: Rule<V, Message = M>,
-        V: FromValue + 'static;
+        F: for<'a> FnOnce(&'a mut V) -> Result<(), M1> + 'static + Clone,
+        F: Rule<(V, M), Message = M>,
+        V: FromValue + 'static,
+        M: From<M1>;
 }
 
 impl<R, M> RuleExt<M> for R
@@ -254,11 +117,12 @@ where
         }
     }
 
-    fn custom<F, V>(self, other: F) -> RuleList<M>
+    fn custom<F, V, M1>(self, other: F) -> RuleList<M>
     where
-        F: for<'a> FnOnce(&'a mut V) -> Result<(), M> + 'static + Clone,
-        F: Rule<V, Message = M>,
+        F: for<'a> FnOnce(&'a mut V) -> Result<(), M1> + 'static + Clone,
+        F: Rule<(V, M), Message = M>,
         V: FromValue + 'static,
+        M: From<M1>,
     {
         RuleList {
             list: vec![ErasedRule::new(self), ErasedRule::new(other)],
@@ -268,6 +132,7 @@ where
 }
 
 /// Rules collection
+/// TODO remove Default
 #[derive(Default, Clone)]
 pub struct RuleList<M> {
     list: Vec<ErasedRule<M>>,
@@ -286,11 +151,12 @@ where
         self
     }
 
-    pub fn custom<F, V>(mut self, other: F) -> Self
+    pub fn custom<F, V, M2>(mut self, other: F) -> Self
     where
-        F: for<'a> FnOnce(&'a mut V) -> Result<(), M> + 'static + Clone,
-        F: Rule<V, Message = M>,
+        F: for<'a> FnOnce(&'a mut V) -> Result<(), M2> + 'static + Clone,
+        F: Rule<(V, M), Message = M>,
         V: FromValue + 'static,
+        M: From<M2>,
     {
         self.list.push(ErasedRule::new(other));
         self
@@ -348,6 +214,17 @@ where
             }
         })
     }
+
+    // pub(crate) fn map<M2>(mut self) -> RuleList<M2> where M2: Clone + 'static + Into<M> {
+    //     let list = self.list.into_iter().map(|endpoint| -> ErasedRule<M2> {
+    //       endpoint.map()
+    //     }).collect();
+
+    //     RuleList{
+    //       list,
+    //       is_bail: self.is_bail,
+    //     }
+    // }
 }
 
 pub trait IntoRuleList<M> {
@@ -355,12 +232,12 @@ pub trait IntoRuleList<M> {
 }
 
 /// load closure rule
-pub fn custom<F, V, M>(f: F) -> RuleList<M>
+pub fn custom<F, V, M, M1>(f: F) -> RuleList<M>
 where
-    F: for<'a> FnOnce(&'a mut V) -> Result<(), M> + 'static + Clone,
-    F: Rule<V, Message = M>,
+    F: for<'a> FnOnce(&'a mut V) -> Result<(), M1> + 'static + Clone,
+    F: Rule<(V, M), Message = M>,
     V: FromValue + 'static,
-    M: Default + 'static,
+    M: Default + 'static + From<M1>,
 {
     RuleList {
         list: vec![ErasedRule::new(f)],
@@ -391,11 +268,12 @@ mod test_regster {
     use super::available::*;
     use super::*;
     fn register<R: IntoRuleList<M>, M>(_: R) {}
+    fn register2<R: IntoRuleList<Message>>(_: R) {}
 
-    fn hander(_val: &mut ValueMap) -> Result<(), String> {
+    fn hander(_val: &mut ValueMap) -> Result<(), Message> {
         Ok(())
     }
-    fn hander2(_val: &mut Value) -> Result<(), String> {
+    fn hander2(_val: &mut Value) -> Result<(), Message> {
         Ok(())
     }
 
@@ -430,13 +308,15 @@ mod test_regster {
                 .custom(hander)
                 .bail(),
         );
-        register(custom(hander2));
-        register(custom(hander));
+        register2(custom(hander2));
+        register2(custom(hander));
+        register::<RuleList<Message>, Message>(custom(hander2));
+        register::<RuleList<Message>, Message>(custom(hander));
         register(custom(hander).and(StartWith("foo")));
         register(custom(hander).and(StartWith("foo")).bail());
         register(custom(|_a: &mut u8| Ok::<_, u8>(())).and(Gt10));
         register(Gt10.custom(|_a: &mut u8| Ok::<_, u8>(())));
-        register(custom(|_a: &mut u8| Ok::<_, u8>(())));
+        register::<RuleList<u8>, u8>(custom(|_a: &mut u8| Ok::<_, u8>(())));
     }
 }
 
@@ -487,15 +367,16 @@ where
     }
 }
 
-impl<F, V, M> Rule<V> for F
+impl<F, V, M, M1> Rule<(V, M)> for F
 where
-    F: for<'a> FnOnce(&'a mut V) -> Result<(), M> + 'static + Clone,
+    F: for<'a> FnOnce(&'a mut V) -> Result<(), M1> + 'static + Clone,
     V: FromValue,
+    M: From<M1>,
 {
     type Message = M;
     fn call(&mut self, data: &mut ValueMap) -> Result<(), Self::Message> {
         let val = V::from_value(data).expect("argument type can not be matched");
-        self.clone()(val)
+        self.clone()(val).map_err(M::from)
     }
     fn name(&self) -> &'static str {
         "custom"
