@@ -5,7 +5,7 @@
 //! ```rust
 //! # use serde::{Deserialize, Serialize};
 //! # use valitron::{
-//! # available::{Required, StartWith},
+//! # available::{Message, Required, StartWith},
 //! # custom, RuleExt, Validator
 //! # };
 //! #[derive(Serialize, Debug)]
@@ -16,7 +16,7 @@
 //! }
 //!
 //! # fn main() {
-//! let validator = Validator::<String>::new()
+//! let validator = Validator::new()
 //!     .rule("introduce", Required.and(StartWith("I am")))
 //!     .rule("age", custom(age_range))
 //!     .message([
@@ -34,7 +34,7 @@
 //! assert!(res.len() == 2);
 //! # }
 //!
-//! fn age_range(age: &mut u8) -> Result<(), String> {
+//! fn age_range(age: &mut u8) -> Result<(), Message> {
 //!     if *age >= 25 && *age <= 45 {
 //!         Ok(())
 //!     } else {

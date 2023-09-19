@@ -94,12 +94,11 @@ pub trait RuleExt<M> {
     where
         R: Rule<(), Message = M> + Clone;
 
-    fn custom<F, V, M1>(self, other: F) -> RuleList<M>
+    fn custom<F, V>(self, other: F) -> RuleList<M>
     where
-        F: for<'a> FnOnce(&'a mut V) -> Result<(), M1> + 'static + Clone,
-        F: Rule<(V, M), Message = M>,
-        V: FromValue + 'static,
-        M: From<M1>;
+        F: for<'a> FnOnce(&'a mut V) -> Result<(), M> + 'static + Clone,
+        F: Rule<V, Message = M>,
+        V: FromValue + 'static;
 }
 
 impl<R, M> RuleExt<M> for R
@@ -117,12 +116,11 @@ where
         }
     }
 
-    fn custom<F, V, M1>(self, other: F) -> RuleList<M>
+    fn custom<F, V>(self, other: F) -> RuleList<M>
     where
-        F: for<'a> FnOnce(&'a mut V) -> Result<(), M1> + 'static + Clone,
-        F: Rule<(V, M), Message = M>,
+        F: for<'a> FnOnce(&'a mut V) -> Result<(), M> + 'static + Clone,
+        F: Rule<V, Message = M>,
         V: FromValue + 'static,
-        M: From<M1>,
     {
         RuleList {
             list: vec![ErasedRule::new(self), ErasedRule::new(other)],
@@ -159,12 +157,11 @@ where
         self
     }
 
-    pub fn custom<F, V, M2>(mut self, other: F) -> Self
+    pub fn custom<F, V>(mut self, other: F) -> Self
     where
-        F: for<'a> FnOnce(&'a mut V) -> Result<(), M2> + 'static + Clone,
-        F: Rule<(V, M), Message = M>,
+        F: for<'a> FnOnce(&'a mut V) -> Result<(), M> + 'static + Clone,
+        F: Rule<V, Message = M>,
         V: FromValue + 'static,
-        M: From<M2>,
     {
         self.list.push(ErasedRule::new(other));
         self
@@ -245,12 +242,12 @@ pub trait IntoRuleList<M> {
 }
 
 /// load closure rule
-pub fn custom<F, V, M, M1>(f: F) -> RuleList<M>
+pub fn custom<F, V, M>(f: F) -> RuleList<M>
 where
-    F: for<'a> FnOnce(&'a mut V) -> Result<(), M1> + 'static + Clone,
-    F: Rule<(V, M), Message = M>,
+    F: for<'a> FnOnce(&'a mut V) -> Result<(), M> + 'static + Clone,
+    F: Rule<V, Message = M>,
     V: FromValue + 'static,
-    M: 'static + From<M1>,
+    M: 'static,
 {
     RuleList {
         list: vec![ErasedRule::new(f)],
@@ -321,15 +318,16 @@ mod test_regster {
                 .custom(hander)
                 .bail(),
         );
-        register2(custom(hander2));
+
+        register(custom(hander));
+        register(custom(hander2));
         register2(custom(hander));
-        register::<RuleList<Message>, Message>(custom(hander2));
-        register::<RuleList<Message>, Message>(custom(hander));
+        register2(custom(hander2));
+
         register(custom(hander).and(StartWith("foo")));
         register(custom(hander).and(StartWith("foo")).bail());
-        register(custom(|_a: &mut u8| Ok::<_, u8>(())).and(Gt10));
-        register(Gt10.custom(|_a: &mut u8| Ok::<_, u8>(())));
-        register::<RuleList<u8>, u8>(custom(|_a: &mut u8| Ok::<_, u8>(())));
+        register(custom(|_a: &mut u8| Ok(())).and(Gt10));
+        register(Gt10.custom(|_a: &mut u8| Ok(())));
     }
 }
 
@@ -380,16 +378,15 @@ where
     }
 }
 
-impl<F, V, M, M1> Rule<(V, M)> for F
+impl<F, V, M> Rule<V> for F
 where
-    F: for<'a> FnOnce(&'a mut V) -> Result<(), M1> + 'static + Clone,
+    F: for<'a> FnOnce(&'a mut V) -> Result<(), M> + 'static + Clone,
     V: FromValue,
-    M: From<M1>,
 {
     type Message = M;
     fn call(&mut self, data: &mut ValueMap) -> Result<(), Self::Message> {
         let val = V::from_value(data).expect("argument type can not be matched");
-        self.clone()(val).map_err(M::from)
+        self.clone()(val)
     }
     fn name(&self) -> &'static str {
         "custom"

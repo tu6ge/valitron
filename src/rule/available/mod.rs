@@ -60,6 +60,12 @@ impl From<String> for Message {
     }
 }
 
+impl From<&str> for Message {
+    fn from(content: &str) -> Self {
+        content.to_string().into()
+    }
+}
+
 impl Display for Message {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         self.kind.fmt(f)

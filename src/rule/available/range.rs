@@ -4,7 +4,7 @@
 //! ```
 //! # use valitron::{Validator, available::Range};
 //! # fn main() {
-//! let validator = Validator::<String>::new()
+//! let validator = Validator::new()
 //!     .rule("num", Range::new(10..20));
 //! # }
 //! ```
