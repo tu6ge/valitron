@@ -20,7 +20,11 @@ extern crate rocket;
 
 #[get("/?<name>&<second>")]
 fn index(name: String, second: String) -> String {
-    match (name, second).validate_mut(Validator::new().rule("0", Trim.and(Required))) {
+    match (name, second).validate_mut(
+        Validator::new()
+            .rule("0", Trim.and(Required))
+            .map(String::from),
+    ) {
         Ok((name, _)) => format!("Hello, {name}!"),
         Err(_) => format!("name is required"),
     }

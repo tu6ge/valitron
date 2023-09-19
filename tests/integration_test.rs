@@ -2,8 +2,8 @@
 
 use serde::{Deserialize, Serialize};
 use valitron::{
-    available::{Required, StartWith},
-    custom, Message, RuleExt, Validator, Value,
+    available::{Message, Required, StartWith},
+    custom, RuleExt, Validator, Value,
 };
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -34,33 +34,34 @@ fn test_validator() {
 
     assert!(res.len() == 3);
     assert_eq!(
-        res.get("age").unwrap()[0],
-        "age should be between 25 and 45".into()
+        res.get("age").unwrap()[0].to_string(),
+        "age should be between 25 and 45"
     );
-    assert_eq!(res.get("weight").unwrap()[0], Message::from_code(100),);
     assert_eq!(
-        res.get("name").unwrap()[0],
-        "name should be starts with `hello`".into(),
+        res.get("weight").unwrap()[0].to_string(),
+        "weight should be between 40 and 80",
     );
-
-    //println!("{res:?}");
+    assert_eq!(
+        res.get("name").unwrap()[0].to_string(),
+        "name should be starts with `hello`",
+    );
 }
 
-fn age_limit(n: &mut u8) -> Result<(), &'static str> {
+fn age_limit(n: &mut u8) -> Result<(), Message> {
     if *n >= 25 && *n <= 45 {
         return Ok(());
     }
-    Err("age should be between 25 and 45")
+    Err("age should be between 25 and 45".into())
 }
 
-fn weight_limit(v: &mut Value) -> Result<(), u8> {
+fn weight_limit(v: &mut Value) -> Result<(), Message> {
     if let Value::Float32(n) = v {
         let n = n.get();
         if n >= 40.0 && n <= 80.0 {
             return Ok(());
         }
     }
-    Err(100)
+    Err("weight should be between 40 and 80".into())
 }
 
 #[test]
@@ -76,8 +77,8 @@ fn test_has_tuple() {
     assert!(res.len() == 1);
 
     assert_eq!(
-        res.get(0).unwrap()[0],
-        "first item should be start with `hello`".into()
+        res.get(0).unwrap()[0].to_string(),
+        "first item should be start with `hello`"
     );
 }
 
@@ -89,7 +90,7 @@ fn test_has_array() {
 
     assert!(res.len() == 1);
     assert_eq!(
-        res.get([1]).unwrap()[0],
-        "this field must be start with `hello`".into()
+        res.get([1]).unwrap()[0].to_string(),
+        "this field must be start with `hello`"
     );
 }

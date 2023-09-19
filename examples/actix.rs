@@ -27,6 +27,7 @@ async fn index(info: web::Json<Info>) -> Result<String, ServerError> {
     info.validate(
         Validator::new()
             .rule("username", Required)
+            .map(String::from)
             .message([("username.required", "username is required")]),
     )?;
     Ok(format!("Welcome {}!", info.username))
@@ -44,7 +45,7 @@ async fn main() -> std::io::Result<()> {
 #[derive(Debug, Error)]
 pub enum ServerError {
     #[error(transparent)]
-    ValidationError(#[from] ValidatorError),
+    ValidationError(#[from] ValidatorError<String>),
     //
     // other ...
 }

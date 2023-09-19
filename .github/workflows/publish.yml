@@ -3,8 +3,7 @@ name: Test and Publish
 on:
   push:
     branches: 
-      - "master"
-      - "branch*"
+      - "*"
   pull_request:
     branches:
       - "*"
@@ -26,10 +25,11 @@ jobs:
       - name: Run Test Lib
         run: |
           cargo test --lib
+          cargo test --example enum_msg
 
       - name: Run Test Full Features
         run: |
-            cargo test --features="full"
+          cargo test --features="full"
 
   publish:
     needs: [test]

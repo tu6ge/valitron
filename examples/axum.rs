@@ -49,6 +49,7 @@ async fn handler(Form(input): Form<BlogInput>) -> Result<Html<String>, ServerErr
     input.validate(
         Validator::new()
             .rule("title", Required.and(StartWith("hi")))
+            .map(String::from)
             .message([
                 ("title.required", "title is required"),
                 ("title.start_with", "title should be starts with `hi`"),
@@ -61,7 +62,7 @@ async fn handler(Form(input): Form<BlogInput>) -> Result<Html<String>, ServerErr
 #[derive(Debug, Error)]
 pub enum ServerError {
     #[error(transparent)]
-    ValidationError(#[from] ValidatorError),
+    ValidationError(#[from] ValidatorError<String>),
 
     #[error(transparent)]
     AxumFormRejection(#[from] FormRejection),

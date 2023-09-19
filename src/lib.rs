@@ -5,8 +5,8 @@
 //! ```rust
 //! # use serde::{Deserialize, Serialize};
 //! # use valitron::{
-//! # available::{Required, StartWith},
-//! # custom, Message, RuleExt, Validator
+//! # available::{Message, Required, StartWith},
+//! # custom, RuleExt, Validator
 //! # };
 //! #[derive(Serialize, Debug)]
 //! struct Person {
@@ -34,11 +34,11 @@
 //! assert!(res.len() == 2);
 //! # }
 //!
-//! fn age_range(age: &mut u8) -> Result<(), &'static str> {
+//! fn age_range(age: &mut u8) -> Result<(), Message> {
 //!     if *age >= 25 && *age <= 45 {
 //!         Ok(())
 //!     } else {
-//!         Err("age should be between 25 and 45")
+//!         Err("age should be between 25 and 45".into())
 //!     }
 //! }
 //! ```
@@ -96,7 +96,7 @@ mod ser;
 pub mod value;
 
 pub use register::{Validatable, Validator};
-pub use rule::{custom, IntoRuleMessage, Message, Rule, RuleExt, RuleShortcut};
+pub use rule::{custom, Rule, RuleExt, RuleShortcut};
 pub use value::{FromValue, Value, ValueMap};
 
 #[cfg(feature = "full")]

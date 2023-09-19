@@ -31,6 +31,13 @@ required-features = ["full"]
 name = "rocket"
 required-features = ["full"]
 
+[[example]]
+name = "enum_msg"
+
+[[example]]
+name = "enum_msg_full"
+required-features = ["full"]
+
 [dependencies]
 serde = { version = "^1.0" }
 
