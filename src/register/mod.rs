@@ -211,8 +211,38 @@ where
         self
     }
 
+    /// # convert `Validator<M1>` to `Validator<M2>`
+    ///
+    /// Using build-in rules and returning custom validator message type is able:
+    /// ```rust
+    /// # use valitron::{Validator, available::{Message, MessageKind, Required}};
+    /// let validator = Validator::new()
+    ///     .rule("introduce", Required)
+    ///     .map(MyError::from)
+    ///     .message([("introduce.required", MyError::IntroduceRequired)]);
+    ///
+    /// #[derive(Clone)]
+    /// enum MyError{
+    ///     IntroduceRequired,
+    ///     NotReset,
+    /// }
+    ///
+    /// impl From<Message> for MyError{
+    ///     fn from(val: Message) -> Self {
+    ///         match val.kind() {
+    ///             MessageKind::Required => MyError::NotReset,
+    ///             // ...
+    ///             # _ => unreachable!(),
+    ///         }
+    ///     }
+    /// }
+    ///
+    /// // or using a custom message type init a validator
+    /// let validator = Validator::<MyError>::new();
+    /// ```
+    #[cfg_attr(docsrs, doc(cfg(feature = "full")))]
     #[must_use]
-    pub fn map<M2>(self, f: fn(M) -> M2) -> Validator<M2>
+    pub fn map<M2>(self, f: fn(message: M) -> M2) -> Validator<M2>
     where
         M2: 'static,
     {

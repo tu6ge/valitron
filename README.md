@@ -36,11 +36,11 @@ fn main() {
     let res = validator.validate(person);
 }
 
-fn age_limit(n: &mut u8) -> Result<(), &'static str> {
+fn age_limit(n: &mut u8) -> Result<(), Message> {
     if *n >= 25 && *n <= 45 {
         return Ok(());
     }
-    Err("age should be between 25 and 45")
+    Err("age should be between 25 and 45".into())
 }
 ```
 
