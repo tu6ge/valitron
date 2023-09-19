@@ -48,16 +48,16 @@ pub trait BoxedRule<M> {
 
 pub struct RuleIntoBoxed<H, M, T> {
     handler: H,
-    other: PhantomData<fn() -> T>,
-    msg: PhantomData<fn() -> M>,
+    _marker: PhantomData<fn() -> T>,
+    _message: PhantomData<fn() -> M>,
 }
 
 impl<H, M, T> RuleIntoBoxed<H, M, T> {
     pub(super) fn new(handler: H) -> Self {
         Self {
             handler,
-            other: PhantomData,
-            msg: PhantomData,
+            _marker: PhantomData,
+            _message: PhantomData,
         }
     }
 }
@@ -69,8 +69,8 @@ where
     fn clone(&self) -> Self {
         Self {
             handler: self.handler.clone(),
-            other: PhantomData,
-            msg: PhantomData,
+            _marker: PhantomData,
+            _message: PhantomData,
         }
     }
 }

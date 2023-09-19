@@ -1,24 +1,34 @@
 //! available rules collection
 
+use std::fmt::Display;
+
+use serde::Serialize;
+
 pub mod confirm;
 pub mod range;
 pub mod required;
 pub mod start_with;
 pub mod trim;
 
-use std::fmt::Display;
-
 pub use confirm::Confirm;
 pub use range::Range;
 pub use required::Required;
-use serde::Serialize;
 pub use start_with::StartWith;
 pub use trim::Trim;
 
 /// Error message returned when validate fail
-#[derive(Debug, Clone, Eq, PartialEq, Serialize)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Message {
     kind: MessageKind,
+}
+
+impl Serialize for Message {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        self.kind.serialize(serializer)
+    }
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize)]
@@ -103,17 +113,13 @@ impl FromRuleMessage for Message {
     }
 }
 
-// #[test]
-// fn test_message_serialize() {
-//     let msg = Message::new(10, "hello world".into());
-//     let json = serde_json::to_string(&msg).unwrap();
-//     assert_eq!(json, r#"{"code":10,"content":"hello world"}"#);
+#[test]
+fn test_message_serialize() {
+    let msg = Message::new(MessageKind::Required);
+    let json = serde_json::to_string(&msg).unwrap();
+    assert_eq!(json, r#""Required""#);
 
-//     let msg = Message::from_code(10);
-//     let json = serde_json::to_string(&msg).unwrap();
-//     assert_eq!(json, "10");
-
-//     let msg = Message::from_content("hello".into());
-//     let json = serde_json::to_string(&msg).unwrap();
-//     assert_eq!(json, r#""hello""#);
-// }
+    let msg = Message::new(MessageKind::Confirm("foo".into()));
+    let json = serde_json::to_string(&msg).unwrap();
+    assert_eq!(json, r#"{"Confirm":"foo"}"#);
+}

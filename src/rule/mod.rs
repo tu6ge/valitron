@@ -220,6 +220,7 @@ where
         })
     }
 
+    #[must_use]
     pub(crate) fn map<M2>(self, f: fn(M) -> M2) -> RuleList<M2>
     where
         M2: 'static,

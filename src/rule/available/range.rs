@@ -118,6 +118,6 @@ mod tests {
 
     #[test]
     fn test_register() {
-        //register::<_, String>(Required.and(Range::new(1..10)));
+        register(Required.and(Range::new(1..10)));
     }
 }

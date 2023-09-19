@@ -211,6 +211,7 @@ where
         self
     }
 
+    #[must_use]
     pub fn map<M2>(self, f: fn(M) -> M2) -> Validator<M2>
     where
         M2: 'static,

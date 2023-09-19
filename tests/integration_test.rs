@@ -15,7 +15,7 @@ struct Person {
 
 #[test]
 fn test_validator() {
-    let validator = Validator::<Message>::new()
+    let validator = Validator::new()
         .rule("name", Required.and(StartWith("hello")))
         .rule("age", custom(age_limit))
         .rule("weight", custom(weight_limit))
