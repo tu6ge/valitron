@@ -31,6 +31,7 @@ impl Serialize for Message {
     }
 }
 
+#[non_exhaustive]
 #[derive(Debug, Clone, Eq, PartialEq, Serialize)]
 pub enum MessageKind {
     Required,
