@@ -29,8 +29,7 @@ jobs:
 
       - name: Run Test Full Features
         run: |
-          cargo test --doc --features="full"
-          cargo test --example axum --example actix --example rocket --example enum_msg_full --features="full"
+          cargo test --features="full"
 
   publish:
     needs: [test]
