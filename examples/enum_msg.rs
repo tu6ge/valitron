@@ -1,17 +1,35 @@
 //! usage without "full" feature
 
-use valitron::{RuleExt, RuleShortcut, Validator, Value};
+use valitron::{RuleShortcut, Validator, Value};
 
 fn main() {
-    let _validator = Validator::<MyMessage>::new()
-        .rule("num", Gt10.and(Lt20))
-        .message([("num.gt10", MyMessage::Gt10), ("num.lt20", MyMessage::Lt20)]);
+    let validator = Validator::<MyMessage>::new()
+        .rule("num", Gt10)
+        .message([("num.gt10", MyMessage::Gt10)]);
+
+    let _validate = validator
+        .map(MyMessage2::from)
+        .rule("num", Lt20)
+        .message([("num.gt20", MyMessage2::Lt20)]);
 }
 
 #[derive(Clone)]
 enum MyMessage {
     Gt10,
+}
+
+#[derive(Clone)]
+enum MyMessage2 {
+    Gt10,
     Lt20,
+}
+
+impl From<MyMessage> for MyMessage2 {
+    fn from(value: MyMessage) -> Self {
+        match value {
+            MyMessage::Gt10 => MyMessage2::Gt10,
+        }
+    }
 }
 
 #[derive(Clone)]
@@ -34,12 +52,12 @@ impl RuleShortcut for Gt10 {
 struct Lt20;
 
 impl RuleShortcut for Lt20 {
-    type Message = MyMessage;
+    type Message = MyMessage2;
     fn name(&self) -> &'static str {
         "gt10"
     }
     fn message(&self) -> Self::Message {
-        MyMessage::Lt20
+        MyMessage2::Lt20
     }
     fn call(&mut self, data: &mut Value) -> bool {
         data < 20_u8

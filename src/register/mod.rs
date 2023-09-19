@@ -412,6 +412,24 @@ where
         self
     }
 
+    pub fn map<M2>(self, f: fn(M) -> M2) -> Validator<M2>
+    where
+        M2: 'static,
+    {
+        Validator {
+            rules: self
+                .rules
+                .into_iter()
+                .map(|(field, list)| (field, list.map(f)))
+                .collect(),
+            message: self
+                .message
+                .into_iter()
+                .map(|(key, msg)| (key, f(msg)))
+                .collect(),
+        }
+    }
+
     /// run validate without modifiable
     pub fn validate<T>(self, data: T) -> Result<(), ValidatorError<M>>
     where

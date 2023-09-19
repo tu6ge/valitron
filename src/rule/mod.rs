@@ -223,16 +223,21 @@ where
         })
     }
 
-    // pub(crate) fn map<M2>(mut self) -> RuleList<M2> where M2: Clone + 'static + Into<M> {
-    //     let list = self.list.into_iter().map(|endpoint| -> ErasedRule<M2> {
-    //       endpoint.map()
-    //     }).collect();
+    pub(crate) fn map<M2>(self, f: fn(M) -> M2) -> RuleList<M2>
+    where
+        M2: 'static,
+    {
+        let list = self
+            .list
+            .into_iter()
+            .map(|endpoint| endpoint.map(f))
+            .collect();
 
-    //     RuleList{
-    //       list,
-    //       is_bail: self.is_bail,
-    //     }
-    // }
+        RuleList {
+            list,
+            is_bail: self.is_bail,
+        }
+    }
 }
 
 pub trait IntoRuleList<M> {
