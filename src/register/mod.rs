@@ -453,26 +453,6 @@ impl<M> IntoIterator for ValidatorError<M> {
     }
 }
 
-impl From<ValidatorError> for Result<(), ValidatorError> {
-    fn from(value: ValidatorError) -> Self {
-        if value.is_empty() {
-            Ok(())
-        } else {
-            Err(value)
-        }
-    }
-}
-
-// impl From<ValidatorError> for Result<(), ValidatorError> {
-//     fn from(value: ValidatorError) -> Self {
-//         if value.is_empty() {
-//             Ok(())
-//         } else {
-//             Err(value)
-//         }
-//     }
-// }
-
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct MessageKey {
     fields: FieldNames,
