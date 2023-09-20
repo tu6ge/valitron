@@ -322,16 +322,15 @@ where
             let rule_resp = rules.call(value_map);
             names = value_map.remove_index();
 
-            let mut field_msg = Vec::with_capacity(rule_resp.len());
-            for (rule, msg) in rule_resp.into_iter() {
-                let final_msg = match message.remove(&MessageKey::new(names.clone(), rule)) {
-                    Some(s) => s,
-                    None => msg,
-                };
-                field_msg.push(final_msg);
-            }
-
-            field_msg.shrink_to_fit();
+            let field_msg = rule_resp
+                .into_iter()
+                .map(
+                    |(rule, msg)| match message.remove(&MessageKey::new(names.clone(), rule)) {
+                        Some(s) => s,
+                        None => msg,
+                    },
+                )
+                .collect();
 
             resp_message.push(names, field_msg);
         }
