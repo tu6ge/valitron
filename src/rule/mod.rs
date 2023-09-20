@@ -1,4 +1,4 @@
-//! define Rule trait, inner rule type
+//! define Rule trait, and build-in rule types
 //! # A custom rule example
 //! ```rust
 //! # use valitron::{Value, RuleShortcut};

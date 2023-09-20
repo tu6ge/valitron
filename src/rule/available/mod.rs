@@ -16,7 +16,7 @@ pub use required::Required;
 pub use start_with::StartWith;
 pub use trim::Trim;
 
-/// Error message returned when validate fail
+/// Error message, it is returned when build-in rules validate fail
 #[derive(Debug, Clone, Eq, PartialEq, Serialize)]
 pub struct Message {
     kind: MessageKind,

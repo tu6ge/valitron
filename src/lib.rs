@@ -21,7 +21,10 @@
 //!     .rule("age", custom(age_range))
 //!     .message([
 //!         ("introduce.required", "introduce is required"),
-//!         ("introduce.start_with", "introduce should be starts with `I am`"),
+//!         (
+//!             "introduce.start_with",
+//!             "introduce should be starts with `I am`",
+//!         ),
 //!     ]);
 //!
 //! let person = Person {
@@ -66,18 +69,20 @@
 //!
 //! ## Closure Rule
 //!
-//! This is support closure with a primitive type mutable reference arguments and returns something that can be converted into a [`Message`].
+//! This is support closure with a primitive type mutable reference arguments and returning `message type`.
 //!
-//! About returning, it just need to implement [`IntoRuleMessage`] trait.
+//! > ### Tip
+//! > `message type` is [`Validator`]'s only one generics argument, default is `String`, but when `full` features
+//! > enabled default is [`Message`], and it is customable. And it's not immutable, it can be changed by [`map`] method.
 //!
 //! ## Custom Rule
 //!
 //! anything types implemented [`RuleShortcut`] trait can be used as a rule
 //!
+//! [`map`]: crate::register::Validator::map
 //! [`Rule`]: crate::Rule
 //! [`RuleShortcut`]: crate::RuleShortcut
-//! [`Message`]: crate::rule::Message
-//! [`IntoRuleMessage`]: crate::rule::IntoRuleMessage
+//! [`Message`]: crate::available::Message
 //! [`Required`]: crate::available::required
 //! [`StartWith`]: crate::available::start_with
 //! [`Confirm`]: crate::available::confirm

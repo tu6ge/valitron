@@ -1,4 +1,33 @@
 //! Require string to start with provided parameters
+//!
+//! # Examples
+//! ```
+//! # use serde::Serialize;
+//! # use valitron::{available::{StartWith, MessageKind}, Validatable, Validator};
+//! #[derive(Serialize, Debug)]
+//! struct Input {
+//!     title: String,
+//! }
+//!
+//! let input = Input {
+//!     title: String::from("hi"),
+//! };
+//! let err = input
+//!     .validate(Validator::new().rule("title", StartWith("hello")))
+//!     .unwrap_err();
+//!
+//! assert!(matches!(
+//!     err.get("title").unwrap()[0].kind(),
+//!     MessageKind::StartWith(_)
+//! ));
+//!
+//! let input = Input {
+//!     title: String::from("hello world"),
+//! };
+//! input
+//!     .validate(Validator::new().rule("title", StartWith("hello")))
+//!     .unwrap();
+//! ```
 
 use std::fmt::Display;
 

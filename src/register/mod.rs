@@ -1,4 +1,21 @@
 //! register validator
+//!
+//! The [`Validator`] has a generics argument `M`, it is used validate message type,
+//! it default is `String`, but when `full` feature is enabled, default is [`Message`].
+//! Besides, it can be every types with your idea.
+//!
+//! if `M1` can be converted to `M2`, then `Validator<M1>` can be
+//! converted to `Validator<M2>` with [`map`] method:
+//!
+//! ```ignore
+//! let validator1 = Validator::<M1>::new();
+//! let validator2 = validator1.map(M2::from);
+//! ```
+//! This can integrate built-in [rules] with your application very well.
+//!
+//! [`Message`]: crate::available::Message
+//! [`map`]: Validator::map
+//! [rules]: crate::available
 
 use std::{
     collections::{
@@ -47,7 +64,10 @@ mod lexer;
 ///     .rule("age", custom(age_range))
 ///     .message([
 ///         ("introduce.required", "introduce is required"),
-///         ("introduce.start_with", "introduce should be starts with `I am`"),
+///         (
+///             "introduce.start_with",
+///             "introduce should be starts with `I am`",
+///         ),
 ///     ]);
 ///
 /// let person = Person {
@@ -223,12 +243,12 @@ where
     ///     .message([("introduce.required", MyError::IntroduceRequired)]);
     ///
     /// #[derive(Clone)]
-    /// enum MyError{
+    /// enum MyError {
     ///     IntroduceRequired,
     ///     NotReset,
     /// }
     ///
-    /// impl From<Message> for MyError{
+    /// impl From<Message> for MyError {
     ///     fn from(val: Message) -> Self {
     ///         match val.kind() {
     ///             MessageKind::Required => MyError::NotReset,
@@ -237,9 +257,6 @@ where
     ///         }
     ///     }
     /// }
-    ///
-    /// // or using a custom message type init a validator
-    /// let validator = Validator::<MyError>::new();
     /// ```
     #[must_use]
     pub fn map<M2>(self, f: fn(message: M) -> M2) -> Validator<M2>
@@ -345,7 +362,7 @@ where
     }
 }
 
-/// validateable for any types
+/// validateable for more types
 pub trait Validatable<M> {
     /// if not change value
     fn validate(&self, validator: Validator<M>) -> Result<(), ValidatorError<M>>;

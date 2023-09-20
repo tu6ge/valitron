@@ -1,4 +1,23 @@
 //! Modifies a string by leading and trailing whitespace removed
+//!
+//! # Examples
+//! ```
+//! # use serde::{Deserialize, Serialize};
+//! # use valitron::{available::{Trim, MessageKind}, Validatable, Validator};
+//! #[derive(Deserialize, Serialize, Debug)]
+//! struct Input {
+//!     title: String,
+//! }
+//!
+//! let input = Input {
+//!     title: String::from(" hi "),
+//! };
+//! let new_input = input
+//!     .validate_mut(Validator::new().rule("title", Trim))
+//!     .unwrap();
+//!
+//! assert_eq!(new_input.title, "hi");
+//! ```
 
 use crate::{RuleShortcut, Value};
 

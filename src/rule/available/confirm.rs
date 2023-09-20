@@ -1,4 +1,37 @@
 //! Usual used by password confirm input
+//!
+//! # Example:
+//! ```
+//! # use serde::Serialize;
+//! # use valitron::{available::{Confirm, MessageKind}, Validatable, Validator};
+//! #[derive(Serialize, Debug)]
+//! struct Input {
+//!     password: String,
+//!     confirm_password: String,
+//! }
+//!
+//! let input = Input {
+//!     password: "foo".into(),
+//!     confirm_password: "bar".into(),
+//! };
+//!
+//! let err = input
+//!     .validate(Validator::new().rule("confirm_password", Confirm("password")))
+//!     .unwrap_err();
+//! assert!(matches!(
+//!     err.get("confirm_password").unwrap()[0].kind(),
+//!     MessageKind::Confirm(_)
+//! ));
+//!
+//! let input = Input {
+//!     password: "foo".into(),
+//!     confirm_password: "foo".into(),
+//! };
+//!
+//! input
+//!     .validate(Validator::new().rule("confirm_password", Confirm("password")))
+//!     .unwrap();
+//! ```
 
 use std::fmt::Display;
 

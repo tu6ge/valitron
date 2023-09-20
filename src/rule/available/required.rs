@@ -1,4 +1,48 @@
 //! Value can not be empty
+//!
+//! # Examples
+//! ```
+//! # use serde::Serialize;
+//! # use valitron::{available::{Required, MessageKind}, Validatable, Validator};
+//! #[derive(Serialize, Debug)]
+//! struct Input {
+//!     username: String,
+//!     password: String,
+//! }
+//!
+//! let input = Input {
+//!     username: String::default(),
+//!     password: String::default(),
+//! };
+//! let err = input
+//!     .validate(
+//!         Validator::new()
+//!             .rule("username", Required)
+//!             .rule("password", Required),
+//!     )
+//!     .unwrap_err();
+//!
+//! assert!(matches!(
+//!     err.get("username").unwrap()[0].kind(),
+//!     MessageKind::Required
+//! ));
+//! assert!(matches!(
+//!     err.get("password").unwrap()[0].kind(),
+//!     MessageKind::Required
+//! ));
+//!
+//! let input = Input {
+//!     username: String::from("foo"),
+//!     password: String::from("bar"),
+//! };
+//! input
+//!     .validate(
+//!         Validator::new()
+//!             .rule("username", Required)
+//!             .rule("password", Required),
+//!     )
+//!     .unwrap();
+//! ```
 
 use super::Message;
 use crate::{RuleShortcut, Value};

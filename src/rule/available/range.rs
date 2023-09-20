@@ -1,12 +1,29 @@
-//! Range validate rule
+//! Range validate rule, support `u8`, `u16`, `u32`, `u64`, `i8`,
+//! `i16`, `i32`, `i64`, `f32`, `f64` and char.
 //!
 //! # Examples
 //! ```
-//! # use valitron::{Validator, available::Range};
-//! # fn main() {
-//! let validator = Validator::new()
-//!     .rule("num", Range::new(10..20));
-//! # }
+//! # use serde::Serialize;
+//! # use valitron::{available::{Range, MessageKind}, Validatable, Validator};
+//! #[derive(Serialize, Debug)]
+//! struct Input {
+//!     num: u8,
+//! }
+//!
+//! let input = Input { num: 9 };
+//! let err = input
+//!     .validate(Validator::new().rule("num", Range::new(10_u8..20)))
+//!     .unwrap_err();
+//!
+//! assert!(matches!(
+//!     err.get("num").unwrap()[0].kind(),
+//!     MessageKind::Range
+//! ));
+//!
+//! let input = Input { num: 15 };
+//! input
+//!     .validate(Validator::new().rule("num", Range::new(10_u8..20)))
+//!     .unwrap();
 //! ```
 
 use std::{marker::PhantomData, ops::RangeBounds};
