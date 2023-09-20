@@ -215,9 +215,9 @@ where
     /// # Panic
     ///
     /// When field or rule is not existing ,this will panic
-    pub fn message<'key, const N: usize, MSG>(mut self, list: [(&'key str, MSG); N]) -> Self
+    pub fn message<'key, const N: usize, Msg>(mut self, list: [(&'key str, Msg); N]) -> Self
     where
-        MSG: Into<M>,
+        Msg: Into<M>,
     {
         self.message = HashMap::from_iter(
             list.map(|(key_str, v)| {
@@ -518,14 +518,6 @@ impl MessageKey {
         Self { fields, rule }
     }
 }
-
-// #[test]
-// fn test_message() {
-//     let ruler = Ruler::new().message([
-//         ("name.required", "name mut not be null"),
-//         ("password.password", "password mut not very simple"),
-//     ]);
-// }
 
 #[test]
 fn test_validator_error_serialize() {
