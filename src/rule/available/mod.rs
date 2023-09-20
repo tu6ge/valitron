@@ -25,11 +25,22 @@ pub struct Message {
 #[non_exhaustive]
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum MessageKind {
+    /// as required rule
     Required,
+
+    /// as confrim rule, only one argument is other field name.
     Confirm(String),
+
+    /// as start_with rule, only one argument is text for comparison
     StartWith(String),
+
+    /// as trim rule, this is unreachable, only mark
     Trim,
+
+    /// as range rule
     Range,
+
+    /// other way, it used by other type converting Message stopover
     Fallback(String),
 }
 
