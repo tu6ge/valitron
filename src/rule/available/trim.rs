@@ -1,4 +1,5 @@
-//! Modifies a string by leading and trailing whitespace removed
+//! Modifies a string by leading and trailing whitespace removed,
+//! and this alway return true
 //!
 //! # Examples
 //! ```

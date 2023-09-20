@@ -1,4 +1,5 @@
-//! Require string to start with provided parameters
+//! Require string to start with provided parameter, the parameter support `String`, `&str` or `char`,
+//! and verified data only support `String` or `&'static str` , other types always return false.
 //!
 //! # Examples
 //! ```
@@ -7,13 +8,19 @@
 //! #[derive(Serialize, Debug)]
 //! struct Input {
 //!     title: String,
+//!     other: &'static str,
 //! }
 //!
 //! let input = Input {
 //!     title: String::from("hi"),
+//!     other: "foo",
 //! };
 //! let err = input
-//!     .validate(Validator::new().rule("title", StartWith("hello")))
+//!     .validate(
+//!         Validator::new()
+//!             .rule("title", StartWith("hello"))
+//!             .rule("other", StartWith("bar"))
+//!     )
 //!     .unwrap_err();
 //!
 //! assert!(matches!(
@@ -23,6 +30,7 @@
 //!
 //! let input = Input {
 //!     title: String::from("hello world"),
+//!     other: "foo",
 //! };
 //! input
 //!     .validate(Validator::new().rule("title", StartWith("hello")))

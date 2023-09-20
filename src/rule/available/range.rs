@@ -1,5 +1,5 @@
 //! Range validate rule, support `u8`, `u16`, `u32`, `u64`, `i8`,
-//! `i16`, `i32`, `i64`, `f32`, `f64` and char.
+//! `i16`, `i32`, `i64`, `f32`, `f64` and char. other types always return false.
 //!
 //! # Examples
 //! ```
