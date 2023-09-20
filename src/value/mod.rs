@@ -21,7 +21,7 @@
 //! # }
 //! ```
 
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, mem};
 
 use crate::register::{FieldName, FieldNames, Parser};
 
@@ -101,8 +101,8 @@ pub enum Value {
 ///
 /// [`Value`]: self::Value
 pub struct ValueMap {
-    value: Value,
-    index: FieldNames,
+    pub(crate) value: Value,
+    pub(crate) index: FieldNames,
 }
 
 pub trait FromValue {
@@ -120,6 +120,12 @@ impl ValueMap {
     /// change index
     pub fn index(&mut self, index: FieldNames) {
         self.index = index;
+    }
+
+    pub fn remove_index(&mut self) -> FieldNames {
+        let mut x = FieldNames::default();
+        mem::swap(&mut self.index, &mut x);
+        x
     }
 
     /// get current field value

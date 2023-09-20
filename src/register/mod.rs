@@ -88,9 +88,9 @@ mod lexer;
 ///     }
 /// }
 /// ```
-pub struct Validator<M = DefaultMessage> {
+pub struct Validator<'v, M = DefaultMessage> {
     rules: HashMap<FieldNames, RuleList<M>>,
-    message: HashMap<MessageKey, M>,
+    message: HashMap<MessageKey<'v>, M>,
 }
 
 /// default message is `Message`
@@ -103,7 +103,7 @@ type DefaultMessage = Message;
 #[cfg(not(feature = "full"))]
 type DefaultMessage = String;
 
-impl<M> Default for Validator<M> {
+impl<M> Default for Validator<'_, M> {
     fn default() -> Self {
         Self {
             rules: HashMap::new(),
@@ -112,7 +112,7 @@ impl<M> Default for Validator<M> {
     }
 }
 
-impl<M> Validator<M> {
+impl<M> Validator<'_, M> {
     pub fn new() -> Self {
         Self::default()
     }
@@ -127,7 +127,7 @@ macro_rules! panic_on_err {
     };
 }
 
-impl<M> Validator<M>
+impl<'v, M> Validator<'v, M>
 where
     M: 'static,
 {
@@ -215,7 +215,7 @@ where
     /// # Panic
     ///
     /// When field or rule is not existing ,this will panic
-    pub fn message<'key, const N: usize, Msg>(mut self, list: [(&'key str, Msg); N]) -> Self
+    pub fn message<const N: usize, Msg>(mut self, list: [(&'v str, Msg); N]) -> Self
     where
         Msg: Into<M>,
     {
@@ -258,7 +258,7 @@ where
     /// }
     /// ```
     #[must_use]
-    pub fn map<M2>(self, f: fn(message: M) -> M2) -> Validator<M2>
+    pub fn map<M2>(self, f: fn(message: M) -> M2) -> Validator<'v, M2>
     where
         M2: 'static,
     {
@@ -317,23 +317,23 @@ where
 
         let Validator { rules, mut message } = self;
 
-        for (names, rules) in rules.into_iter() {
-            value_map.index(names.clone());
+        for (mut names, rules) in rules.into_iter() {
+            value_map.index(names);
             let rule_resp = rules.call(value_map);
+            names = value_map.remove_index();
 
             let mut field_msg = Vec::with_capacity(rule_resp.len());
             for (rule, msg) in rule_resp.into_iter() {
-                let final_msg =
-                    match message.remove(&MessageKey::new(names.clone(), rule.to_string())) {
-                        Some(s) => s,
-                        None => msg,
-                    };
+                let final_msg = match message.remove(&MessageKey::new(names.clone(), rule)) {
+                    Some(s) => s,
+                    None => msg,
+                };
                 field_msg.push(final_msg);
             }
 
             field_msg.shrink_to_fit();
 
-            resp_message.push(names.clone(), field_msg);
+            resp_message.push(names, field_msg);
         }
 
         resp_message.shrink_to_fit();
@@ -506,20 +506,20 @@ impl<M> IntoIterator for ValidatorError<M> {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
-pub struct MessageKey {
+pub struct MessageKey<'key> {
     fields: FieldNames,
-    rule: String,
+    rule: &'key str,
 }
 
-impl Hash for MessageKey {
+impl Hash for MessageKey<'_> {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.fields.hash(state);
         self.rule.hash(state);
     }
 }
 
-impl MessageKey {
-    pub(crate) fn new(fields: FieldNames, rule: String) -> Self {
+impl<'key> MessageKey<'key> {
+    pub(crate) fn new(fields: FieldNames, rule: &'key str) -> Self {
         Self { fields, rule }
     }
 }
