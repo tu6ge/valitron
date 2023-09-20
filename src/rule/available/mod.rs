@@ -17,29 +17,36 @@ pub use start_with::StartWith;
 pub use trim::Trim;
 
 /// Error message returned when validate fail
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize)]
 pub struct Message {
     kind: MessageKind,
 }
 
-impl Serialize for Message {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        self.kind.serialize(serializer)
-    }
-}
-
 #[non_exhaustive]
-#[derive(Debug, Clone, Eq, PartialEq, Serialize)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum MessageKind {
     Required,
     Confirm(String),
     StartWith(String),
     Trim,
     Range,
-    Undefined(String),
+    Fallback(String),
+}
+
+impl Serialize for MessageKind {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        match self {
+            MessageKind::Required => serializer.serialize_str("required"),
+            MessageKind::Range => serializer.serialize_str("range"),
+            MessageKind::Confirm(_) => serializer.serialize_str("confirm"),
+            MessageKind::StartWith(_) => serializer.serialize_str("start_with"),
+            MessageKind::Trim => serializer.serialize_str("trim"),
+            MessageKind::Fallback(s) => serializer.serialize_str(s),
+        }
+    }
 }
 
 impl Message {
@@ -47,9 +54,12 @@ impl Message {
         Message { kind }
     }
 
-    pub fn undefined(content: String) -> Self {
+    pub fn fallback<C>(content: C) -> Self
+    where
+        C: Into<String>,
+    {
         Message {
-            kind: MessageKind::Undefined(content),
+            kind: MessageKind::Fallback(content.into()),
         }
     }
 
@@ -66,7 +76,7 @@ impl From<Message> for String {
 impl From<String> for Message {
     fn from(content: String) -> Self {
         Self {
-            kind: MessageKind::Undefined(content),
+            kind: MessageKind::Fallback(content),
         }
     }
 }
@@ -93,7 +103,7 @@ impl Display for MessageKind {
             MessageKind::StartWith(str) => write!(f, "this field must be start with `{}`", str),
             MessageKind::Trim => unreachable!(),
             MessageKind::Range => "the value not in the range".fmt(f),
-            MessageKind::Undefined(s) => s.fmt(f),
+            MessageKind::Fallback(s) => s.fmt(f),
         }
     }
 }
@@ -104,23 +114,17 @@ impl PartialEq<Message> for String {
     }
 }
 
-pub trait FromRuleMessage {
-    fn from_message(msg: Message) -> Self;
-}
-
-impl FromRuleMessage for Message {
-    fn from_message(msg: Message) -> Self {
-        msg
-    }
-}
-
 #[test]
 fn test_message_serialize() {
     let msg = Message::new(MessageKind::Required);
     let json = serde_json::to_string(&msg).unwrap();
-    assert_eq!(json, r#""Required""#);
+    assert_eq!(json, r#"{"kind":"required"}"#);
 
     let msg = Message::new(MessageKind::Confirm("foo".into()));
     let json = serde_json::to_string(&msg).unwrap();
-    assert_eq!(json, r#"{"Confirm":"foo"}"#);
+    assert_eq!(json, r#"{"kind":"confirm"}"#);
+
+    let msg = Message::new(MessageKind::Fallback("foo".into()));
+    let json = serde_json::to_string(&msg).unwrap();
+    assert_eq!(json, r#"{"kind":"foo"}"#);
 }
