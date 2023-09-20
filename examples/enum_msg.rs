@@ -13,12 +13,10 @@ fn main() {
         .message([("num.gt20", MyMessage2::Lt20)]);
 }
 
-#[derive(Clone)]
 enum MyMessage {
     Gt10,
 }
 
-#[derive(Clone)]
 enum MyMessage2 {
     Gt10,
     Lt20,

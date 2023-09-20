@@ -15,7 +15,6 @@ fn main() {
         ]);
 }
 
-#[derive(Clone)]
 enum MyMessage {
     NameRequierd,
     NameStartWith,

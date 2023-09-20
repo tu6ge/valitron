@@ -130,7 +130,6 @@ where
 }
 
 /// Rules collection
-#[derive(Clone)]
 pub struct RuleList<M> {
     list: Vec<ErasedRule<M>>,
     is_bail: bool,
@@ -145,9 +144,18 @@ impl<M> Default for RuleList<M> {
     }
 }
 
+impl<M: Clone> Clone for RuleList<M> {
+    fn clone(&self) -> Self {
+        Self {
+            list: self.list.clone(),
+            is_bail: self.is_bail,
+        }
+    }
+}
+
 impl<M> RuleList<M>
 where
-    M: Clone + 'static,
+    M: 'static,
 {
     pub fn and<R>(mut self, other: R) -> Self
     where
@@ -173,9 +181,10 @@ where
     }
 
     #[must_use]
-    pub(crate) fn call(mut self, data: &mut ValueMap) -> Vec<(&'static str, M)> {
+    pub(crate) fn call(self, data: &mut ValueMap) -> Vec<(&'static str, M)> {
+        let RuleList { mut list, .. } = self;
         let mut msg = Vec::new();
-        for endpoint in self.list.iter_mut() {
+        for endpoint in list.iter_mut() {
             let _ = endpoint
                 .call(data)
                 .map_err(|e| msg.push((endpoint.name(), e)));

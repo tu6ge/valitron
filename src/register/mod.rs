@@ -129,7 +129,7 @@ macro_rules! panic_on_err {
 
 impl<M> Validator<M>
 where
-    M: Clone + 'static,
+    M: 'static,
 {
     /// # Register rules
     ///
@@ -242,7 +242,6 @@ where
     ///     .map(MyError::from)
     ///     .message([("introduce.required", MyError::IntroduceRequired)]);
     ///
-    /// #[derive(Clone)]
     /// enum MyError {
     ///     IntroduceRequired,
     ///     NotReset,
@@ -314,17 +313,19 @@ where
     }
 
     fn inner_validate(self, value_map: &mut ValueMap) -> ValidatorError<M> {
-        let mut message = ValidatorError::with_capacity(self.rules.len());
+        let mut resp_message = ValidatorError::with_capacity(self.rules.len());
 
-        for (names, rules) in self.rules.iter() {
+        let Validator { rules, mut message } = self;
+
+        for (names, rules) in rules.into_iter() {
             value_map.index(names.clone());
-            let rule_resp = rules.clone().call(value_map);
+            let rule_resp = rules.call(value_map);
 
             let mut field_msg = Vec::with_capacity(rule_resp.len());
             for (rule, msg) in rule_resp.into_iter() {
                 let final_msg =
-                    match self.get_message(&MessageKey::new(names.clone(), rule.to_string())) {
-                        Some(s) => s.clone(),
+                    match message.remove(&MessageKey::new(names.clone(), rule.to_string())) {
+                        Some(s) => s,
                         None => msg,
                     };
                 field_msg.push(final_msg);
@@ -332,12 +333,12 @@ where
 
             field_msg.shrink_to_fit();
 
-            message.push(names.clone(), field_msg);
+            resp_message.push(names.clone(), field_msg);
         }
 
-        message.shrink_to_fit();
+        resp_message.shrink_to_fit();
 
-        message
+        resp_message
     }
 
     fn rule_get(&self, names: &FieldNames) -> Option<&RuleList<M>> {
@@ -356,10 +357,6 @@ where
             Err(format!("rule \"{rule}\" is not found in rules"))
         }
     }
-
-    fn get_message(&self, key: &MessageKey) -> Option<&M> {
-        self.message.get(key)
-    }
 }
 
 /// validateable for more types
@@ -376,7 +373,7 @@ pub trait Validatable<M> {
 impl<T, M> Validatable<M> for T
 where
     T: Serialize,
-    M: Clone + 'static,
+    M: 'static,
 {
     fn validate(&self, validator: Validator<M>) -> Result<(), ValidatorError<M>> {
         validator.validate(self)
@@ -391,9 +388,17 @@ where
 }
 
 /// store validate error message
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct ValidatorError<M> {
     message: HashMap<FieldNames, Vec<M>>,
+}
+
+impl<M: Clone> Clone for ValidatorError<M> {
+    fn clone(&self) -> Self {
+        Self {
+            message: self.message.clone(),
+        }
+    }
 }
 
 impl<M> Serialize for ValidatorError<M>
