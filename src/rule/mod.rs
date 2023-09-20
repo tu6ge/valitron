@@ -88,27 +88,26 @@ pub trait Rule<T>: 'static + Sized + Clone {
 /// ```rust,ignore
 /// Rule1.and(Rule2).and(Rule3)
 /// ```
-/// TODO `Clone` should be removed ?
 pub trait RuleExt<M> {
     fn and<R>(self, other: R) -> RuleList<M>
     where
-        R: Rule<(), Message = M> + Clone;
+        R: Rule<(), Message = M>;
 
     fn custom<F, V>(self, other: F) -> RuleList<M>
     where
-        F: for<'a> FnOnce(&'a mut V) -> Result<(), M> + 'static + Clone,
+        F: for<'a> FnOnce(&'a mut V) -> Result<(), M>,
         F: Rule<V, Message = M>,
         V: FromValue + 'static;
 }
 
 impl<R, M> RuleExt<M> for R
 where
-    R: Rule<(), Message = M> + Clone,
+    R: Rule<(), Message = M>,
     M: 'static,
 {
     fn and<R2>(self, other: R2) -> RuleList<M>
     where
-        R2: Rule<(), Message = M> + Clone,
+        R2: Rule<(), Message = M>,
     {
         RuleList {
             list: vec![ErasedRule::<M>::new(self), ErasedRule::new(other)],
@@ -118,7 +117,7 @@ where
 
     fn custom<F, V>(self, other: F) -> RuleList<M>
     where
-        F: for<'a> FnOnce(&'a mut V) -> Result<(), M> + 'static + Clone,
+        F: for<'a> FnOnce(&'a mut V) -> Result<(), M>,
         F: Rule<V, Message = M>,
         V: FromValue + 'static,
     {
@@ -159,7 +158,7 @@ where
 {
     pub fn and<R>(mut self, other: R) -> Self
     where
-        R: Rule<(), Message = M> + Clone,
+        R: Rule<(), Message = M>,
     {
         self.list.push(ErasedRule::new(other));
         self
@@ -167,7 +166,7 @@ where
 
     pub fn custom<F, V>(mut self, other: F) -> Self
     where
-        F: for<'a> FnOnce(&'a mut V) -> Result<(), M> + 'static + Clone,
+        F: for<'a> FnOnce(&'a mut V) -> Result<(), M>,
         F: Rule<V, Message = M>,
         V: FromValue + 'static,
     {
@@ -254,7 +253,7 @@ pub trait IntoRuleList<M> {
 /// load closure rule
 pub fn custom<F, V, M>(f: F) -> RuleList<M>
 where
-    F: for<'a> FnOnce(&'a mut V) -> Result<(), M> + 'static + Clone,
+    F: for<'a> FnOnce(&'a mut V) -> Result<(), M>,
     F: Rule<V, Message = M>,
     V: FromValue + 'static,
     M: 'static,
@@ -272,7 +271,7 @@ impl<M> IntoRuleList<M> for RuleList<M> {
 }
 impl<R, M> IntoRuleList<M> for R
 where
-    R: Rule<(), Message = M> + Clone,
+    R: Rule<(), Message = M>,
     M: 'static,
 {
     fn into_list(self) -> RuleList<M> {
