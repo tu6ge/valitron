@@ -68,19 +68,20 @@ mod lexer;
 ///     }
 /// }
 /// ```
-#[cfg_attr(docsrs, doc(cfg(feature = "full")))]
-#[cfg(feature = "full")]
-pub struct Validator<M = Message> {
+pub struct Validator<M = DefaultMessage> {
     rules: HashMap<FieldNames, RuleList<M>>,
     message: HashMap<MessageKey, M>,
 }
 
-/// register a validator
+/// default message is `Message`
+#[cfg_attr(docsrs, doc(cfg(feature = "full")))]
+#[cfg(feature = "full")]
+type DefaultMessage = Message;
+
+/// default message is `String`
+#[cfg_attr(docsrs, doc(cfg(not(feature = "full"))))]
 #[cfg(not(feature = "full"))]
-pub struct Validator<M = String> {
-    rules: HashMap<FieldNames, RuleList<M>>,
-    message: HashMap<MessageKey, M>,
-}
+type DefaultMessage = String;
 
 impl<M> Default for Validator<M> {
     fn default() -> Self {
@@ -240,7 +241,6 @@ where
     /// // or using a custom message type init a validator
     /// let validator = Validator::<MyError>::new();
     /// ```
-    #[cfg_attr(docsrs, doc(cfg(feature = "full")))]
     #[must_use]
     pub fn map<M2>(self, f: fn(message: M) -> M2) -> Validator<M2>
     where
