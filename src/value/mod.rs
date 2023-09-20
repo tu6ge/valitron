@@ -122,7 +122,8 @@ impl ValueMap {
         self.index = index;
     }
 
-    pub fn remove_index(&mut self) -> FieldNames {
+    /// Takes the FieldNames out of the ValueMap
+    pub fn take_index(&mut self) -> FieldNames {
         let mut x = FieldNames::default();
         mem::swap(&mut self.index, &mut x);
         x

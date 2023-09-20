@@ -320,7 +320,7 @@ where
         for (mut names, rules) in rules.into_iter() {
             value_map.index(names);
             let rule_resp = rules.call(value_map);
-            names = value_map.remove_index();
+            names = value_map.take_index();
 
             let field_msg = rule_resp
                 .into_iter()
