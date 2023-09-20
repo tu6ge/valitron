@@ -12,9 +12,10 @@ Inspired by axum
 - Related validate, e.g. password confirm
 - Custom rule with other parameter
 - Check / modify input data
-- Custom error message
-- collect validate error messages
-- Support all types data on `#[dervic(Serialize, Deserialize)]` ( visit [`serde`](https://serde.rs/) for more info)
+- Custom error message type
+- Support different error types convert, it can use both build-in rules and custom error type simultaneously
+- Collect validate error messages
+- Support all types data on `#[derive(Serialize, Deserialize)]` ( visit [`serde`](https://serde.rs/) for more info)
 
 ## Examples
 
@@ -34,6 +35,8 @@ fn main() {
     };
 
     let res = validator.validate(person);
+    // or using trait
+    let res = person.validate(validator);
 }
 
 fn age_limit(n: &mut u8) -> Result<(), Message> {
