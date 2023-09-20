@@ -219,15 +219,13 @@ where
     where
         Msg: Into<M>,
     {
-        self.message = HashMap::from_iter(
-            list.map(|(key_str, v)| {
-                let msg_key = panic_on_err!(field_name::parse_message(key_str));
+        self.message = HashMap::from_iter(list.map(|(key_str, v)| {
+            let msg_key = panic_on_err!(field_name::parse_message(key_str));
 
-                panic_on_err!(self.exit_message(&msg_key));
+            panic_on_err!(self.exit_message(&msg_key));
 
-                (msg_key, v.into())
-            }),
-        );
+            (msg_key, v.into())
+        }));
         self
     }
 
