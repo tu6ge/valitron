@@ -75,7 +75,6 @@ pub trait Rule<T>: 'static + Sized + Clone {
     /// Rule specific implementation, data is gived type all field's value, and current field index.
     ///
     /// success returning Ok(()), or else returning message.
-    #[must_use]
     fn call(&mut self, data: &mut ValueMap) -> Result<(), Self::Message>;
 
     #[doc(hidden)]

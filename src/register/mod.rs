@@ -226,8 +226,7 @@ where
                 panic_on_err!(self.exit_message(&msg_key));
 
                 (msg_key, v.into())
-            })
-            .into_iter(),
+            }),
         );
         self
     }
