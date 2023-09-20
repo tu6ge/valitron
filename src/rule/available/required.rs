@@ -1,4 +1,5 @@
-//! Value can not be empty
+//! Value can not be empty, supported `Vec`, `String`, `HashMap`
+//! or `BTreeMap`. other types always return true.
 //!
 //! # Examples
 //! ```
@@ -63,16 +64,10 @@ impl RuleShortcut for Required {
 
     fn call(&mut self, value: &mut Value) -> bool {
         match value {
-            Value::Uint8(_)
-            | Value::Uint16(_)
-            | Value::Uint32(_)
-            | Value::Uint64(_)
-            | Value::Int8(_)
-            | Value::Int16(_)
-            | Value::Int32(_)
-            | Value::Int64(_) => true,
             Value::String(s) => !s.is_empty(),
-            _ => unreachable!("invalid Value variant"),
+            Value::Array(arr) => !arr.is_empty(),
+            Value::Map(map) => !map.is_empty(),
+            _ => true,
         }
     }
 }
