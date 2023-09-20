@@ -84,7 +84,7 @@ pub trait Rule<T>: 'static + Sized + Clone {
     }
 }
 
-/// Rule extension, it contains some rules, such as
+/// Rule extension, it can coupling some rules, such as
 /// ```rust,ignore
 /// Rule1.and(Rule2).and(Rule3)
 /// ```
