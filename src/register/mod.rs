@@ -148,9 +148,9 @@ where
     /// - `foo.1[color]`
     /// - more combine
     ///
-    /// BNF indicate
+    /// fields's BNF:
     /// ```bnf
-    /// exp                    ::= <tuple_index>
+    /// fields                 ::= <tuple_index>
     ///                          | <array_index>
     ///                          | <ident>
     ///                          | <struct_variant_index>
