@@ -1,11 +1,18 @@
+use serde::Serialize;
 use valitron::{
-    available::{Message, Required, StartWith},
+    available::{Message, Required, StartWith, Trim},
     RuleExt, RuleShortcut, Validator, Value,
 };
 
+#[derive(Debug, Serialize)]
+struct Input {
+    name: String,
+    num: u8,
+}
+
 fn main() {
-    let _validator = Validator::new()
-        .rule("name", Required.and(StartWith("foo")))
+    let validator = Validator::new()
+        .rule("name", Trim.and(Required).and(StartWith("foo")))
         .map(MyMessage::from)
         .rule("num", Gt10)
         .message([
@@ -13,8 +20,18 @@ fn main() {
             ("name.start_with", MyMessage::NameStartWith),
             ("num.gt10", MyMessage::Gt10),
         ]);
+
+    let input = Input {
+        name: "bar".into(),
+        num: 9,
+    };
+    let res = validator.validate(&input).unwrap_err();
+
+    assert_eq!(res.get("name").unwrap()[0], MyMessage::NameStartWith);
+    assert_eq!(res.get("num").unwrap()[0], MyMessage::Gt10);
 }
 
+#[derive(Debug, Eq, PartialEq)]
 enum MyMessage {
     NameRequierd,
     NameStartWith,
