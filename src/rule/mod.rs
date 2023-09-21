@@ -142,7 +142,7 @@ impl<M> Default for RuleList<M> {
     }
 }
 
-impl<M: Clone> Clone for RuleList<M> {
+impl<M> Clone for RuleList<M> {
     fn clone(&self) -> Self {
         Self {
             list: self.list.clone(),
