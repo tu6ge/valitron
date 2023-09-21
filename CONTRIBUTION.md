@@ -1,6 +1,6 @@
 # Contribution Guide
 
-1. if you using vscode and rust-analysis, you should be open `full` feature, like:
+1. If you using vscode and rust-analysis, you should be open `full` feature, like:
 
 ```
 {
@@ -21,15 +21,15 @@ or format on save.
 }
 ```
 
-2. one thing once commit
+2. One thing once commit
 
 so in once pull request, it can contain multiple commits.
 
-3. if you add new features, you should be add some test case of the features.
+3. If you add new features, you should be add some test case of the features.
 
-4. run `cargo fmt`
+4. Run `cargo fmt` with your need.
 
-5. run test case:
+5. Run test case:
 
 ```
 cargo t --lib
