@@ -43,14 +43,14 @@ impl Value {
             Value::Unit => Unexpected::Unit,
             Value::Option(_) => Unexpected::Option,
             Value::Array(_) => Unexpected::Seq,
-            Value::Tuple(_) => Unexpected::TupleVariant, // TODO
+            Value::Tuple(_) => Unexpected::TupleVariant,
             Value::TupleStruct(_) => Unexpected::StructVariant,
             Value::NewtypeStruct(_) => Unexpected::NewtypeStruct,
             Value::Enum(..) => Unexpected::Enum,
             Value::EnumUnit(_) => Unexpected::Enum,
             Value::TupleVariant(..) => Unexpected::TupleVariant,
             Value::Map(_) => Unexpected::Map,
-            Value::Struct(_) => Unexpected::NewtypeStruct, // TODO
+            Value::Struct(_) => Unexpected::NewtypeStruct,
             Value::StructVariant(..) => Unexpected::NewtypeVariant,
         }
     }
@@ -542,7 +542,6 @@ struct MapRefDeserializer<'de> {
 //     }
 // }
 
-// TODO  &Value need to implement Deserializer
 impl<'de> MapAccess<'de> for MapRefDeserializer<'de> {
     type Error = Error;
 
