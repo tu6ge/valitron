@@ -525,7 +525,7 @@ impl<'key> MessageKey<'key> {
 
 #[cfg(test)]
 mod tests {
-    use super::{ValidatorError, FieldNames, Validator};
+    use super::{FieldNames, Validator, ValidatorError};
 
     #[test]
     fn test_validator_error_serialize() {
@@ -543,7 +543,7 @@ mod tests {
     #[test]
     fn repect_insert_rules() {
         use crate::{
-            available::{Required, Range, Trim},
+            available::{Range, Required, Trim},
             RuleExt,
         };
 
