@@ -1,7 +1,0 @@
-{
-  "rust-analyzer.cargo.features": [
-    "full"
-  ],
-  "editor.formatOnSave": true,
-  "editor.defaultFormatter": "rust-lang.rust-analyzer"
-}
