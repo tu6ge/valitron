@@ -91,6 +91,7 @@ mod lexer;
 pub struct Validator<'v, M = DefaultMessage> {
     rules: HashMap<FieldNames, RuleList<M>>,
     message: HashMap<MessageKey<'v>, M>,
+    is_bail: bool,
 }
 
 /// default message is `Message`
@@ -108,6 +109,7 @@ impl<M> Default for Validator<'_, M> {
         Self {
             rules: HashMap::new(),
             message: HashMap::new(),
+            is_bail: false,
         }
     }
 }
@@ -273,7 +275,14 @@ where
                 .into_iter()
                 .map(|(key, msg)| (key, f(msg)))
                 .collect(),
+            is_bail: self.is_bail,
         }
+    }
+
+    /// when first validate error is encountered, right away return Err(message).
+    pub fn bail(mut self) -> Self {
+        self.is_bail = true;
+        self
     }
 
     /// run validate without modifiable
@@ -315,9 +324,17 @@ where
     fn inner_validate(self, value_map: &mut ValueMap) -> ValidatorError<M> {
         let mut resp_message = ValidatorError::with_capacity(self.rules.len());
 
-        let Validator { rules, mut message } = self;
+        let Validator {
+            rules,
+            mut message,
+            is_bail,
+        } = self;
 
-        for (mut names, rules) in rules.into_iter() {
+        for (mut names, mut rules) in rules.into_iter() {
+            if is_bail {
+                rules.set_bail();
+            }
+
             value_map.index(names);
             let rule_resp = rules.call(value_map);
             names = value_map.take_index();
@@ -333,6 +350,10 @@ where
                 .collect();
 
             resp_message.push(names, field_msg);
+
+            if is_bail && !resp_message.is_empty() {
+                return resp_message;
+            }
         }
 
         resp_message.shrink_to_fit();

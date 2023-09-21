@@ -173,9 +173,18 @@ where
         self
     }
 
+    /// when first validate error is encountered, right away return Err(message) in one field.
+    ///
+    /// when [`Validator`] set bail, it will cover, and comply with [`Validator`]
+    ///
+    /// [`Validator`]: crate::Validator
     pub fn bail(mut self) -> Self {
         self.is_bail = true;
         self
+    }
+
+    pub(crate) fn set_bail(&mut self) {
+        self.is_bail = true;
     }
 
     pub fn is_bail(&self) -> bool {
