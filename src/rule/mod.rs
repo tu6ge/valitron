@@ -178,6 +178,19 @@ where
         self
     }
 
+    pub fn is_bail(&self) -> bool {
+        self.is_bail
+    }
+
+    pub fn len(&self) -> usize {
+        self.list.len()
+    }
+
+    pub(crate) fn merge(&mut self, other: &mut RuleList<M>) {
+        self.list.append(&mut other.list);
+        self.is_bail = self.is_bail || other.is_bail;
+    }
+
     #[must_use]
     pub(crate) fn call(self, data: &mut ValueMap) -> Vec<(&'static str, M)> {
         let RuleList { mut list, .. } = self;

@@ -193,13 +193,16 @@ where
         R: IntoRuleList<M>,
     {
         let names = panic_on_err!(field.into_field());
-        let rules = rule.into_list();
+        let mut rules = rule.into_list();
 
         if !rules.valid_name() {
             panic!("invalid rule name")
         }
 
-        self.rules.insert(names, rules);
+        self.rules
+            .entry(names)
+            .and_modify(|list| list.merge(&mut rules))
+            .or_insert(rules);
         self
     }
 
@@ -520,14 +523,61 @@ impl<'key> MessageKey<'key> {
     }
 }
 
-#[test]
-fn test_validator_error_serialize() {
-    let mut error = ValidatorError::<String>::new();
-    error.push(
-        FieldNames::new("field1".into()),
-        vec!["message1".into(), "message2".into()],
-    );
+#[cfg(test)]
+mod tests {
+    use super::{ValidatorError, FieldNames, Validator};
 
-    let json = serde_json::to_string(&error).unwrap();
-    assert_eq!(json, r#"{"field1":["message1","message2"]}"#);
+    #[test]
+    fn test_validator_error_serialize() {
+        let mut error = ValidatorError::<String>::new();
+        error.push(
+            FieldNames::new("field1".into()),
+            vec!["message1".into(), "message2".into()],
+        );
+
+        let json = serde_json::to_string(&error).unwrap();
+        assert_eq!(json, r#"{"field1":["message1","message2"]}"#);
+    }
+
+    #[cfg(feature = "full")]
+    #[test]
+    fn repect_insert_rules() {
+        use crate::{
+            available::{Required, Range, Trim},
+            RuleExt,
+        };
+
+        let validate = Validator::new()
+            .rule("foo", Required)
+            .rule("foo", Range::new(1..2));
+
+        let vec = validate.rules.get(&FieldNames::new("foo".into())).unwrap();
+        assert!(vec.len() == 2);
+        assert!(vec.is_bail() == false);
+
+        let validate = Validator::new()
+            .rule("foo", Required.and(Trim).bail())
+            .rule("foo", Range::new(1..2));
+
+        let vec = validate.rules.get(&FieldNames::new("foo".into())).unwrap();
+        assert!(vec.len() == 3);
+        assert!(vec.is_bail() == true);
+
+        let validate = Validator::new()
+            .rule("foo", Required)
+            .rule("foo", Range::new(1..2).and(Trim).bail());
+
+        let vec = validate.rules.get(&FieldNames::new("foo".into())).unwrap();
+        assert!(vec.len() == 3);
+        assert!(vec.is_bail() == true);
+
+        let validate = Validator::new()
+            .rule("foo", Required.and(Trim).bail())
+            .rule("foo", Range::new(1..2).and(Trim).bail());
+
+        // TODO need remove duplicates
+        let vec = validate.rules.get(&FieldNames::new("foo".into())).unwrap();
+        assert!(vec.len() == 4);
+        assert!(vec.is_bail() == true);
+    }
 }
