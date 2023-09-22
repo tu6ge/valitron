@@ -562,7 +562,7 @@ mod tests {
 
     #[cfg(feature = "full")]
     #[test]
-    fn repect_insert_rules() {
+    fn repeat_insert_rules() {
         use crate::{
             available::{Range, Required, Trim},
             RuleExt,
@@ -573,7 +573,7 @@ mod tests {
             .rule("foo", Range::new(1..2));
 
         let vec = validate.rules.get(&FieldNames::new("foo".into())).unwrap();
-        assert!(vec.len() == 2);
+        assert_eq!(vec.len(), 2);
         assert!(vec.is_bail() == false);
 
         let validate = Validator::new()
@@ -581,7 +581,7 @@ mod tests {
             .rule("foo", Range::new(1..2));
 
         let vec = validate.rules.get(&FieldNames::new("foo".into())).unwrap();
-        assert!(vec.len() == 3);
+        assert_eq!(vec.len(), 3);
         assert!(vec.is_bail() == true);
 
         let validate = Validator::new()
@@ -589,16 +589,37 @@ mod tests {
             .rule("foo", Range::new(1..2).and(Trim).bail());
 
         let vec = validate.rules.get(&FieldNames::new("foo".into())).unwrap();
-        assert!(vec.len() == 3);
+        assert_eq!(vec.len(), 3);
         assert!(vec.is_bail() == true);
 
         let validate = Validator::new()
             .rule("foo", Required.and(Trim).bail())
             .rule("foo", Range::new(1..2).and(Trim).bail());
 
-        // TODO need remove duplicates
         let vec = validate.rules.get(&FieldNames::new("foo".into())).unwrap();
-        assert!(vec.len() == 4);
+        assert_eq!(vec.len(), 3);
+        assert!(vec.is_bail() == true);
+
+        let validate = Validator::new()
+            .rule("foo", Required.and(Trim).and(Required).bail())
+            .rule("foo", Range::new(1..2).and(Trim).and(Required).bail());
+
+        let vec = validate.rules.get(&FieldNames::new("foo".into())).unwrap();
+        assert_eq!(vec.len(), 3);
+        assert!(vec.is_bail() == true);
+
+        let validate = Validator::new()
+            .rule("foo", Required.and(Trim).and(Required).bail())
+            .rule("bar", Required.and(Trim).and(Required).bail())
+            .rule("foo", Range::new(1..2).and(Trim).and(Required).bail())
+            .rule("bar", Range::new(1..2).and(Trim).and(Required).bail());
+
+        let vec = validate.rules.get(&FieldNames::new("foo".into())).unwrap();
+        assert_eq!(vec.len(), 3);
+        assert!(vec.is_bail() == true);
+
+        let vec = validate.rules.get(&FieldNames::new("bar".into())).unwrap();
+        assert_eq!(vec.len(), 3);
         assert!(vec.is_bail() == true);
     }
 }
