@@ -27,6 +27,7 @@ use crate::register::{FieldName, FieldNames, Parser};
 
 mod cmp;
 mod float;
+pub(crate) mod mock;
 
 /// # serialized resultant
 ///

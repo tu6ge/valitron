@@ -5,14 +5,9 @@ use serde::de::{
     Unexpected, VariantAccess, Visitor,
 };
 
-use crate::value::Value;
+use crate::value::mock::Value;
 
-#[cfg(test)]
-mod test;
-
-pub(crate) mod mock;
-
-impl Value {
+impl Value<'_> {
     #[cold]
     fn invalid_type<E>(&self, exp: &dyn Expected) -> E
     where
@@ -34,11 +29,12 @@ impl Value {
             Value::Int32(n) => Unexpected::Signed(*n as i64),
             Value::Int64(n) => Unexpected::Signed(*n),
             //Value::ISize(n) => Unexpected::Signed(*n as i64),
-            Value::Float32(n) => Unexpected::Float(n.get() as f64),
-            Value::Float64(n) => Unexpected::Float(n.get()),
+            // Value::Float32(n) => Unexpected::Float(n.get() as f64),
+            // Value::Float64(n) => Unexpected::Float(n.get()),
             Value::Boolean(b) => Unexpected::Bool(*b),
             Value::Char(ch) => Unexpected::Char(*ch),
             Value::String(s) => Unexpected::Str(s),
+            Value::Str(s) => Unexpected::Str(s),
             Value::Bytes(n) => Unexpected::Bytes(n),
             Value::StructKey(_s) => Unexpected::Other("struct field name"),
             Value::StructVariantKey(_s) => Unexpected::Other("struct variant"),
@@ -89,7 +85,7 @@ macro_rules! deserialize_primitive {
     };
 }
 
-impl<'de> Deserializer<'de> for Value {
+impl<'de> Deserializer<'de> for Value<'de> {
     type Error = Error;
 
     fn deserialize_any<V>(self, _visitor: V) -> Result<V::Value, Self::Error>
@@ -117,22 +113,24 @@ impl<'de> Deserializer<'de> for Value {
     where
         V: Visitor<'de>,
     {
-        if let Value::Float32(n) = self {
-            visitor.visit_f32(n.into())
-        } else {
-            Err(self.invalid_type(&visitor))
-        }
+        // if let Value::Float32(n) = self {
+        //     visitor.visit_f32(n.into())
+        // } else {
+        //     Err(self.invalid_type(&visitor))
+        // }
+        todo!()
     }
 
     fn deserialize_f64<V>(self, visitor: V) -> Result<V::Value, Self::Error>
     where
         V: Visitor<'de>,
     {
-        if let Value::Float64(n) = self {
-            visitor.visit_f64(n.into())
-        } else {
-            Err(self.invalid_type(&visitor))
-        }
+        // if let Value::Float64(n) = self {
+        //     visitor.visit_f64(n.into())
+        // } else {
+        //     Err(self.invalid_type(&visitor))
+        // }
+        todo!()
     }
 
     deserialize_primitive!(deserialize_char, Char, visit_char);
@@ -347,19 +345,19 @@ impl<'de> Deserializer<'de> for Value {
     }
 }
 
-struct SeqDeserializer {
-    iter: IntoIter<Value>,
+struct SeqDeserializer<'de> {
+    iter: IntoIter<Value<'de>>,
 }
 
-impl SeqDeserializer {
-    fn new(vec: Vec<Value>) -> Self {
+impl<'de> SeqDeserializer<'de> {
+    fn new(vec: Vec<Value<'de>>) -> Self {
         SeqDeserializer {
             iter: vec.into_iter(),
         }
     }
 }
 
-impl<'de> SeqAccess<'de> for SeqDeserializer {
+impl<'de> SeqAccess<'de> for SeqDeserializer<'de> {
     type Error = Error;
 
     fn next_element_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>, Self::Error>
@@ -380,7 +378,7 @@ impl<'de> SeqAccess<'de> for SeqDeserializer {
     }
 }
 
-fn visit_array<'de, V>(array: Vec<Value>, visitor: V) -> Result<V::Value, Error>
+fn visit_array<'de, V>(array: Vec<Value<'de>>, visitor: V) -> Result<V::Value, Error>
 where
     V: Visitor<'de>,
 {
@@ -388,21 +386,21 @@ where
     visitor.visit_seq(&mut deserializer)
 }
 
-struct EnumDeserializer {
+struct EnumDeserializer<'de> {
     variant: String,
-    value: Vec<Value>,
-    tree: BTreeMap<Value, Value>,
+    value: Vec<Value<'de>>,
+    tree: BTreeMap<Value<'de>, Value<'de>>,
 }
 
-impl EnumDeserializer {
-    fn from_value(variant: String, value: Vec<Value>) -> Self {
+impl<'de> EnumDeserializer<'de> {
+    fn from_value(variant: String, value: Vec<Value<'de>>) -> Self {
         Self {
             variant,
             value,
             tree: BTreeMap::new(),
         }
     }
-    fn from_map(variant: String, tree: BTreeMap<Value, Value>) -> Self {
+    fn from_map(variant: String, tree: BTreeMap<Value<'de>, Value<'de>>) -> Self {
         Self {
             variant,
             value: vec![],
@@ -411,11 +409,11 @@ impl EnumDeserializer {
     }
 }
 
-impl<'de> EnumAccess<'de> for EnumDeserializer {
+impl<'de> EnumAccess<'de> for EnumDeserializer<'de> {
     type Error = Error;
-    type Variant = VariantDeserializer;
+    type Variant = VariantDeserializer<'de>;
 
-    fn variant_seed<V>(self, seed: V) -> Result<(V::Value, VariantDeserializer), Self::Error>
+    fn variant_seed<V>(self, seed: V) -> Result<(V::Value, VariantDeserializer<'de>), Self::Error>
     where
         V: DeserializeSeed<'de>,
     {
@@ -428,12 +426,12 @@ impl<'de> EnumAccess<'de> for EnumDeserializer {
     }
 }
 
-struct VariantDeserializer {
-    value: Vec<Value>,
-    tree: BTreeMap<Value, Value>,
+struct VariantDeserializer<'de> {
+    value: Vec<Value<'de>>,
+    tree: BTreeMap<Value<'de>, Value<'de>>,
 }
 
-impl<'de> VariantAccess<'de> for VariantDeserializer {
+impl<'de> VariantAccess<'de> for VariantDeserializer<'de> {
     type Error = Error;
 
     fn unit_variant(self) -> Result<(), Self::Error> {
@@ -482,13 +480,13 @@ impl<'de> VariantAccess<'de> for VariantDeserializer {
     }
 }
 
-struct MapDeserializer {
-    iter: <BTreeMap<Value, Value> as IntoIterator>::IntoIter,
-    value: Option<Value>,
+struct MapDeserializer<'de> {
+    iter: <BTreeMap<Value<'de>, Value<'de>> as IntoIterator>::IntoIter,
+    value: Option<Value<'de>>,
 }
 
-impl MapDeserializer {
-    fn new(map: BTreeMap<Value, Value>) -> Self {
+impl<'de> MapDeserializer<'de> {
+    fn new(map: BTreeMap<Value<'de>, Value<'de>>) -> Self {
         MapDeserializer {
             iter: map.into_iter(),
             value: None,
@@ -496,7 +494,7 @@ impl MapDeserializer {
     }
 }
 
-impl<'de> MapAccess<'de> for MapDeserializer {
+impl<'de> MapAccess<'de> for MapDeserializer<'de> {
     type Error = Error;
 
     fn next_key_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>, Self::Error>
@@ -518,54 +516,6 @@ impl<'de> MapAccess<'de> for MapDeserializer {
     {
         match self.value.take() {
             Some(value) => seed.deserialize(value),
-            None => Err(serde::de::Error::custom("value is missing")),
-        }
-    }
-
-    fn size_hint(&self) -> Option<usize> {
-        match self.iter.size_hint() {
-            (lower, Some(upper)) if lower == upper => Some(upper),
-            _ => None,
-        }
-    }
-}
-
-struct MapRefDeserializer<'de> {
-    iter: <&'de BTreeMap<Value, Value> as IntoIterator>::IntoIter,
-    value: Option<&'de Value>,
-}
-
-// impl<'de> MapRefDeserializer<'de> {
-//     fn new(map: &'de BTreeMap<Value, Value>) -> Self {
-//         MapRefDeserializer {
-//             iter: map.into_iter(),
-//             value: None,
-//         }
-//     }
-// }
-
-impl<'de> MapAccess<'de> for MapRefDeserializer<'de> {
-    type Error = Error;
-
-    fn next_key_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>, Self::Error>
-    where
-        T: DeserializeSeed<'de>,
-    {
-        match self.iter.next() {
-            Some((key, value)) => {
-                self.value = Some(value);
-                seed.deserialize(key.clone()).map(Some)
-            }
-            None => Ok(None),
-        }
-    }
-
-    fn next_value_seed<T>(&mut self, seed: T) -> Result<T::Value, Self::Error>
-    where
-        T: DeserializeSeed<'de>,
-    {
-        match self.value.take() {
-            Some(value) => seed.deserialize(value.clone()),
             None => Err(serde::de::Error::custom("value is missing")),
         }
     }
