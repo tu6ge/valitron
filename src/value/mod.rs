@@ -312,6 +312,7 @@ primitive_impl!(Uint32(u32));
 primitive_impl!(Int32(i32));
 primitive_impl!(Uint64(u64));
 primitive_impl!(Int64(i64));
+primitive_impl!(String(String));
 primitive_impl!(Boolean(bool));
 primitive_impl!(Char(char));
 

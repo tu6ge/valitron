@@ -135,6 +135,7 @@ primitive_eq!(Uint32(u32));
 primitive_eq!(Int32(i32));
 primitive_eq!(Uint64(u64));
 primitive_eq!(Int64(i64));
+primitive_eq!(String(String));
 primitive_eq!(Boolean(bool));
 primitive_eq!(Char(char));
 
@@ -146,6 +147,7 @@ primitive_ord!(Uint32(u32));
 primitive_ord!(Int32(i32));
 primitive_ord!(Uint64(u64));
 primitive_ord!(Int64(i64));
+primitive_ord!(String(String));
 primitive_ord!(Boolean(bool));
 primitive_ord!(Char(char));
 
