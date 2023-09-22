@@ -85,7 +85,7 @@ macro_rules! deserialize_primitive {
     };
 }
 
-impl<'de> Deserializer<'de> for Value<'de> {
+impl<'de: 'v, 'v> Deserializer<'de> for Value<'v> {
     type Error = Error;
 
     fn deserialize_any<V>(self, _visitor: V) -> Result<V::Value, Self::Error>
@@ -139,8 +139,8 @@ impl<'de> Deserializer<'de> for Value<'de> {
     where
         V: Visitor<'de>,
     {
-        if let Value::String(n) = self {
-            visitor.visit_str(&n)
+        if let Value::Str(n) = self {
+            visitor.visit_str(n)
         } else {
             Err(self.invalid_type(&visitor))
         }
@@ -269,7 +269,7 @@ impl<'de> Deserializer<'de> for Value<'de> {
         V: Visitor<'de>,
     {
         if let Value::Map(map) = self {
-            let mut deserializer = MapDeserializer::new(map);
+            let mut deserializer = MapDeserializer::<'v>::new(map);
             visitor.visit_map(&mut deserializer)
         } else {
             Err(self.invalid_type(&visitor))
@@ -357,7 +357,7 @@ impl<'de> SeqDeserializer<'de> {
     }
 }
 
-impl<'de> SeqAccess<'de> for SeqDeserializer<'de> {
+impl<'de: 'v, 'v> SeqAccess<'de> for SeqDeserializer<'v> {
     type Error = Error;
 
     fn next_element_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>, Self::Error>
@@ -378,7 +378,7 @@ impl<'de> SeqAccess<'de> for SeqDeserializer<'de> {
     }
 }
 
-fn visit_array<'de, V>(array: Vec<Value<'de>>, visitor: V) -> Result<V::Value, Error>
+fn visit_array<'de: 'v, 'v, V>(array: Vec<Value<'v>>, visitor: V) -> Result<V::Value, Error>
 where
     V: Visitor<'de>,
 {
@@ -409,11 +409,11 @@ impl<'de> EnumDeserializer<'de> {
     }
 }
 
-impl<'de> EnumAccess<'de> for EnumDeserializer<'de> {
+impl<'de: 'v, 'v> EnumAccess<'de> for EnumDeserializer<'v> {
     type Error = Error;
-    type Variant = VariantDeserializer<'de>;
+    type Variant = VariantDeserializer<'v>;
 
-    fn variant_seed<V>(self, seed: V) -> Result<(V::Value, VariantDeserializer<'de>), Self::Error>
+    fn variant_seed<V>(self, seed: V) -> Result<(V::Value, VariantDeserializer<'v>), Self::Error>
     where
         V: DeserializeSeed<'de>,
     {
@@ -431,7 +431,7 @@ struct VariantDeserializer<'de> {
     tree: BTreeMap<Value<'de>, Value<'de>>,
 }
 
-impl<'de> VariantAccess<'de> for VariantDeserializer<'de> {
+impl<'de: 'v, 'v> VariantAccess<'de> for VariantDeserializer<'v> {
     type Error = Error;
 
     fn unit_variant(self) -> Result<(), Self::Error> {
@@ -494,7 +494,7 @@ impl<'de> MapDeserializer<'de> {
     }
 }
 
-impl<'de> MapAccess<'de> for MapDeserializer<'de> {
+impl<'de: 'v, 'v> MapAccess<'de> for MapDeserializer<'v> {
     type Error = Error;
 
     fn next_key_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>, Self::Error>
@@ -526,4 +526,35 @@ impl<'de> MapAccess<'de> for MapDeserializer<'de> {
             _ => None,
         }
     }
+}
+
+#[cfg(test)]
+#[test]
+fn test_str() {
+    use serde::{Deserialize, Serialize};
+
+    #[derive(Debug, Serialize, Deserialize)]
+    struct A<'a> {
+        foo: &'a str,
+        num: u8,
+    }
+
+    let val = A {
+        foo: "bar",
+        num: 11,
+    };
+
+    let foo = "bar";
+
+    let value = Value::Struct({
+        let mut map = BTreeMap::new();
+        map.insert(Value::StructKey("foo".into()), Value::Str(foo));
+        map.insert(Value::StructKey("num".into()), Value::Uint8(11));
+        map
+    });
+
+    let new_value = A::deserialize(value).unwrap();
+
+    assert_eq!(new_value.foo, "bar");
+    assert_eq!(new_value.num, 11);
 }

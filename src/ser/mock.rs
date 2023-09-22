@@ -6,6 +6,12 @@ use crate::value::mock::Value;
 
 pub(crate) struct Serializer<'ser>(PhantomData<&'ser u8>);
 
+impl Serializer<'_> {
+    pub(crate) fn new() -> Self {
+        Self(PhantomData)
+    }
+}
+
 #[derive(Debug)]
 pub struct Error;
 
