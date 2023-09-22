@@ -73,9 +73,10 @@ fn names_to_string(vec: &[FieldName]) -> String {
     string
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Default)]
-pub struct FieldNames {
-    string: String,
+#[derive(Debug, PartialEq, Eq, Clone, Hash)]
+pub enum FieldNames {
+    String(String),
+    Vec(Vec<FieldName>),
 }
 
 impl Serialize for FieldNames {
@@ -83,42 +84,37 @@ impl Serialize for FieldNames {
     where
         S: serde::Serializer,
     {
-        serializer.serialize_str(&self.string)
-    }
-}
-
-impl Hash for FieldNames {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.string.hash(state)
+        match self {
+            FieldNames::String(s) => serializer.serialize_str(s),
+            FieldNames::Vec(vec) => serializer.serialize_str(&names_to_string(vec)),
+        }
     }
 }
 
 impl FieldNames {
     pub(crate) fn new(string: String) -> Self {
-        Self { string }
+        Self::String(string)
     }
 
     // pub fn iter(&self) -> Iter<'_, FieldName> {
     //     self.vec.iter()
     // }
     pub fn as_str(&self) -> &str {
-        &self.string
+        match self {
+            FieldNames::String(s) => s.as_str(),
+            FieldNames::Vec(_) => "",
+        }
     }
 }
 
 impl From<Vec<FieldName>> for FieldNames {
     fn from(value: Vec<FieldName>) -> Self {
-        Self {
-            string: names_to_string(&value),
-        }
+        Self::Vec(value)
     }
 }
 impl From<FieldName> for FieldNames {
     fn from(value: FieldName) -> Self {
-        let vec = vec![value];
-        Self {
-            string: names_to_string(&vec),
-        }
+        Self::Vec(vec![value])
     }
 }
 impl<const N: usize> From<[FieldName; N]> for FieldNames {
@@ -137,41 +133,38 @@ pub trait IntoFieldName {
 impl IntoFieldName for &str {
     type Error = Infallible;
     fn into_field(self) -> Result<FieldNames, Self::Error> {
-        Ok(FieldNames {
-            string: self.to_string(),
-        })
+        Ok(FieldNames::String(self.to_string()))
     }
 }
 impl IntoFieldName for u8 {
     type Error = Infallible;
     fn into_field(self) -> Result<FieldNames, Self::Error> {
-        Ok(FieldNames {
-            string: self.to_string(),
-        })
+        Ok(FieldNames::Vec(vec![FieldName::Tuple(self)]))
     }
 }
 impl IntoFieldName for (u8, u8) {
     type Error = Infallible;
     fn into_field(self) -> Result<FieldNames, Self::Error> {
-        Ok(FieldNames {
-            string: format!("{}.{}", self.0, self.1),
-        })
+        Ok(FieldNames::Vec(vec![
+            FieldName::Tuple(self.0),
+            FieldName::Tuple(self.1),
+        ]))
     }
 }
 impl IntoFieldName for (u8, u8, u8) {
     type Error = Infallible;
     fn into_field(self) -> Result<FieldNames, Self::Error> {
-        Ok(FieldNames {
-            string: format!("{}.{}.{}", self.0, self.1, self.2),
-        })
+        Ok(FieldNames::Vec(vec![
+            FieldName::Tuple(self.0),
+            FieldName::Tuple(self.1),
+            FieldName::Tuple(self.2),
+        ]))
     }
 }
 impl IntoFieldName for [usize; 1] {
     type Error = Infallible;
     fn into_field(self) -> Result<FieldNames, Self::Error> {
-        Ok(FieldNames {
-            string: format!("[{}]", self[0]),
-        })
+        Ok(FieldNames::Vec(vec![FieldName::Array(self[0])]))
     }
 }
 // impl IntoFieldName for [&str; 1] {

@@ -113,7 +113,7 @@ impl ValueMap {
     pub(crate) fn new(value: Value) -> Self {
         Self {
             value,
-            index: FieldNames::default(),
+            index: FieldNames::Vec(vec![]),
         }
     }
 
@@ -124,7 +124,7 @@ impl ValueMap {
 
     /// Takes the FieldNames out of the ValueMap
     pub fn take_index(&mut self) -> FieldNames {
-        let mut x = FieldNames::default();
+        let mut x = FieldNames::Vec(vec![]);
         mem::swap(&mut self.index, &mut x);
         x
     }
@@ -177,17 +177,35 @@ impl Value {
     /// get field value by field names
     pub fn get_with_names(&self, names: &FieldNames) -> Option<&Value> {
         let mut value = Some(self);
-        let mut parser = Parser::new(names.as_str());
-        loop {
-            match parser.next_name() {
-                Ok(Some(name)) => {
-                    value = match value {
-                        Some(v) => v.get_with_name(&name),
-                        None => return None,
+        match names {
+            FieldNames::String(s) => {
+                let mut parser = Parser::new(s);
+                loop {
+                    match parser.next_name() {
+                        Ok(Some(name)) => {
+                            value = match value {
+                                Some(v) => v.get_with_name(&name),
+                                None => return None,
+                            }
+                        }
+                        Ok(None) => break value,
+                        Err(e) => panic!("{e}"),
                     }
                 }
-                Ok(None) => break value,
-                Err(e) => panic!("{e}"),
+            }
+            FieldNames::Vec(vec) => {
+                let mut iter = vec.iter();
+                loop {
+                    match iter.next() {
+                        Some(name) => {
+                            value = match value {
+                                Some(v) => v.get_with_name(&name),
+                                None => return None,
+                            }
+                        }
+                        None => break value,
+                    }
+                }
             }
         }
     }
@@ -214,17 +232,35 @@ impl Value {
     /// get field mutable value by field names
     pub fn get_with_names_mut(&mut self, names: &FieldNames) -> Option<&mut Value> {
         let mut value = Some(self);
-        let mut parser = Parser::new(names.as_str());
-        loop {
-            match parser.next_name() {
-                Ok(Some(name)) => {
-                    value = match value {
-                        Some(v) => v.get_with_name_mut(&name),
-                        None => break None,
+        match names {
+            FieldNames::String(s) => {
+                let mut parser = Parser::new(s);
+                loop {
+                    match parser.next_name() {
+                        Ok(Some(name)) => {
+                            value = match value {
+                                Some(v) => v.get_with_name_mut(&name),
+                                None => return None,
+                            }
+                        }
+                        Ok(None) => break value,
+                        Err(e) => panic!("{e}"),
                     }
                 }
-                Ok(None) => break value,
-                Err(e) => panic!("{e}"),
+            }
+            FieldNames::Vec(vec) => {
+                let mut iter = vec.iter();
+                loop {
+                    match iter.next() {
+                        Some(name) => {
+                            value = match value {
+                                Some(v) => v.get_with_name_mut(&name),
+                                None => return None,
+                            }
+                        }
+                        None => break value,
+                    }
+                }
             }
         }
     }
