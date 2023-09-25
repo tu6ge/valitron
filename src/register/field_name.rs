@@ -128,6 +128,19 @@ impl<const N: usize> From<[FieldName; N]> for FieldNames {
     }
 }
 
+impl From<String> for FieldNames {
+    fn from(string: String) -> Self {
+        Self { string }
+    }
+}
+impl From<&str> for FieldNames {
+    fn from(string: &str) -> Self {
+        Self {
+            string: string.to_owned(),
+        }
+    }
+}
+
 /// Convert to FieldName trait
 pub trait IntoFieldName {
     type Error: std::fmt::Display;

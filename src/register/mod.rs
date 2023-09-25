@@ -507,6 +507,11 @@ impl<M> ValidatorError<M> {
     pub fn len(&self) -> usize {
         self.message.len()
     }
+
+    /// total length of the message
+    pub fn total(&self) -> usize {
+        self.message.iter().map(|(_, msg)| msg.len()).sum()
+    }
 }
 
 impl<'a, M> IntoIterator for &'a mut ValidatorError<M> {
@@ -616,5 +621,14 @@ mod tests {
             .message([("field1.required", "bar")]);
         vali = vali.message([("field2.required", "bar2")]);
         assert_eq!(vali.message.len(), 2);
+    }
+
+    #[test]
+    fn test_total() {
+        let mut msg = ValidatorError::<&str>::new();
+        msg.push("foo".into(), vec!["foo", "bar"]);
+        msg.push("foo2".into(), vec!["foo2"]);
+
+        assert_eq!(msg.total(), 3);
     }
 }
