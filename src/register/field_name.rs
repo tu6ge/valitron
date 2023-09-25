@@ -1,8 +1,4 @@
-use std::{
-    convert::Infallible,
-    fmt::Display,
-    hash::{Hash, Hasher},
-};
+use std::{convert::Infallible, fmt::Display, hash::Hash};
 
 use serde::Serialize;
 
