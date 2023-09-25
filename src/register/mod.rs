@@ -224,7 +224,7 @@ where
     where
         Msg: Into<M>,
     {
-        self.message = HashMap::from_iter(list.map(|(key_str, v)| {
+        self.message.extend(list.map(|(key_str, v)| {
             let msg_key = panic_on_err!(field_name::parse_message(key_str));
 
             panic_on_err!(self.exit_message(&msg_key));
@@ -546,6 +546,7 @@ impl<'key> MessageKey<'key> {
 
 #[cfg(test)]
 mod tests {
+
     use super::{FieldNames, Validator, ValidatorError};
 
     #[test]
@@ -600,5 +601,20 @@ mod tests {
         let vec = validate.rules.get(&FieldNames::new("foo".into())).unwrap();
         assert!(vec.len() == 4);
         assert!(vec.is_bail() == true);
+    }
+
+    #[cfg(feature = "full")]
+    #[test]
+    fn multi_messages() {
+        use crate::{
+            available::{Message, Required},
+            RuleExt,
+        };
+        let mut vali = Validator::<Message>::new()
+            .rule("field1", Required)
+            .rule("field2", Required)
+            .message([("field1.required", "bar")]);
+        vali = vali.message([("field2.required", "bar2")]);
+        assert_eq!(vali.message.len(), 2);
     }
 }
