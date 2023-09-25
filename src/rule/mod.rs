@@ -203,15 +203,20 @@ where
     #[must_use]
     pub(crate) fn call(self, data: &mut ValueMap) -> Vec<(&'static str, M)> {
         let RuleList { mut list, .. } = self;
-        let mut msg = Vec::new();
+        let mut msg = Vec::with_capacity(list.len());
+
         for endpoint in list.iter_mut() {
             let _ = endpoint
                 .call(data)
                 .map_err(|e| msg.push((endpoint.name(), e)));
+
             if self.is_bail && !msg.is_empty() {
+                msg.shrink_to_fit();
                 return msg;
             }
         }
+
+        msg.shrink_to_fit();
         msg
     }
 
