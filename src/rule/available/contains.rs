@@ -1,39 +1,35 @@
-//! Require string to start with provided parameter, the parameter support `String`, `&str` or `char`,
+//! Require string to contain provided parameter, the parameter support `String`, `&str` or `char`,
 //! and verified data only support `String` or `&'static str` , other types always return false.
 //!
 //! # Examples
 //! ```
 //! # use serde::Serialize;
-//! # use valitron::{available::{StartWith, MessageKind}, Validatable, Validator};
+//! # use valitron::{available::{Contains, MessageKind}, Validatable, Validator};
 //! #[derive(Serialize, Debug)]
 //! struct Input {
-//!     title: String,
-//!     other: &'static str,
+//!     email: String,
 //! }
 //!
 //! let input = Input {
-//!     title: String::from("hi"),
-//!     other: "foo",
+//!     email: String::from("hi"),
 //! };
 //! let err = input
 //!     .validate(
 //!         Validator::new()
-//!             .rule("title", StartWith("hello"))
-//!             .rule("other", StartWith("bar"))
+//!             .rule("email", Contains('@'))
 //!     )
 //!     .unwrap_err();
 //!
 //! assert!(matches!(
-//!     err.get("title").unwrap()[0].kind(),
-//!     MessageKind::StartWith(_)
+//!     err.get("email").unwrap()[0].kind(),
+//!     MessageKind::Contains(_)
 //! ));
 //!
 //! let input = Input {
-//!     title: String::from("hello world"),
-//!     other: "foo",
+//!     email: String::from("user@foo.com"),
 //! };
 //! input
-//!     .validate(Validator::new().rule("title", StartWith("hello")))
+//!     .validate(Validator::new().rule("email", Contains('@')))
 //!     .unwrap();
 //! ```
 
@@ -44,24 +40,24 @@ use crate::{RuleShortcut, Value};
 use super::Message;
 
 #[derive(Clone, Debug)]
-pub struct StartWith<T>(pub T);
+pub struct Contains<T>(pub T);
 
-impl<T> StartWith<T> {
+impl<T> Contains<T> {
     fn name_in(&self) -> &'static str {
-        "start_with"
+        "contains"
     }
 }
 
-impl<T> StartWith<T>
+impl<T> Contains<T>
 where
     T: Display,
 {
     fn message_in(&self) -> Message {
-        Message::new(super::MessageKind::StartWith(self.0.to_string()))
+        Message::new(super::MessageKind::Contains(self.0.to_string()))
     }
 }
 
-impl RuleShortcut for StartWith<&str> {
+impl RuleShortcut for Contains<&str> {
     type Message = Message;
 
     fn name(&self) -> &'static str {
@@ -74,13 +70,13 @@ impl RuleShortcut for StartWith<&str> {
 
     fn call(&mut self, value: &mut Value) -> bool {
         match value {
-            Value::String(s) => s.starts_with(self.0),
+            Value::String(s) => s.contains(self.0),
             _ => false,
         }
     }
 }
 
-impl RuleShortcut for StartWith<String> {
+impl RuleShortcut for Contains<String> {
     type Message = Message;
 
     fn name(&self) -> &'static str {
@@ -93,13 +89,13 @@ impl RuleShortcut for StartWith<String> {
 
     fn call(&mut self, value: &mut Value) -> bool {
         match value {
-            Value::String(s) => s.starts_with(&self.0),
+            Value::String(s) => s.contains(&self.0),
             _ => false,
         }
     }
 }
 
-impl RuleShortcut for StartWith<char> {
+impl RuleShortcut for Contains<char> {
     type Message = Message;
 
     fn name(&self) -> &'static str {
@@ -112,7 +108,7 @@ impl RuleShortcut for StartWith<char> {
 
     fn call(&mut self, value: &mut Value) -> bool {
         match value {
-            Value::String(s) => s.starts_with(self.0),
+            Value::String(s) => s.contains(self.0),
             _ => false,
         }
     }

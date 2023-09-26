@@ -5,12 +5,16 @@ use std::fmt::Display;
 use serde::Serialize;
 
 pub mod confirm;
+pub mod contains;
+pub mod end_with;
 pub mod range;
 pub mod required;
 pub mod start_with;
 pub mod trim;
 
 pub use confirm::Confirm;
+pub use contains::Contains;
+pub use end_with::EndsWith;
 pub use range::Range;
 pub use required::Required;
 pub use start_with::StartWith;
@@ -30,6 +34,12 @@ pub enum MessageKind {
 
     /// as confrim rule, only one argument is other field name.
     Confirm(String),
+
+    /// as contains rule
+    Contains(String),
+
+    /// as end_with rule
+    EndsWith(String),
 
     /// as start_with rule, only one argument is text for comparison
     StartWith(String),
@@ -54,6 +64,8 @@ impl Serialize for MessageKind {
             MessageKind::Range => serializer.serialize_str("range"),
             MessageKind::Confirm(_) => serializer.serialize_str("confirm"),
             MessageKind::StartWith(_) => serializer.serialize_str("start_with"),
+            MessageKind::EndsWith(_) => serializer.serialize_str("end_with"),
+            MessageKind::Contains(_) => serializer.serialize_str("contains"),
             MessageKind::Trim => serializer.serialize_str("trim"),
             MessageKind::Fallback(s) => serializer.serialize_str(s),
         }
@@ -112,6 +124,8 @@ impl Display for MessageKind {
             }
             MessageKind::Required => "this field is required".fmt(f),
             MessageKind::StartWith(str) => write!(f, "this field must be start with `{}`", str),
+            MessageKind::EndsWith(str) => write!(f, "this field must be end with `{}`", str),
+            MessageKind::Contains(str) => write!(f, "this field must be contain `{}`", str),
             MessageKind::Trim => unreachable!(),
             MessageKind::Range => "the value not in the range".fmt(f),
             MessageKind::Fallback(s) => s.fmt(f),

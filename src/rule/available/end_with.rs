@@ -1,39 +1,35 @@
-//! Require string to start with provided parameter, the parameter support `String`, `&str` or `char`,
+//! Require string to ends with provided parameter, the parameter support `String`, `&str` or `char`,
 //! and verified data only support `String` or `&'static str` , other types always return false.
 //!
 //! # Examples
 //! ```
 //! # use serde::Serialize;
-//! # use valitron::{available::{StartWith, MessageKind}, Validatable, Validator};
+//! # use valitron::{available::{EndsWith, MessageKind}, Validatable, Validator};
 //! #[derive(Serialize, Debug)]
 //! struct Input {
-//!     title: String,
-//!     other: &'static str,
+//!     email: String,
 //! }
 //!
 //! let input = Input {
-//!     title: String::from("hi"),
-//!     other: "foo",
+//!     email: String::from("hi"),
 //! };
 //! let err = input
 //!     .validate(
 //!         Validator::new()
-//!             .rule("title", StartWith("hello"))
-//!             .rule("other", StartWith("bar"))
+//!             .rule("email", EndsWith("gmail.com"))
 //!     )
 //!     .unwrap_err();
 //!
 //! assert!(matches!(
-//!     err.get("title").unwrap()[0].kind(),
-//!     MessageKind::StartWith(_)
+//!     err.get("email").unwrap()[0].kind(),
+//!     MessageKind::EndsWith(_)
 //! ));
 //!
 //! let input = Input {
-//!     title: String::from("hello world"),
-//!     other: "foo",
+//!     email: String::from("guest@gmail.com"),
 //! };
 //! input
-//!     .validate(Validator::new().rule("title", StartWith("hello")))
+//!     .validate(Validator::new().rule("email", EndsWith("gmail.com")))
 //!     .unwrap();
 //! ```
 
@@ -44,24 +40,24 @@ use crate::{RuleShortcut, Value};
 use super::Message;
 
 #[derive(Clone, Debug)]
-pub struct StartWith<T>(pub T);
+pub struct EndsWith<T>(pub T);
 
-impl<T> StartWith<T> {
+impl<T> EndsWith<T> {
     fn name_in(&self) -> &'static str {
-        "start_with"
+        "end_with"
     }
 }
 
-impl<T> StartWith<T>
+impl<T> EndsWith<T>
 where
     T: Display,
 {
     fn message_in(&self) -> Message {
-        Message::new(super::MessageKind::StartWith(self.0.to_string()))
+        Message::new(super::MessageKind::EndsWith(self.0.to_string()))
     }
 }
 
-impl RuleShortcut for StartWith<&str> {
+impl RuleShortcut for EndsWith<&str> {
     type Message = Message;
 
     fn name(&self) -> &'static str {
@@ -74,13 +70,13 @@ impl RuleShortcut for StartWith<&str> {
 
     fn call(&mut self, value: &mut Value) -> bool {
         match value {
-            Value::String(s) => s.starts_with(self.0),
+            Value::String(s) => s.ends_with(self.0),
             _ => false,
         }
     }
 }
 
-impl RuleShortcut for StartWith<String> {
+impl RuleShortcut for EndsWith<String> {
     type Message = Message;
 
     fn name(&self) -> &'static str {
@@ -93,13 +89,13 @@ impl RuleShortcut for StartWith<String> {
 
     fn call(&mut self, value: &mut Value) -> bool {
         match value {
-            Value::String(s) => s.starts_with(&self.0),
+            Value::String(s) => s.ends_with(&self.0),
             _ => false,
         }
     }
 }
 
-impl RuleShortcut for StartWith<char> {
+impl RuleShortcut for EndsWith<char> {
     type Message = Message;
 
     fn name(&self) -> &'static str {
@@ -112,7 +108,7 @@ impl RuleShortcut for StartWith<char> {
 
     fn call(&mut self, value: &mut Value) -> bool {
         match value {
-            Value::String(s) => s.starts_with(self.0),
+            Value::String(s) => s.ends_with(self.0),
             _ => false,
         }
     }
