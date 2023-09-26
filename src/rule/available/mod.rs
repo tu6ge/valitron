@@ -7,6 +7,7 @@ use serde::Serialize;
 pub mod confirm;
 pub mod contains;
 pub mod end_with;
+pub mod length;
 pub mod range;
 pub mod required;
 pub mod start_with;
@@ -15,6 +16,7 @@ pub mod trim;
 pub use confirm::Confirm;
 pub use contains::Contains;
 pub use end_with::EndsWith;
+pub use length::Length;
 pub use range::Range;
 pub use required::Required;
 pub use start_with::StartWith;
@@ -44,6 +46,9 @@ pub enum MessageKind {
     /// as start_with rule, only one argument is text for comparison
     StartWith(String),
 
+    /// as length rule,
+    Length,
+
     /// as trim rule, this is unreachable, only mark
     Trim,
 
@@ -62,6 +67,7 @@ impl Serialize for MessageKind {
         match self {
             MessageKind::Required => serializer.serialize_str("required"),
             MessageKind::Range => serializer.serialize_str("range"),
+            MessageKind::Length => serializer.serialize_str("length"),
             MessageKind::Confirm(_) => serializer.serialize_str("confirm"),
             MessageKind::StartWith(_) => serializer.serialize_str("start_with"),
             MessageKind::EndsWith(_) => serializer.serialize_str("end_with"),
@@ -128,6 +134,7 @@ impl Display for MessageKind {
             MessageKind::Contains(str) => write!(f, "this field must be contain `{}`", str),
             MessageKind::Trim => unreachable!(),
             MessageKind::Range => "the value not in the range".fmt(f),
+            MessageKind::Length => "the value's length not in the range".fmt(f),
             MessageKind::Fallback(s) => s.fmt(f),
         }
     }
