@@ -350,7 +350,12 @@ mod test_regster {
         register(Required.and(Custom::new(hander)));
         register(Required.and(StartWith("foo")));
         register(Required.and(StartWith("foo")).bail());
-        register(Required.and(StartWith("foo")).and(Custom::new(hander2)).bail());
+        register(
+            Required
+                .and(StartWith("foo"))
+                .and(Custom::new(hander2))
+                .bail(),
+        );
         register(
             Required
                 .and(StartWith("foo"))

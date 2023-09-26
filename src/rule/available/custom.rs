@@ -27,7 +27,7 @@ impl<M> Custom<M> {
         F: for<'a> FnOnce(&'a mut V) -> Result<(), Message>,
         F: Rule<V, Message = M>,
         V: FromValue + 'static,
-        M:'static
+        M: 'static,
     {
         // let f =move |data| {
         //     f(data).map_err(|err| match err.kind {

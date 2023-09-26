@@ -5,18 +5,18 @@ use std::fmt::Display;
 use serde::Serialize;
 
 pub mod confirm;
+pub mod custom;
 pub mod range;
 pub mod required;
 pub mod start_with;
 pub mod trim;
-pub mod custom;
 
 pub use confirm::Confirm;
+pub use custom::Custom;
 pub use range::Range;
 pub use required::Required;
 pub use start_with::StartWith;
 pub use trim::Trim;
-pub use custom::Custom;
 
 /// Error message, it is returned when build-in rules validate fail
 #[derive(Debug, Clone, Eq, PartialEq, Serialize)]
