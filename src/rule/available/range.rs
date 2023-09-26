@@ -58,7 +58,7 @@ macro_rules! impl_range {
     ($val:ident($ty:ty)) => {
         impl<T> RuleShortcut for Range<T, $ty>
         where
-            T: RangeBounds<$ty> + Clone + 'static,
+            T: RangeBounds<$ty>,
         {
             type Message = Message;
             fn name(&self) -> &'static str {
