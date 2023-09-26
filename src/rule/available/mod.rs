@@ -9,12 +9,14 @@ pub mod range;
 pub mod required;
 pub mod start_with;
 pub mod trim;
+pub mod custom;
 
 pub use confirm::Confirm;
 pub use range::Range;
 pub use required::Required;
 pub use start_with::StartWith;
 pub use trim::Trim;
+pub use custom::Custom;
 
 /// Error message, it is returned when build-in rules validate fail
 #[derive(Debug, Clone, Eq, PartialEq, Serialize)]
@@ -40,6 +42,9 @@ pub enum MessageKind {
     /// as range rule
     Range,
 
+    /// as custom rule, not really invoked
+    Custom(String),
+
     /// other way, it used by other type converting Message stopover
     Fallback(String),
 }
@@ -55,6 +60,7 @@ impl Serialize for MessageKind {
             MessageKind::Confirm(_) => serializer.serialize_str("confirm"),
             MessageKind::StartWith(_) => serializer.serialize_str("start_with"),
             MessageKind::Trim => serializer.serialize_str("trim"),
+            MessageKind::Custom(_) => serializer.serialize_str("custom"),
             MessageKind::Fallback(s) => serializer.serialize_str(s),
         }
     }
@@ -114,6 +120,7 @@ impl Display for MessageKind {
             MessageKind::StartWith(str) => write!(f, "this field must be start with `{}`", str),
             MessageKind::Trim => unreachable!(),
             MessageKind::Range => "the value not in the range".fmt(f),
+            MessageKind::Custom(str) => write!(f, "custom error: {}", str),
             MessageKind::Fallback(s) => s.fmt(f),
         }
     }

@@ -48,8 +48,8 @@ mod lexer;
 /// ```rust
 /// # use serde::{Deserialize, Serialize};
 /// # use valitron::{
-/// # available::{Required, StartWith, Message},
-/// # custom, RuleExt, Validator
+/// # available::{Required, StartWith, Message, Custom},
+/// # RuleExt, Validator
 /// # };
 /// #[derive(Serialize, Debug)]
 /// struct Person {
@@ -61,7 +61,7 @@ mod lexer;
 /// # fn main() {
 /// let validator = Validator::new()
 ///     .rule("introduce", Required.and(StartWith("I am")))
-///     .rule("age", custom(age_range))
+///     .rule("age", Custom::new(age_range))
 ///     .message([
 ///         ("introduce.required", "introduce is required"),
 ///         (

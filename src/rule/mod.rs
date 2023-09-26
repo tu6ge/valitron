@@ -92,11 +92,11 @@ pub trait RuleExt<M> {
     where
         R: Rule<(), Message = M>;
 
-    fn custom<F, V>(self, other: F) -> RuleList<M>
-    where
-        F: for<'a> FnOnce(&'a mut V) -> Result<(), M>,
-        F: Rule<V, Message = M>,
-        V: FromValue + 'static;
+    // fn custom<F, V>(self, other: F) -> RuleList<M>
+    // where
+    //     F: for<'a> FnOnce(&'a mut V) -> Result<(), M>,
+    //     F: Rule<V, Message = M>,
+    //     V: FromValue + 'static;
 }
 
 impl<R, M> RuleExt<M> for R
@@ -114,17 +114,17 @@ where
         }
     }
 
-    fn custom<F, V>(self, other: F) -> RuleList<M>
-    where
-        F: for<'a> FnOnce(&'a mut V) -> Result<(), M>,
-        F: Rule<V, Message = M>,
-        V: FromValue + 'static,
-    {
-        RuleList {
-            list: vec![ErasedRule::new(self), ErasedRule::new(other)],
-            ..Default::default()
-        }
-    }
+    // fn custom<F, V>(self, other: F) -> RuleList<M>
+    // where
+    //     F: for<'a> FnOnce(&'a mut V) -> Result<(), M>,
+    //     F: Rule<V, Message = M>,
+    //     V: FromValue + 'static,
+    // {
+    //     RuleList {
+    //         list: vec![ErasedRule::new(self), ErasedRule::new(other)],
+    //         ..Default::default()
+    //     }
+    // }
 }
 
 /// Rules collection
@@ -280,8 +280,9 @@ pub trait IntoRuleList<M> {
     fn into_list(self) -> RuleList<M>;
 }
 
-/// load closure rule
-pub fn custom<F, V, M>(f: F) -> RuleList<M>
+/// load closure rule, maybe remove
+#[allow(dead_code)]
+fn custom<F, V, M>(f: F) -> RuleList<M>
 where
     F: for<'a> FnOnce(&'a mut V) -> Result<(), M>,
     F: Rule<V, Message = M>,
@@ -345,28 +346,29 @@ mod test_regster {
     #[test]
     fn test() {
         register(Required);
-        register(Required.custom(hander2));
-        register(Required.custom(hander));
+        register(Required.and(Custom::new(hander2)));
+        register(Required.and(Custom::new(hander)));
         register(Required.and(StartWith("foo")));
         register(Required.and(StartWith("foo")).bail());
-        register(Required.and(StartWith("foo")).custom(hander2).bail());
+        register(Required.and(StartWith("foo")).and(Custom::new(hander2)).bail());
         register(
             Required
                 .and(StartWith("foo"))
-                .custom(hander2)
-                .custom(hander)
+                .and(Custom::new(hander2))
+                .and(Custom::new(hander))
                 .bail(),
         );
 
-        register(custom(hander));
-        register(custom(hander2));
-        register2(custom(hander));
-        register2(custom(hander2));
+        register(Custom::new(hander));
+        register(Custom::new(hander2));
+        register2(Custom::new(hander));
+        register2(Custom::new(hander2));
 
-        register(custom(hander).and(StartWith("foo")));
-        register(custom(hander).and(StartWith("foo")).bail());
-        register(custom(|_a: &mut u8| Ok(())).and(Gt10));
-        register(Gt10.custom(|_a: &mut u8| Ok(())));
+        register(Custom::new(hander).and(StartWith("foo")));
+        register(Custom::new(hander).and(StartWith("foo")).bail());
+        register(Custom::new(|_a: &mut u8| Ok(())).and(StartWith("foo")));
+        // register(Custom::new(|_a: &mut u8| Ok(())).and(Gt10));
+        // register(Gt10.custom(|_a: &mut u8| Ok(())));
     }
 }
 

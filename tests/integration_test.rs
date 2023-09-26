@@ -2,8 +2,8 @@
 
 use serde::{Deserialize, Serialize};
 use valitron::{
-    available::{Message, Required, StartWith},
-    custom, RuleExt, Validator, Value,
+    available::{Message,Required, StartWith, Custom},
+    RuleExt, Validator, Value,
 };
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -17,8 +17,8 @@ struct Person {
 fn test_validator() {
     let validator = Validator::new()
         .rule("name", Required.and(StartWith("hello")))
-        .rule("age", custom(age_limit))
-        .rule("weight", custom(weight_limit))
+        .rule("age",Custom::new(age_limit))
+        .rule("weight", Custom::new(weight_limit).and(Required))
         .message([
             ("name.required", "name is required"),
             ("name.start_with", "name should be starts with `hello`"),
@@ -32,7 +32,7 @@ fn test_validator() {
 
     let res = validator.validate(person).unwrap_err();
 
-    assert!(res.len() == 3);
+    assert_eq!(res.len() , 3);
     assert_eq!(
         res.get("age").unwrap()[0].to_string(),
         "age should be between 25 and 45"
