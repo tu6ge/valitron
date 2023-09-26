@@ -457,13 +457,6 @@ impl<M> Display for ValidatorError<M> {
 
 impl<M> Error for ValidatorError<M> where M: std::fmt::Debug {}
 
-// impl Deref for ValidatorError {
-//     type Target = HashMap<FieldNames, Vec<String>>;
-//     fn deref(&self) -> &Self::Target {
-//         &self.message
-//     }
-// }
-
 impl<M> ValidatorError<M> {
     #[cfg(test)]
     fn new() -> Self {
@@ -514,6 +507,17 @@ impl<M> ValidatorError<M> {
 
     pub fn iter_mut(&mut self) -> IterMut<'_, FieldNames, Vec<M>> {
         self.message.iter_mut()
+    }
+
+    /// ValidatorError<M1> convert to ValidatorError<M2>
+    pub fn map<M2>(self, f: fn(M) -> M2) -> ValidatorError<M2> {
+        ValidatorError {
+            message: self
+                .message
+                .into_iter()
+                .map(|(name, msg)| (name, msg.into_iter().map(f).collect()))
+                .collect(),
+        }
     }
 
     pub fn is_empty(&self) -> bool {
