@@ -408,7 +408,6 @@ where
 }
 
 /// store validate error message
-#[derive(Debug, PartialEq, Eq)]
 pub struct ValidatorError<M> {
     message: HashMap<FieldNames, Vec<M>>,
 }
@@ -418,6 +417,23 @@ impl<M: Clone> Clone for ValidatorError<M> {
         Self {
             message: self.message.clone(),
         }
+    }
+}
+
+impl<M: PartialEq<M>> PartialEq<Self> for ValidatorError<M> {
+    fn eq(&self, other: &Self) -> bool {
+        self.message == other.message
+    }
+}
+
+impl<M> std::fmt::Debug for ValidatorError<M>
+where
+    M: std::fmt::Debug,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ValidatorError")
+            .field("message", &self.message)
+            .finish()
     }
 }
 
