@@ -510,7 +510,7 @@ impl<M> ValidatorError<M> {
 
     /// total length of the message
     pub fn total(&self) -> usize {
-        self.message.iter().map(|(_, msg)| msg.len()).sum()
+        self.message.values().map(|msg| msg.len()).sum()
     }
 }
 

@@ -195,6 +195,10 @@ where
         self.list.len()
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.list.is_empty()
+    }
+
     pub(crate) fn merge(&mut self, other: &mut RuleList<M>) {
         self.list.append(&mut other.list);
         self.is_bail = self.is_bail || other.is_bail;
