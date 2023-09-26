@@ -10,12 +10,15 @@
 //!     fruit: Vec<String>,
 //! }
 //!
-//! let input = Input { title: "hello".into(), fruit: vec!["foo".into(), "bar".into()]};
+//! let input = Input {
+//!     title: "hello".into(),
+//!     fruit: vec!["foo".into(), "bar".into()],
+//! };
 //! let err = input
 //!     .validate(
 //!         Validator::new()
 //!             .rule("title", Length(30..40))
-//!             .rule("fruit", Length(4..=4))
+//!             .rule("fruit", Length(4..=4)),
 //!     )
 //!     .unwrap_err();
 //!
@@ -32,7 +35,7 @@
 //!     .validate(
 //!         Validator::new()
 //!             .rule("title", Length(..10))
-//!             .rule("fruit", Length(2..=2))
+//!             .rule("fruit", Length(2..=2)),
 //!     )
 //!     .unwrap();
 //! ```

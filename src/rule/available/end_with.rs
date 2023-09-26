@@ -14,10 +14,7 @@
 //!     email: String::from("hi"),
 //! };
 //! let err = input
-//!     .validate(
-//!         Validator::new()
-//!             .rule("email", EndsWith("gmail.com"))
-//!     )
+//!     .validate(Validator::new().rule("email", EndsWith("gmail.com")))
 //!     .unwrap_err();
 //!
 //! assert!(matches!(

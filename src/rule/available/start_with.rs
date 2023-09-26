@@ -19,7 +19,7 @@
 //!     .validate(
 //!         Validator::new()
 //!             .rule("title", StartWith("hello"))
-//!             .rule("other", StartWith("bar"))
+//!             .rule("other", StartWith("bar")),
 //!     )
 //!     .unwrap_err();
 //!
