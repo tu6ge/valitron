@@ -131,10 +131,7 @@ macro_rules! panic_on_err {
     };
 }
 
-impl<'v, M> Validator<'v, M>
-where
-    M: 'static,
-{
+impl<M> Validator<'_, M> {
     /// # Register rules
     ///
     /// **Feild support multiple formats:**
@@ -207,78 +204,6 @@ where
             .or_insert(rules);
         self
     }
-
-    /// Custom validate error message
-    ///
-    /// Every rule has a default message, the method should be replace it with your need.
-    ///
-    /// parameter list item format:
-    /// `(field_name.rule_name, message)`
-    ///
-    /// e.g: `("name.required", "name is required")`
-    ///
-    /// # Panic
-    ///
-    /// When field or rule is not existing ,this will panic
-    pub fn message<const N: usize, Msg>(mut self, list: [(&'v str, Msg); N]) -> Self
-    where
-        Msg: Into<M>,
-    {
-        self.message.extend(list.map(|(key_str, v)| {
-            let msg_key = panic_on_err!(field_name::parse_message(key_str));
-
-            self.exit_message(&msg_key);
-
-            (msg_key, v.into())
-        }));
-        self
-    }
-
-    /// # convert `Validator<M1>` to `Validator<M2>`
-    ///
-    /// Using build-in rules and returning custom validator message type is able:
-    /// ```rust
-    /// # use valitron::{Validator, available::{Message, MessageKind, Required}};
-    /// let validator = Validator::new()
-    ///     .rule("introduce", Required)
-    ///     .map(MyError::from)
-    ///     .message([("introduce.required", MyError::IntroduceRequired)]);
-    ///
-    /// enum MyError {
-    ///     IntroduceRequired,
-    ///     NotReset,
-    /// }
-    ///
-    /// impl From<Message> for MyError {
-    ///     fn from(val: Message) -> Self {
-    ///         match val.kind() {
-    ///             MessageKind::Required => MyError::NotReset,
-    ///             // ...
-    ///             # _ => unreachable!(),
-    ///         }
-    ///     }
-    /// }
-    /// ```
-    #[must_use]
-    pub fn map<M2>(self, f: fn(message: M) -> M2) -> Validator<'v, M2>
-    where
-        M2: 'static,
-    {
-        Validator {
-            rules: self
-                .rules
-                .into_iter()
-                .map(|(field, list)| (field, list.map(f)))
-                .collect(),
-            message: self
-                .message
-                .into_iter()
-                .map(|(key, msg)| (key, f(msg)))
-                .collect(),
-            is_bail: self.is_bail,
-        }
-    }
-
     /// when first validate error is encountered, right away return Err(message).
     pub fn bail(mut self) -> Self {
         self.is_bail = true;
@@ -377,6 +302,80 @@ where
             self.rule_get(fields).unwrap().contains(rule),
             "rule \"{rule}\" is not found in rules"
         );
+    }
+}
+
+impl<'v, M> Validator<'v, M> {
+    /// Custom validate error message
+    ///
+    /// Every rule has a default message, the method should be replace it with your need.
+    ///
+    /// parameter list item format:
+    /// `(field_name.rule_name, message)`
+    ///
+    /// e.g: `("name.required", "name is required")`
+    ///
+    /// # Panic
+    ///
+    /// When field or rule is not existing ,this will panic
+    pub fn message<const N: usize, Msg>(mut self, list: [(&'v str, Msg); N]) -> Self
+    where
+        Msg: Into<M>,
+    {
+        self.message.extend(list.map(|(key_str, v)| {
+            let msg_key = panic_on_err!(field_name::parse_message(key_str));
+
+            self.exit_message(&msg_key);
+
+            (msg_key, v.into())
+        }));
+        self
+    }
+
+    /// # convert `Validator<M1>` to `Validator<M2>`
+    ///
+    /// Using build-in rules and returning custom validator message type is able:
+    /// ```rust
+    /// # use valitron::{Validator, available::{Message, MessageKind, Required}};
+    /// let validator = Validator::new()
+    ///     .rule("introduce", Required)
+    ///     .map(MyError::from)
+    ///     .message([("introduce.required", MyError::IntroduceRequired)]);
+    ///
+    /// enum MyError {
+    ///     IntroduceRequired,
+    ///     NotReset,
+    /// }
+    ///
+    /// impl From<Message> for MyError {
+    ///     fn from(val: Message) -> Self {
+    ///         match val.kind() {
+    ///             MessageKind::Required => MyError::NotReset,
+    ///             // ...
+    ///             # _ => unreachable!(),
+    ///         }
+    ///     }
+    /// }
+    /// ```
+    #[must_use]
+    pub fn map<M2>(self, f: fn(message: M) -> M2) -> Validator<'v, M2>
+    where
+        M: 'static,
+        M2: 'static,
+    {
+        Validator {
+            rules: self
+                .rules
+                .into_iter()
+                .map(|(field, list)| (field, list.map(f)))
+                .collect(),
+            message: self
+                .message
+                .into_iter()
+                .map(|(key, msg)| (key, f(msg)))
+                .collect(),
+            is_bail: self.is_bail,
+        }
     }
 }
 
