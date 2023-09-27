@@ -119,6 +119,12 @@ impl ValueMap {
 
     /// change index
     pub fn index(&mut self, index: FieldNames) {
+        debug_assert!(
+            self.value.get_with_names(&index).is_some(),
+            "field `{}` is not exist",
+            index.as_str()
+        );
+
         self.index = index;
     }
 
