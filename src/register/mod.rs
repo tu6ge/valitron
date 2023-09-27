@@ -361,6 +361,7 @@ where
         resp_message
     }
 
+    #[inline(always)]
     fn rule_get(&self, names: &FieldNames) -> Option<&RuleList<M>> {
         self.rules.get(names)
     }
