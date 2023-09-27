@@ -56,6 +56,16 @@ impl<T> StartWith<T> {
     fn name_in(&self) -> &'static str {
         "start_with"
     }
+
+    pub const fn as_ref(&self) -> StartWith<&T> {
+        let StartWith(ref t) = self;
+        StartWith(t)
+    }
+
+    pub fn as_mut(&mut self) -> StartWith<&mut T> {
+        let StartWith(ref mut t) = self;
+        StartWith(t)
+    }
 }
 
 impl<T> StartWith<T>
@@ -121,5 +131,44 @@ impl RuleShortcut for StartWith<char> {
             Value::String(s) => s.starts_with(self.0),
             _ => false,
         }
+    }
+}
+
+impl<T> StartWith<&T> {
+    pub const fn copied(self) -> StartWith<T>
+    where
+        T: Copy,
+    {
+        StartWith(*self.0)
+    }
+
+    pub fn cloned(self) -> StartWith<T>
+    where
+        T: Clone,
+    {
+        StartWith(self.0.clone())
+    }
+}
+
+impl<T> StartWith<&mut T> {
+    pub fn copied(self) -> StartWith<T>
+    where
+        T: Copy,
+    {
+        StartWith(*self.0)
+    }
+
+    pub fn cloned(self) -> StartWith<T>
+    where
+        T: Clone,
+    {
+        StartWith(self.0.clone())
+    }
+}
+
+impl<T: PartialEq> PartialEq for StartWith<T> {
+    #[inline]
+    fn eq(&self, other: &Self) -> bool {
+        self.0 == other.0
     }
 }

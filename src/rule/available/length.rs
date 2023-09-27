@@ -63,6 +63,16 @@ impl<T> Length<T> {
     fn message_in(&self) -> Message {
         Message::new(super::MessageKind::Length)
     }
+
+    pub const fn as_ref(&self) -> Length<&T> {
+        let Length(ref t) = self;
+        Length(t)
+    }
+
+    pub fn as_mut(&mut self) -> Length<&mut T> {
+        let Length(ref mut t) = self;
+        Length(t)
+    }
 }
 
 impl<T> RuleShortcut for Length<T>
@@ -103,3 +113,42 @@ where
 //         }
 //     }
 // }
+
+impl<T> Length<&T> {
+    pub const fn copied(self) -> Length<T>
+    where
+        T: Copy,
+    {
+        Length(*self.0)
+    }
+
+    pub fn cloned(self) -> Length<T>
+    where
+        T: Clone,
+    {
+        Length(self.0.clone())
+    }
+}
+
+impl<T> Length<&mut T> {
+    pub fn copied(self) -> Length<T>
+    where
+        T: Copy,
+    {
+        Length(*self.0)
+    }
+
+    pub fn cloned(self) -> Length<T>
+    where
+        T: Clone,
+    {
+        Length(self.0.clone())
+    }
+}
+
+impl<T: PartialEq> PartialEq for Length<T> {
+    #[inline]
+    fn eq(&self, other: &Self) -> bool {
+        self.0 == other.0
+    }
+}

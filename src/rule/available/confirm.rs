@@ -52,6 +52,16 @@ impl<T> Confirm<T> {
     fn name_in(&self) -> &'static str {
         "confirm"
     }
+
+    pub const fn as_ref(&self) -> Confirm<&T> {
+        let Confirm(ref t) = self;
+        Confirm(t)
+    }
+
+    pub fn as_mut(&mut self) -> Confirm<&mut T> {
+        let Confirm(ref mut t) = self;
+        Confirm(t)
+    }
 }
 
 impl<T> Confirm<T>
@@ -112,6 +122,45 @@ impl RuleShortcut for Confirm<&str> {
 
     fn call(&mut self, _value: &mut Value) -> bool {
         unreachable!()
+    }
+}
+
+impl<T> Confirm<&T> {
+    pub const fn copied(self) -> Confirm<T>
+    where
+        T: Copy,
+    {
+        Confirm(*self.0)
+    }
+
+    pub fn cloned(self) -> Confirm<T>
+    where
+        T: Clone,
+    {
+        Confirm(self.0.clone())
+    }
+}
+
+impl<T> Confirm<&mut T> {
+    pub fn copied(self) -> Confirm<T>
+    where
+        T: Copy,
+    {
+        Confirm(*self.0)
+    }
+
+    pub fn cloned(self) -> Confirm<T>
+    where
+        T: Clone,
+    {
+        Confirm(self.0.clone())
+    }
+}
+
+impl<T: PartialEq> PartialEq for Confirm<T> {
+    #[inline]
+    fn eq(&self, other: &Self) -> bool {
+        self.0 == other.0
     }
 }
 

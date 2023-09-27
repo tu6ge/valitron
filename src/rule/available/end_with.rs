@@ -49,6 +49,16 @@ impl<T> EndsWith<T> {
     fn name_in(&self) -> &'static str {
         "end_with"
     }
+
+    pub const fn as_ref(&self) -> EndsWith<&T> {
+        let EndsWith(ref t) = self;
+        EndsWith(t)
+    }
+
+    pub fn as_mut(&mut self) -> EndsWith<&mut T> {
+        let EndsWith(ref mut t) = self;
+        EndsWith(t)
+    }
 }
 
 impl<T> EndsWith<T>
@@ -114,5 +124,44 @@ impl RuleShortcut for EndsWith<char> {
             Value::String(s) => s.ends_with(self.0),
             _ => false,
         }
+    }
+}
+
+impl<T> EndsWith<&T> {
+    pub const fn copied(self) -> EndsWith<T>
+    where
+        T: Copy,
+    {
+        EndsWith(*self.0)
+    }
+
+    pub fn cloned(self) -> EndsWith<T>
+    where
+        T: Clone,
+    {
+        EndsWith(self.0.clone())
+    }
+}
+
+impl<T> EndsWith<&mut T> {
+    pub fn copied(self) -> EndsWith<T>
+    where
+        T: Copy,
+    {
+        EndsWith(*self.0)
+    }
+
+    pub fn cloned(self) -> EndsWith<T>
+    where
+        T: Clone,
+    {
+        EndsWith(self.0.clone())
+    }
+}
+
+impl<T: PartialEq> PartialEq for EndsWith<T> {
+    #[inline]
+    fn eq(&self, other: &Self) -> bool {
+        self.0 == other.0
     }
 }

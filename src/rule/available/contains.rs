@@ -49,6 +49,16 @@ impl<T> Contains<T> {
     fn name_in(&self) -> &'static str {
         "contains"
     }
+
+    pub const fn as_ref(&self) -> Contains<&T> {
+        let Contains(ref t) = self;
+        Contains(t)
+    }
+
+    pub fn as_mut(&mut self) -> Contains<&mut T> {
+        let Contains(ref mut t) = self;
+        Contains(t)
+    }
 }
 
 impl<T> Contains<T>
@@ -114,5 +124,44 @@ impl RuleShortcut for Contains<char> {
             Value::String(s) => s.contains(self.0),
             _ => false,
         }
+    }
+}
+
+impl<T> Contains<&T> {
+    pub const fn copied(self) -> Contains<T>
+    where
+        T: Copy,
+    {
+        Contains(*self.0)
+    }
+
+    pub fn cloned(self) -> Contains<T>
+    where
+        T: Clone,
+    {
+        Contains(self.0.clone())
+    }
+}
+
+impl<T> Contains<&mut T> {
+    pub fn copied(self) -> Contains<T>
+    where
+        T: Copy,
+    {
+        Contains(*self.0)
+    }
+
+    pub fn cloned(self) -> Contains<T>
+    where
+        T: Clone,
+    {
+        Contains(self.0.clone())
+    }
+}
+
+impl<T: PartialEq> PartialEq for Contains<T> {
+    #[inline]
+    fn eq(&self, other: &Self) -> bool {
+        self.0 == other.0
     }
 }
