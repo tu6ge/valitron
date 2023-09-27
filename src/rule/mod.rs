@@ -83,11 +83,19 @@ pub trait Rule<T>: 'static + Sized + Clone {
     }
 }
 
+mod private {
+    use super::Rule;
+
+    pub trait Sealed {}
+
+    impl<R> Sealed for R where R: Rule<()> {}
+}
+
 /// Rule extension, it can coupling some rules, such as
 /// ```rust,ignore
 /// Rule1.and(Rule2).and(Rule3)
 /// ```
-pub trait RuleExt<M> {
+pub trait RuleExt<M>: private::Sealed {
     fn and<R>(self, other: R) -> RuleList<M>
     where
         R: Rule<(), Message = M>;
