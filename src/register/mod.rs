@@ -199,9 +199,7 @@ where
         let names = panic_on_err!(field.into_field());
         let mut rules = rule.into_list();
 
-        if !rules.valid_name() {
-            panic!("invalid rule name")
-        }
+        debug_assert!(rules.valid_name(), "invalid rule name");
 
         self.rules
             .entry(names)
@@ -229,7 +227,7 @@ where
         self.message.extend(list.map(|(key_str, v)| {
             let msg_key = panic_on_err!(field_name::parse_message(key_str));
 
-            panic_on_err!(self.exit_message(&msg_key));
+            self.exit_message(&msg_key);
 
             (msg_key, v.into())
         }));
@@ -367,17 +365,17 @@ where
         self.rules.get(names)
     }
 
-    fn exit_message(&self, MessageKey { fields, rule }: &MessageKey) -> Result<(), String> {
-        let names = self.rule_get(fields).ok_or(format!(
+    fn exit_message(&self, MessageKey { fields, rule }: &MessageKey) {
+        debug_assert!(
+            self.rule_get(fields).is_some(),
             "the field \"{}\" not found in validator",
             fields.as_str()
-        ))?;
+        );
 
-        if names.contains(rule) {
-            Ok(())
-        } else {
-            Err(format!("rule \"{rule}\" is not found in rules"))
-        }
+        debug_assert!(
+            self.rule_get(fields).unwrap().contains(rule),
+            "rule \"{rule}\" is not found in rules"
+        );
     }
 }
 
