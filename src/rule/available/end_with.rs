@@ -30,14 +30,20 @@
 //!     .unwrap();
 //! ```
 
-use std::fmt::Display;
+use std::fmt::{Debug, Display};
 
 use crate::{RuleShortcut, Value};
 
 use super::Message;
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct EndsWith<T>(pub T);
+
+impl<T: Debug> Debug for EndsWith<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("EndsWith").field("0", &self.0).finish()
+    }
+}
 
 impl<T> EndsWith<T> {
     fn name_in(&self) -> &'static str {

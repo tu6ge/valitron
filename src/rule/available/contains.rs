@@ -30,14 +30,20 @@
 //!     .unwrap();
 //! ```
 
-use std::fmt::Display;
+use std::fmt::{Debug, Display};
 
 use crate::{RuleShortcut, Value};
 
 use super::Message;
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct Contains<T>(pub T);
+
+impl<T: Debug> Debug for Contains<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Contains").field("0", &self.0).finish()
+    }
+}
 
 impl<T> Contains<T> {
     fn name_in(&self) -> &'static str {

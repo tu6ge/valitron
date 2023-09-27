@@ -37,14 +37,20 @@
 //!     .unwrap();
 //! ```
 
-use std::fmt::Display;
+use std::fmt::{Debug, Display};
 
 use crate::{RuleShortcut, Value};
 
 use super::Message;
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct StartWith<T>(pub T);
+
+impl<T: Debug> Debug for StartWith<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("StartWith").field("0", &self.0).finish()
+    }
+}
 
 impl<T> StartWith<T> {
     fn name_in(&self) -> &'static str {

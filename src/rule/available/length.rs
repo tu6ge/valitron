@@ -40,7 +40,7 @@
 //!     .unwrap();
 //! ```
 
-use std::ops::RangeBounds;
+use std::{fmt::Debug, ops::RangeBounds};
 
 use crate::{RuleShortcut, Value};
 
@@ -48,6 +48,12 @@ use super::Message;
 
 #[derive(Clone)]
 pub struct Length<T>(pub T);
+
+impl<T: Debug> Debug for Length<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Length").field("0", &self.0).finish()
+    }
+}
 
 impl<T> Length<T> {
     fn name_in(&self) -> &'static str {

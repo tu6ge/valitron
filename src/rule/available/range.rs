@@ -26,7 +26,7 @@
 //!     .unwrap();
 //! ```
 
-use std::{marker::PhantomData, ops::RangeBounds};
+use std::{fmt::Debug, marker::PhantomData, ops::RangeBounds};
 
 use super::Message;
 use crate::{RuleShortcut, Value};
@@ -35,6 +35,12 @@ use crate::{RuleShortcut, Value};
 pub struct Range<T, Num> {
     value: T,
     _marker: PhantomData<Num>,
+}
+
+impl<T: Debug, Num> Debug for Range<T, Num> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Range").field("value", &self.value).finish()
+    }
 }
 
 impl<T, Num> Range<T, Num> {
