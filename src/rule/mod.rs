@@ -159,13 +159,11 @@ impl<M> Clone for RuleList<M> {
     }
 }
 
-impl<M> RuleList<M>
-where
-    M: 'static,
-{
+impl<M> RuleList<M> {
     pub fn and<R>(mut self, other: R) -> Self
     where
         R: Rule<(), Message = M>,
+        M: 'static,
     {
         self.list.push(ErasedRule::new(other));
         self
@@ -176,6 +174,7 @@ where
         F: for<'a> FnOnce(&'a mut V) -> Result<(), M>,
         F: Rule<V, Message = M>,
         V: FromValue + 'static,
+        M: 'static,
     {
         self.list.push(ErasedRule::new(other));
         self
@@ -269,6 +268,7 @@ where
     #[must_use]
     pub(crate) fn map<M2>(self, f: fn(M) -> M2) -> RuleList<M2>
     where
+        M: 'static,
         M2: 'static,
     {
         let list = self
