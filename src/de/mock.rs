@@ -139,8 +139,8 @@ impl<'de: 'v, 'v> Deserializer<'de> for Value<'v> {
     where
         V: Visitor<'de>,
     {
-        if let Value::Str(n) = self {
-            visitor.visit_str(n)
+        if let Value::String(n) = self {
+            visitor.visit_string(n)
         } else {
             Err(self.invalid_type(&visitor))
         }
@@ -333,11 +333,11 @@ impl<'de: 'v, 'v> Deserializer<'de> for Value<'v> {
         }
     }
 
-    fn deserialize_ignored_any<V>(self, _visitor: V) -> Result<V::Value, Self::Error>
+    fn deserialize_ignored_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
     where
         V: Visitor<'de>,
     {
-        unreachable!()
+        visitor.visit_unit()
     }
 
     fn is_human_readable(&self) -> bool {
@@ -535,6 +535,7 @@ fn test_str() {
 
     #[derive(Debug, Serialize, Deserialize)]
     struct A<'a> {
+        #[serde(skip_deserializing)]
         foo: &'a str,
         num: u8,
     }
@@ -546,14 +547,27 @@ fn test_str() {
 
     let foo = "bar";
 
-    let value = Value::Struct({
+    let mut value = Value::Struct({
         let mut map = BTreeMap::new();
-        map.insert(Value::StructKey("foo".into()), Value::Str(foo));
+        map.insert(
+            Value::StructKey("foo".into()),
+            Value::String(foo.to_owned()),
+        );
         map.insert(Value::StructKey("num".into()), Value::Uint8(11));
         map
     });
 
-    let new_value = A::deserialize(value).unwrap();
+    let mut new_str = String::new();
+
+    if let Value::Struct(map) = &mut value {
+        if let Some(Value::String(a)) = map.get_mut(&Value::StructKey("foo".into())) {
+            std::mem::swap(a, &mut new_str);
+        }
+    }
+
+    let mut new_value = A::deserialize(value).unwrap();
+
+    new_value.foo = &new_str;
 
     assert_eq!(new_value.foo, "bar");
     assert_eq!(new_value.num, 11);
