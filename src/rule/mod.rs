@@ -237,14 +237,12 @@ impl<M> RuleList<M> {
 
     /// check the rule name is existing
     pub(crate) fn contains(&self, rule: &str) -> bool {
-        self.iter()
-            .map(|endpoint| endpoint.name())
-            .any(|name| name == rule)
+        self.iter().map(ErasedRule::name).any(|name| name == rule)
     }
 
     /// check all rule names is valid or not
     pub(crate) fn valid_name(&self) -> bool {
-        self.iter().map(|endpoint| endpoint.name()).all(|name| {
+        self.iter().map(ErasedRule::name).all(|name| {
             let mut chares = name.chars();
             let first = match chares.next() {
                 Some(ch) => ch,
