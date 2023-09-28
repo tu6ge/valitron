@@ -277,6 +277,7 @@ impl<M> Validator<'_, M> {
             resp_message.push(names, field_msg);
 
             if is_bail && !resp_message.is_empty() {
+                resp_message.shrink_to(1);
                 return resp_message;
             }
         }
@@ -478,6 +479,10 @@ impl<M> ValidatorError<M> {
 
     fn shrink_to_fit(&mut self) {
         self.message.shrink_to_fit()
+    }
+
+    fn shrink_to(&mut self, min_capacity: usize) {
+        self.message.shrink_to(min_capacity)
     }
 
     pub fn get<K: IntoFieldName>(&self, key: K) -> Option<&Vec<M>> {

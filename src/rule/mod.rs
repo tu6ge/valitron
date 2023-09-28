@@ -222,7 +222,7 @@ impl<M> RuleList<M> {
                 .map_err(|e| msg.push((endpoint.name(), e)));
 
             if self.is_bail && !msg.is_empty() {
-                msg.shrink_to_fit();
+                msg.shrink_to(1);
                 return msg;
             }
         }
