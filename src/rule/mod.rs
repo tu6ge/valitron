@@ -22,7 +22,12 @@
 //! }
 //! ```
 
-use std::slice::Iter;
+use std::{
+    future::Future,
+    pin::Pin,
+    slice::Iter,
+    sync::{Arc, Mutex},
+};
 
 use crate::value::{FromValue, Value, ValueMap};
 
@@ -61,11 +66,13 @@ mod test;
 /// ```
 ///
 /// TODO! introduce ValueMap
-pub trait Rule<T>: 'static + Sized + Clone {
+pub trait Rule<T>: 'static + Sized + Clone + Sync {
     /// custom define returning message type
     ///
     /// u8 or String or both
     type Message;
+
+    type Future: Future<Output = Result<(), Self::Message>> + Send + 'static;
 
     /// Named rule type, used to distinguish between different rules.
     ///
@@ -75,7 +82,7 @@ pub trait Rule<T>: 'static + Sized + Clone {
     /// Rule specific implementation, data is gived type all field's value, and current field index.
     ///
     /// success returning Ok(()), or else returning message.
-    fn call(&mut self, data: &mut ValueMap) -> Result<(), Self::Message>;
+    fn call(&mut self, data: &mut ValueMap) -> Self::Future;
 
     #[doc(hidden)]
     fn into_boxed(self) -> RuleIntoBoxed<Self, Self::Message, T> {
@@ -379,9 +386,11 @@ mod test_regster {
 }
 
 /// used by convenient implementation custom rules.
-pub trait RuleShortcut {
+pub trait RuleShortcut: Send {
     /// custom define returning message type
-    type Message;
+    type Message: Send + 'static;
+
+    type Future: Future<Output = bool> + Send + 'static;
 
     /// Named rule type, used to distinguish different rules
     ///
@@ -397,43 +406,60 @@ pub trait RuleShortcut {
     /// *Panic*
     /// when not found value
     #[must_use]
-    fn call_with_relate(&mut self, data: &mut ValueMap) -> bool {
-        self.call(data.current_mut().expect("not found value with fields"))
+    fn call_with_relate(
+        &mut self,
+        data: &mut ValueMap,
+    ) -> Pin<Box<dyn Future<Output = bool> + Send + 'static>> {
+        Box::pin(async {
+            self.call(data.current_mut().expect("not found value with fields"))
+                .await
+        })
     }
 
     /// Rule specific implementation, data is current field's value
     #[must_use]
-    fn call(&mut self, data: &mut Value) -> bool;
+    fn call(&mut self, data: &mut Value) -> Self::Future;
 }
 
 impl<T> Rule<()> for T
 where
-    T: RuleShortcut + 'static + Clone,
+    T: RuleShortcut + 'static + Clone + Sync + Send,
 {
     type Message = T::Message;
+    type Future = Pin<Box<dyn Future<Output = Result<(), Self::Message>> + Send>>;
 
     fn name(&self) -> &'static str {
         self.name()
     }
     /// Rule specific implementation, data is gived type all field's value, and current field index.
-    fn call(&mut self, data: &mut ValueMap) -> Result<(), Self::Message> {
-        if self.call_with_relate(data) {
-            Ok(())
-        } else {
-            Err(self.message())
-        }
+    fn call(&mut self, data: &mut ValueMap) -> Self::Future {
+        let this = Arc::new(Mutex::new(self));
+        Box::pin(async move {
+            let mut the = this.clone().lock().unwrap();
+            if the.call_with_relate(data).await {
+                Ok(())
+            } else {
+                Err(self.message())
+            }
+        })
     }
 }
 
-impl<F, V, M> Rule<V> for F
+impl<F, V, M, Res> Rule<(V, Res)> for F
 where
-    F: for<'a> FnOnce(&'a mut V) -> Result<(), M> + 'static + Clone,
-    V: FromValue,
+    F: for<'a> FnOnce(&'a mut V) -> Res + Clone + 'static + Sync + Send,
+    V: FromValue + Sync,
+    Res: Future<Output = Result<(), M>> + Send,
+    M: Send + 'static,
 {
     type Message = M;
-    fn call(&mut self, data: &mut ValueMap) -> Result<(), Self::Message> {
-        let val = V::from_value(data).expect("argument type can not be matched");
-        self.clone()(val)
+    type Future = Pin<Box<dyn Future<Output = Result<(), Self::Message>> + Send + 'static>>;
+
+    fn call(&mut self, data: &mut ValueMap) -> Self::Future {
+        Box::pin(async move {
+            let val = V::from_value(data).expect("argument type can not be matched");
+            self.clone()(val).await
+        })
     }
     fn name(&self) -> &'static str {
         "custom"

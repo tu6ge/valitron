@@ -105,7 +105,7 @@ pub struct ValueMap {
     pub(crate) index: FieldNames,
 }
 
-pub trait FromValue {
+pub trait FromValue: Send + Sync {
     fn from_value(value: &mut ValueMap) -> Option<&mut Self>;
 }
 
