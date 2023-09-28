@@ -117,7 +117,7 @@ where
         R2: Rule<(), Message = M>,
     {
         RuleList {
-            list: vec![ErasedRule::<M>::new(self), ErasedRule::new(other)],
+            list: vec![ErasedRule::new(self), ErasedRule::new(other)],
             ..Default::default()
         }
     }
