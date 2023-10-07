@@ -403,7 +403,7 @@ pub trait Validatable<M> {
     /// if need to change value, e.g. `trim`
     fn validate_mut<'de>(self, validator: Validator<M>) -> Result<Self, ValidatorError<M>>
     where
-        Self: Sized + Deserialize<'de>;
+        Self: Deserialize<'de>;
 }
 
 impl<T, M> Validatable<M> for T
@@ -417,7 +417,7 @@ where
 
     fn validate_mut<'de>(self, validator: Validator<M>) -> Result<Self, ValidatorError<M>>
     where
-        Self: Sized + Deserialize<'de>,
+        Self: Deserialize<'de>,
     {
         validator.validate_mut(self)
     }
