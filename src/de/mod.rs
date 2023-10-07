@@ -1,4 +1,4 @@
-use std::{collections::BTreeMap, fmt::Display, vec::IntoIter};
+use std::{collections::BTreeMap, vec::IntoIter};
 
 use serde::de::{
     DeserializeSeed, Deserializer, EnumAccess, Expected, IntoDeserializer, MapAccess, SeqAccess,
