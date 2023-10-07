@@ -77,3 +77,47 @@ fn test_total() {
 
     assert_eq!(msg.total(), 3);
 }
+
+#[cfg(feature = "full")]
+#[test]
+#[should_panic = "field `field3` is not found"]
+fn test_check_field() {
+    use serde::{Deserialize, Serialize};
+
+    use crate::{available::Required, Validatable};
+
+    #[derive(Debug, Serialize, Deserialize)]
+    struct Foo {
+        field1: String,
+        field2: String,
+    }
+
+    let value = Foo {
+        field1: "foo1".into(),
+        field2: "foo2".into(),
+    };
+
+    let _ = value.validate(Validator::new().rule("field3", Required));
+}
+
+#[cfg(feature = "full")]
+#[test]
+#[should_panic = "field `field3` is not found"]
+fn test_check_field_mut() {
+    use serde::{Deserialize, Serialize};
+
+    use crate::{available::Required, Validatable};
+
+    #[derive(Debug, Serialize, Deserialize)]
+    struct Foo {
+        field1: String,
+        field2: String,
+    }
+
+    let value = Foo {
+        field1: "foo1".into(),
+        field2: "foo2".into(),
+    };
+
+    let _ = value.validate_mut(Validator::new().rule("field3", Required));
+}

@@ -31,6 +31,7 @@ use crate::{
     rule::{IntoRuleList, RuleList},
     ser::Serializer,
     value::ValueMap,
+    Value,
 };
 
 #[cfg(feature = "full")]
@@ -217,6 +218,8 @@ impl<M> Validator<'_, M> {
     {
         let value = data.serialize(Serializer).unwrap();
 
+        debug_assert!(self.exist_field(&value));
+
         let mut value_map = ValueMap::new(value);
 
         let message = self.inner_validate(&mut value_map);
@@ -234,6 +237,8 @@ impl<M> Validator<'_, M> {
         T: Serialize + serde::de::Deserialize<'de>,
     {
         let value = data.serialize(Serializer).unwrap();
+
+        debug_assert!(self.exist_field(&value));
 
         let mut value_map = ValueMap::new(value);
 
@@ -285,6 +290,16 @@ impl<M> Validator<'_, M> {
         resp_message.shrink_to_fit();
 
         resp_message
+    }
+
+    fn exist_field(&self, value: &Value) -> bool {
+        for (field, _) in self.rules.iter() {
+            if value.get_with_names(field).is_none() {
+                panic!("field `{}` is not found", field.as_str());
+            }
+        }
+
+        true
     }
 
     #[inline(always)]
