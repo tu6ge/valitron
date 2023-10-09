@@ -13,8 +13,8 @@ struct Person {
     weight: f32,
 }
 
-#[test]
-fn test_validator() {
+#[tokio::test]
+async fn test_validator() {
     let validator = Validator::new()
         .rule("name", Required.and(StartWith("hello")))
         .rule("age", custom(age_limit))
@@ -30,7 +30,7 @@ fn test_validator() {
         weight: 20.0,
     };
 
-    let res = validator.validate(person).unwrap_err();
+    let res = validator.validate(person).await.unwrap_err();
 
     assert!(res.len() == 3);
     assert_eq!(
@@ -47,14 +47,14 @@ fn test_validator() {
     );
 }
 
-fn age_limit(n: &mut u8) -> Result<(), Message> {
+async fn age_limit(n: &mut u8) -> Result<(), Message> {
     if *n >= 25 && *n <= 45 {
         return Ok(());
     }
     Err("age should be between 25 and 45".into())
 }
 
-fn weight_limit(v: &mut Value) -> Result<(), Message> {
+async fn weight_limit(v: &mut Value) -> Result<(), Message> {
     if let Value::Float32(n) = v {
         let n = n.get();
         if n >= 40.0 && n <= 80.0 {
@@ -64,8 +64,8 @@ fn weight_limit(v: &mut Value) -> Result<(), Message> {
     Err("weight should be between 40 and 80".into())
 }
 
-#[test]
-fn test_has_tuple() {
+#[tokio::test]
+async fn test_has_tuple() {
     let validator = Validator::new()
         .rule(0, StartWith("hello"))
         .message([("0.start_with", "first item should be start with `hello`")]);
@@ -73,7 +73,7 @@ fn test_has_tuple() {
     #[derive(Serialize, Deserialize, Debug)]
     struct Foo(&'static str, &'static str);
 
-    let res = validator.validate(Foo("heoo", "bar")).unwrap_err();
+    let res = validator.validate(Foo("heoo", "bar")).await.unwrap_err();
     assert!(res.len() == 1);
 
     assert_eq!(
@@ -82,11 +82,11 @@ fn test_has_tuple() {
     );
 }
 
-#[test]
-fn test_has_array() {
+#[tokio::test]
+async fn test_has_array() {
     let validator = Validator::new().rule([1], StartWith("hello"));
 
-    let res = validator.validate(vec!["foo", "bar"]).unwrap_err();
+    let res = validator.validate(vec!["foo", "bar"]).await.unwrap_err();
 
     assert!(res.len() == 1);
     assert_eq!(

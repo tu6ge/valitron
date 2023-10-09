@@ -45,12 +45,15 @@
 //!     .unwrap();
 //! ```
 
+use async_trait::async_trait;
+
 use super::Message;
 use crate::{RuleShortcut, Value};
 
 #[derive(Clone, Debug)]
 pub struct Required;
 
+#[async_trait]
 impl RuleShortcut for Required {
     type Message = Message;
 
@@ -62,7 +65,7 @@ impl RuleShortcut for Required {
         Message::new(super::MessageKind::Required)
     }
 
-    fn call(&mut self, value: &mut Value) -> bool {
+    async fn call(&mut self, value: &mut Value) -> bool {
         match value {
             Value::String(s) => !s.is_empty(),
             Value::Array(arr) => !arr.is_empty(),

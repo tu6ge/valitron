@@ -28,6 +28,8 @@
 
 use std::{fmt::Debug, marker::PhantomData, ops::RangeBounds};
 
+use async_trait::async_trait;
+
 use super::Message;
 use crate::{RuleShortcut, Value};
 
@@ -62,9 +64,10 @@ impl<T, Num> Range<T, Num> {
 
 macro_rules! impl_range {
     ($val:ident($ty:ty)) => {
+        #[async_trait]
         impl<T> RuleShortcut for Range<T, $ty>
         where
-            T: RangeBounds<$ty>,
+            T: RangeBounds<$ty> + Send,
         {
             type Message = Message;
             fn name(&self) -> &'static str {
@@ -73,7 +76,7 @@ macro_rules! impl_range {
             fn message(&self) -> Self::Message {
                 self.message_in()
             }
-            fn call(&mut self, data: &mut Value) -> bool {
+            async fn call(&mut self, data: &mut Value) -> bool {
                 match data {
                     Value::$val(n) => self.value.contains(n),
                     _ => false,
@@ -93,9 +96,10 @@ impl_range!(Uint64(u64));
 impl_range!(Int64(i64));
 impl_range!(Char(char));
 
+#[async_trait]
 impl<T> RuleShortcut for Range<T, f32>
 where
-    T: RangeBounds<f32> + Clone + 'static,
+    T: RangeBounds<f32> + Clone + 'static + Send,
 {
     type Message = Message;
     fn name(&self) -> &'static str {
@@ -104,7 +108,7 @@ where
     fn message(&self) -> Self::Message {
         self.message_in()
     }
-    fn call(&mut self, data: &mut Value) -> bool {
+    async fn call(&mut self, data: &mut Value) -> bool {
         match data {
             Value::Float32(f) => self.value.contains(f.as_ref()),
             _ => false,
@@ -112,9 +116,10 @@ where
     }
 }
 
+#[async_trait]
 impl<T> RuleShortcut for Range<T, f64>
 where
-    T: RangeBounds<f64> + Clone + 'static,
+    T: RangeBounds<f64> + Clone + 'static + Send,
 {
     type Message = Message;
     fn name(&self) -> &'static str {
@@ -123,7 +128,7 @@ where
     fn message(&self) -> Self::Message {
         self.message_in()
     }
-    fn call(&mut self, data: &mut Value) -> bool {
+    async fn call(&mut self, data: &mut Value) -> bool {
         match data {
             Value::Float64(f) => self.value.contains(f.as_ref()),
             _ => false,

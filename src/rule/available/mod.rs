@@ -28,6 +28,8 @@ pub struct Message {
     kind: MessageKind,
 }
 
+unsafe impl Send for Message {}
+
 #[non_exhaustive]
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum MessageKind {

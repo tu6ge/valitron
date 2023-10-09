@@ -29,7 +29,8 @@ async fn index(info: web::Json<Info>) -> Result<String, ServerError> {
             .rule("username", Required)
             .map(String::from)
             .message([("username.required", "username is required")]),
-    )?;
+    )
+    .await?;
     Ok(format!("Welcome {}!", info.username))
 }
 

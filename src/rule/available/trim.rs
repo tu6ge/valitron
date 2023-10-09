@@ -20,6 +20,8 @@
 //! assert_eq!(new_input.title, "hi");
 //! ```
 
+use async_trait::async_trait;
+
 use crate::{RuleShortcut, Value};
 
 use super::Message;
@@ -27,10 +29,11 @@ use super::Message;
 #[derive(Clone)]
 pub struct Trim;
 
+#[async_trait]
 impl RuleShortcut for Trim {
     type Message = Message;
 
-    fn call(&mut self, data: &mut crate::Value) -> bool {
+    async fn call(&mut self, data: &mut crate::Value) -> bool {
         match data {
             Value::String(s) => *s = s.trim().to_string(),
             _ => (),

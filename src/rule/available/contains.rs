@@ -32,6 +32,8 @@
 
 use std::fmt::{Debug, Display};
 
+use async_trait::async_trait;
+
 use crate::{RuleShortcut, Value};
 
 use super::Message;
@@ -70,6 +72,7 @@ where
     }
 }
 
+#[async_trait]
 impl RuleShortcut for Contains<&str> {
     type Message = Message;
 
@@ -81,7 +84,7 @@ impl RuleShortcut for Contains<&str> {
         self.message_in()
     }
 
-    fn call(&mut self, value: &mut Value) -> bool {
+    async fn call(&mut self, value: &mut Value) -> bool {
         match value {
             Value::String(s) => s.contains(self.0),
             _ => false,
@@ -89,6 +92,7 @@ impl RuleShortcut for Contains<&str> {
     }
 }
 
+#[async_trait]
 impl RuleShortcut for Contains<String> {
     type Message = Message;
 
@@ -100,7 +104,7 @@ impl RuleShortcut for Contains<String> {
         self.message_in()
     }
 
-    fn call(&mut self, value: &mut Value) -> bool {
+    async fn call(&mut self, value: &mut Value) -> bool {
         match value {
             Value::String(s) => s.contains(&self.0),
             _ => false,
@@ -108,6 +112,7 @@ impl RuleShortcut for Contains<String> {
     }
 }
 
+#[async_trait]
 impl RuleShortcut for Contains<char> {
     type Message = Message;
 
@@ -119,7 +124,7 @@ impl RuleShortcut for Contains<char> {
         self.message_in()
     }
 
-    fn call(&mut self, value: &mut Value) -> bool {
+    async fn call(&mut self, value: &mut Value) -> bool {
         match value {
             Value::String(s) => s.contains(self.0),
             _ => false,

@@ -39,6 +39,8 @@
 
 use std::fmt::{Debug, Display};
 
+use async_trait::async_trait;
+
 use crate::{RuleShortcut, Value};
 
 use super::Message;
@@ -77,6 +79,7 @@ where
     }
 }
 
+#[async_trait]
 impl RuleShortcut for StartWith<&str> {
     type Message = Message;
 
@@ -88,7 +91,7 @@ impl RuleShortcut for StartWith<&str> {
         self.message_in()
     }
 
-    fn call(&mut self, value: &mut Value) -> bool {
+    async fn call(&mut self, value: &mut Value) -> bool {
         match value {
             Value::String(s) => s.starts_with(self.0),
             _ => false,
@@ -96,6 +99,7 @@ impl RuleShortcut for StartWith<&str> {
     }
 }
 
+#[async_trait]
 impl RuleShortcut for StartWith<String> {
     type Message = Message;
 
@@ -107,7 +111,7 @@ impl RuleShortcut for StartWith<String> {
         self.message_in()
     }
 
-    fn call(&mut self, value: &mut Value) -> bool {
+    async fn call(&mut self, value: &mut Value) -> bool {
         match value {
             Value::String(s) => s.starts_with(&self.0),
             _ => false,
@@ -115,6 +119,7 @@ impl RuleShortcut for StartWith<String> {
     }
 }
 
+#[async_trait]
 impl RuleShortcut for StartWith<char> {
     type Message = Message;
 
@@ -126,7 +131,7 @@ impl RuleShortcut for StartWith<char> {
         self.message_in()
     }
 
-    fn call(&mut self, value: &mut Value) -> bool {
+    async fn call(&mut self, value: &mut Value) -> bool {
         match value {
             Value::String(s) => s.starts_with(self.0),
             _ => false,

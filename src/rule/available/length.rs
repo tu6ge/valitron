@@ -42,6 +42,8 @@
 
 use std::{fmt::Debug, ops::RangeBounds};
 
+use async_trait::async_trait;
+
 use crate::{RuleShortcut, Value};
 
 use super::Message;
@@ -75,9 +77,10 @@ impl<T> Length<T> {
     }
 }
 
+#[async_trait]
 impl<T> RuleShortcut for Length<T>
 where
-    T: RangeBounds<usize>,
+    T: RangeBounds<usize> + Send,
 {
     type Message = Message;
     fn name(&self) -> &'static str {
@@ -86,7 +89,7 @@ where
     fn message(&self) -> Self::Message {
         self.message_in()
     }
-    fn call(&mut self, data: &mut Value) -> bool {
+    async fn call(&mut self, data: &mut Value) -> bool {
         match data {
             Value::String(str) => self.0.contains(&str.len()),
             Value::Array(arr) => self.0.contains(&arr.len()),

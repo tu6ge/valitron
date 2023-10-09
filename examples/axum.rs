@@ -46,15 +46,17 @@ pub struct BlogInput {
 }
 
 async fn handler(Form(input): Form<BlogInput>) -> Result<Html<String>, ServerError> {
-    input.validate(
-        Validator::new()
-            .rule("title", Required.and(StartWith("hi")))
-            .map(String::from)
-            .message([
-                ("title.required", "title is required"),
-                ("title.start_with", "title should be starts with `hi`"),
-            ]),
-    )?;
+    input
+        .validate(
+            Validator::new()
+                .rule("title", Required.and(StartWith("hi")))
+                .map(String::from)
+                .message([
+                    ("title.required", "title is required"),
+                    ("title.start_with", "title should be starts with `hi`"),
+                ]),
+        )
+        .await?;
 
     Ok(Html(format!("<h1>Hello, {}!</h1>", input.title)))
 }

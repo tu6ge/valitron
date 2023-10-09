@@ -35,6 +35,8 @@
 
 use std::fmt::{Debug, Display};
 
+use async_trait::async_trait;
+
 use crate::{register::FieldNames, value::ValueMap, RuleShortcut, Value};
 
 use super::{Message, MessageKind};
@@ -81,6 +83,7 @@ where
     }
 }
 
+#[async_trait]
 impl RuleShortcut for Confirm<String> {
     type Message = Message;
 
@@ -92,17 +95,18 @@ impl RuleShortcut for Confirm<String> {
         self.message_in()
     }
 
-    fn call_with_relate(&mut self, value: &mut ValueMap) -> bool {
+    async fn call_with_relate(&mut self, value: &mut ValueMap) -> bool {
         let target = self.get_target_value(value);
 
         value.current().unwrap() == target.unwrap()
     }
 
-    fn call(&mut self, _value: &mut Value) -> bool {
+    async fn call(&mut self, _value: &mut Value) -> bool {
         unreachable!()
     }
 }
 
+#[async_trait]
 impl RuleShortcut for Confirm<&str> {
     type Message = Message;
 
@@ -114,13 +118,13 @@ impl RuleShortcut for Confirm<&str> {
         self.message_in()
     }
 
-    fn call_with_relate(&mut self, value: &mut ValueMap) -> bool {
+    async fn call_with_relate(&mut self, value: &mut ValueMap) -> bool {
         let target = self.get_target_value(value);
 
         value.current().unwrap() == target.unwrap()
     }
 
-    fn call(&mut self, _value: &mut Value) -> bool {
+    async fn call(&mut self, _value: &mut Value) -> bool {
         unreachable!()
     }
 }
@@ -172,8 +176,8 @@ mod tests {
 
     use crate::{register::FieldNames, rule::Rule, ser::to_value, RuleShortcut, Value, ValueMap};
 
-    #[test]
-    fn test_confirm() {
+    #[tokio::test]
+    async fn test_confirm() {
         #[derive(Serialize)]
         struct MyType {
             name: String,
@@ -191,7 +195,7 @@ mod tests {
         let mut confirm = Confirm("name");
         let mut map = ValueMap::new(all_value);
         map.index(FieldNames::new("other_name".to_string()));
-        let res = confirm.call_with_relate(&mut map);
+        let res = confirm.call_with_relate(&mut map).await;
         assert!(res == false);
     }
 }

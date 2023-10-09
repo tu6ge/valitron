@@ -19,12 +19,15 @@ use valitron::{
 extern crate rocket;
 
 #[get("/?<name>&<second>")]
-fn index(name: String, second: String) -> String {
-    match (name, second).validate_mut(
-        Validator::new()
-            .rule("0", Trim.and(Required))
-            .map(String::from),
-    ) {
+async fn index(name: String, second: String) -> String {
+    match (name, second)
+        .validate_mut(
+            Validator::new()
+                .rule("0", Trim.and(Required))
+                .map(String::from),
+        )
+        .await
+    {
         Ok((name, _)) => format!("Hello, {name}!"),
         Err(_) => format!("name is required"),
     }

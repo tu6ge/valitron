@@ -103,9 +103,10 @@ pub trait RuleExt<M>: private::Sealed {
     where
         R: Rule<(), Message = M>;
 
-    fn custom<F, V>(self, other: F) -> RuleList<M>
+    fn custom<F, V, Fut>(self, other: F) -> RuleList<M>
     where
-        F: for<'a> FnOnce(&'a mut V) -> Result<(), M>,
+        F: for<'a> FnOnce(&'a mut V) -> Fut + Send + 'static + Clone,
+        Fut: Future<Output = Result<(), M>> + Send,
         F: Rule<V, Message = M>,
         V: FromValue + 'static;
 }
@@ -125,9 +126,10 @@ where
         }
     }
 
-    fn custom<F, V>(self, other: F) -> RuleList<M>
+    fn custom<F, V, Fut>(self, other: F) -> RuleList<M>
     where
-        F: for<'a> FnOnce(&'a mut V) -> Result<(), M>,
+        F: for<'a> FnOnce(&'a mut V) -> Fut + Send + 'static + Clone,
+        Fut: Future<Output = Result<(), M>> + Send,
         F: Rule<V, Message = M>,
         V: FromValue + 'static,
     {
@@ -172,9 +174,10 @@ impl<M> RuleList<M> {
         self
     }
 
-    pub fn custom<F, V>(mut self, other: F) -> Self
+    pub fn custom<F, V, Fut>(mut self, other: F) -> Self
     where
-        F: for<'a> FnOnce(&'a mut V) -> Result<(), M>,
+        F: for<'a> FnOnce(&'a mut V) -> Fut + Send + 'static + Clone,
+        Fut: Future<Output = Result<(), M>> + Send,
         F: Rule<V, Message = M>,
         V: FromValue + 'static,
         M: 'static,
@@ -293,9 +296,10 @@ pub trait IntoRuleList<M> {
 }
 
 /// load closure rule
-pub fn custom<F, V, M>(f: F) -> RuleList<M>
+pub fn custom<F, V, M, Fut>(f: F) -> RuleList<M>
 where
-    F: for<'a> FnOnce(&'a mut V) -> Result<(), M>,
+    F: for<'a> FnOnce(&'a mut V) -> Fut + Send + 'static + Clone,
+    Fut: Future<Output = Result<(), M>> + Send,
     F: Rule<V, Message = M>,
     V: FromValue + 'static,
     M: 'static,
@@ -331,16 +335,17 @@ mod test_regster {
     fn register<R: IntoRuleList<M>, M>(_: R) {}
     fn register2<R: IntoRuleList<Message>>(_: R) {}
 
-    fn hander(_val: &mut ValueMap) -> Result<(), Message> {
+    async fn hander(_val: &mut ValueMap) -> Result<(), Message> {
         Ok(())
     }
-    fn hander2(_val: &mut Value) -> Result<(), Message> {
+    async fn hander2(_val: &mut Value) -> Result<(), Message> {
         Ok(())
     }
 
     #[derive(Clone)]
     struct Gt10;
 
+    #[async_trait]
     impl RuleShortcut for Gt10 {
         type Message = u8;
         fn name(&self) -> &'static str {
@@ -349,7 +354,7 @@ mod test_regster {
         fn message(&self) -> Self::Message {
             1
         }
-        fn call(&mut self, data: &mut Value) -> bool {
+        async fn call(&mut self, data: &mut Value) -> bool {
             data > 10_u8
         }
     }
@@ -377,8 +382,8 @@ mod test_regster {
 
         register(custom(hander).and(StartWith("foo")));
         register(custom(hander).and(StartWith("foo")).bail());
-        register(custom(|_a: &mut u8| Ok(())).and(Gt10));
-        register(Gt10.custom(|_a: &mut u8| Ok(())));
+        register(custom(|_a: &mut u8| async { Ok(()) }).and(Gt10));
+        register(Gt10.custom(|_a: &mut u8| async { Ok(()) }));
     }
 }
 

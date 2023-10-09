@@ -1,3 +1,4 @@
+use async_trait::async_trait;
 use serde::Serialize;
 use valitron::{
     available::{Message, Required, StartWith, Trim},
@@ -10,7 +11,8 @@ struct Input {
     num: u8,
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let validator = Validator::new()
         .rule("name", Trim.and(Required).and(StartWith("foo")))
         .map(MyMessage::from)
@@ -25,7 +27,7 @@ fn main() {
         name: "bar".into(),
         num: 9,
     };
-    let res = validator.validate(&input).unwrap_err();
+    let res = validator.validate(&input).await.unwrap_err();
 
     assert_eq!(res.get("name").unwrap()[0], MyMessage::NameStartWith);
     assert_eq!(res.get("num").unwrap()[0], MyMessage::Gt10);
@@ -48,6 +50,7 @@ impl From<Message> for MyMessage {
 #[derive(Clone)]
 struct Gt10;
 
+#[async_trait]
 impl RuleShortcut for Gt10 {
     type Message = MyMessage;
 
@@ -59,7 +62,7 @@ impl RuleShortcut for Gt10 {
         MyMessage::Gt10
     }
 
-    fn call(&mut self, data: &mut Value) -> bool {
+    async fn call(&mut self, data: &mut Value) -> bool {
         data > 10_u8
     }
 }
