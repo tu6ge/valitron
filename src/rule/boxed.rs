@@ -86,8 +86,7 @@ where
     }
 
     fn call(&mut self, data: &mut ValueMap) -> Result<(), M> {
-        //self.handler.call(data).await
-        todo!()
+        self.handler.call(data)
     }
 
     fn name(&self) -> &'static str {
