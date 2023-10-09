@@ -1,5 +1,7 @@
 use std::marker::PhantomData;
 
+use async_trait::async_trait;
+
 use crate::value::ValueMap;
 
 use super::Rule;
@@ -19,8 +21,8 @@ impl<M> ErasedRule<M> {
     pub fn name(&self) -> &'static str {
         self.0.name()
     }
-    pub fn call(&mut self, data: &mut ValueMap) -> Result<(), M> {
-        self.0.call(data)
+    pub async fn call(&mut self, data: &mut ValueMap) -> Result<(), M> {
+        self.0.call(data).await
     }
 
     pub fn map<M2>(self, layer: fn(M) -> M2) -> ErasedRule<M2>
@@ -38,10 +40,11 @@ impl<M> Clone for ErasedRule<M> {
     }
 }
 
-pub trait BoxedRule<M> {
+#[async_trait]
+pub trait BoxedRule<M>: Send {
     fn clone_box(&self) -> Box<dyn BoxedRule<M>>;
 
-    fn call(&mut self, data: &mut ValueMap) -> Result<(), M>;
+    async fn call<'b>(&'b mut self, data: &'b mut ValueMap) -> Result<(), M>;
 
     fn name(&self) -> &'static str;
 }
@@ -75,9 +78,10 @@ where
     }
 }
 
+#[async_trait]
 impl<H, M, T> BoxedRule<M> for RuleIntoBoxed<H, M, T>
 where
-    H: Rule<T, Message = M> + Clone,
+    H: Rule<T, Message = M> + Clone + Send,
     T: 'static,
     M: 'static,
 {
@@ -85,8 +89,8 @@ where
         Box::new(self.clone())
     }
 
-    fn call(&mut self, data: &mut ValueMap) -> Result<(), M> {
-        self.handler.call(data)
+    async fn call<'b>(&'b mut self, data: &'b mut ValueMap) -> Result<(), M> {
+        self.handler.call(data).await
     }
 
     fn name(&self) -> &'static str {
@@ -108,6 +112,7 @@ impl<M, M2> Clone for Map<M, M2> {
     }
 }
 
+#[async_trait]
 impl<M, M2> BoxedRule<M2> for Map<M, M2>
 where
     M: 'static,
@@ -117,8 +122,8 @@ where
         Box::new(self.clone())
     }
 
-    fn call(&mut self, data: &mut ValueMap) -> Result<(), M2> {
-        self.inner.call(data).map_err(self.layer)
+    async fn call<'b>(&'b mut self, data: &'b mut ValueMap) -> Result<(), M2> {
+        self.inner.call(data).await.map_err(self.layer)
     }
 
     fn name(&self) -> &'static str {

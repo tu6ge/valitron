@@ -1,5 +1,6 @@
 //! usage without "full" feature
 
+use async_trait::async_trait;
 use valitron::{RuleShortcut, Validator, Value};
 
 fn main() {
@@ -33,6 +34,7 @@ impl From<MyMessage> for MyMessage2 {
 #[derive(Clone)]
 struct Gt10;
 
+#[async_trait]
 impl RuleShortcut for Gt10 {
     type Message = MyMessage;
     fn name(&self) -> &'static str {
@@ -41,7 +43,7 @@ impl RuleShortcut for Gt10 {
     fn message(&self) -> Self::Message {
         MyMessage::Gt10
     }
-    fn call(&mut self, data: &mut Value) -> bool {
+    async fn call(&mut self, data: &mut Value) -> bool {
         data > 10_u8
     }
 }
@@ -49,6 +51,7 @@ impl RuleShortcut for Gt10 {
 #[derive(Clone)]
 struct Lt20;
 
+#[async_trait]
 impl RuleShortcut for Lt20 {
     type Message = MyMessage2;
     fn name(&self) -> &'static str {
@@ -57,7 +60,7 @@ impl RuleShortcut for Lt20 {
     fn message(&self) -> Self::Message {
         MyMessage2::Lt20
     }
-    fn call(&mut self, data: &mut Value) -> bool {
+    async fn call(&mut self, data: &mut Value) -> bool {
         data < 20_u8
     }
 }

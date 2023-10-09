@@ -35,6 +35,7 @@ use crate::{
 
 #[cfg(feature = "full")]
 use crate::available::Message;
+use async_trait::async_trait;
 pub use field_name::{FieldName, FieldNames};
 pub(crate) use field_name::{IntoFieldName, Parser};
 use serde::{Deserialize, Serialize};
@@ -211,7 +212,7 @@ impl<M> Validator<'_, M> {
     }
 
     /// run validate without modifiable
-    pub fn validate<T>(self, data: T) -> Result<(), ValidatorError<M>>
+    pub async fn validate<T>(self, data: T) -> Result<(), ValidatorError<M>>
     where
         T: Serialize,
     {
@@ -219,7 +220,7 @@ impl<M> Validator<'_, M> {
 
         let mut value_map = ValueMap::new(value);
 
-        let message = self.inner_validate(&mut value_map);
+        let message = self.inner_validate(&mut value_map).await;
 
         if message.is_empty() {
             Ok(())
@@ -229,7 +230,7 @@ impl<M> Validator<'_, M> {
     }
 
     /// run validate with modifiable
-    pub fn validate_mut<'de, T>(self, data: T) -> Result<T, ValidatorError<M>>
+    pub async fn validate_mut<'de, T>(self, data: T) -> Result<T, ValidatorError<M>>
     where
         T: Serialize + serde::de::Deserialize<'de>,
     {
@@ -237,7 +238,7 @@ impl<M> Validator<'_, M> {
 
         let mut value_map = ValueMap::new(value);
 
-        let message = self.inner_validate(&mut value_map);
+        let message = self.inner_validate(&mut value_map).await;
 
         if message.is_empty() {
             Ok(T::deserialize(value_map.value()).unwrap())
@@ -246,7 +247,7 @@ impl<M> Validator<'_, M> {
         }
     }
 
-    fn inner_validate(self, value_map: &mut ValueMap) -> ValidatorError<M> {
+    async fn inner_validate(self, value_map: &mut ValueMap) -> ValidatorError<M> {
         let mut resp_message = ValidatorError::with_capacity(self.rules.len());
 
         let Validator {
@@ -261,7 +262,7 @@ impl<M> Validator<'_, M> {
             }
 
             value_map.index(names);
-            let rule_resp = rules.call(value_map);
+            let rule_resp = rules.call(value_map).await;
             names = value_map.take_index();
 
             let field_msg = rule_resp
@@ -380,30 +381,38 @@ impl<'v, M> Validator<'v, M> {
 }
 
 /// validateable for more types
+#[async_trait]
 pub trait Validatable<M> {
     /// if not change value
-    fn validate(&self, validator: Validator<M>) -> Result<(), ValidatorError<M>>;
+    async fn validate<'v>(&'v self, validator: Validator<'v, M>) -> Result<(), ValidatorError<M>>;
 
     /// if need to change value, e.g. `trim`
-    fn validate_mut<'de>(self, validator: Validator<M>) -> Result<Self, ValidatorError<M>>
+    async fn validate_mut<'de, 'v>(
+        self,
+        validator: Validator<'v, M>,
+    ) -> Result<Self, ValidatorError<M>>
     where
         Self: Sized + Deserialize<'de>;
 }
 
+#[async_trait]
 impl<T, M> Validatable<M> for T
 where
-    T: Serialize,
-    M: 'static,
+    T: Serialize + Sync + Send,
+    M: 'static + Send,
 {
-    fn validate(&self, validator: Validator<M>) -> Result<(), ValidatorError<M>> {
-        validator.validate(self)
+    async fn validate<'v>(&'v self, validator: Validator<'v, M>) -> Result<(), ValidatorError<M>> {
+        validator.validate(self).await
     }
 
-    fn validate_mut<'de>(self, validator: Validator<M>) -> Result<Self, ValidatorError<M>>
+    async fn validate_mut<'de, 'v>(
+        self,
+        validator: Validator<'v, M>,
+    ) -> Result<Self, ValidatorError<M>>
     where
         Self: Sized + Deserialize<'de>,
     {
-        validator.validate_mut(self)
+        validator.validate_mut(self).await
     }
 }
 
