@@ -33,7 +33,7 @@ jobs:
 
   publish:
     needs: [test]
-    if: ${{ github.event_name == 'push' && github.ref_name == 'master'}}
+    if: ${{ github.event_name == 'push' && github.ref_name == 'main'}}
     runs-on: ubuntu-latest
 
     name: 'publish'
