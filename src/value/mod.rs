@@ -135,6 +135,10 @@ impl ValueMap {
         x
     }
 
+    pub(crate) fn as_index(&self) -> &FieldNames {
+        &self.index
+    }
+
     /// get current field value
     pub fn current(&self) -> Option<&Value> {
         self.value.get_with_names(&self.index)

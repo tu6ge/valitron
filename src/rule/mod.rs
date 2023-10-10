@@ -231,9 +231,9 @@ impl<M> RuleList<M> {
     }
 
     #[must_use]
-    pub(crate) fn call_gen_message(self, data: &mut ValueMap) -> Vec<M>
+    pub(crate) fn call_gen_message<M2>(self, data: &mut ValueMap) -> Vec<M2>
     where
-        M: IntoMessage,
+        M2: IntoMessage,
     {
         let RuleList { mut list, .. } = self;
         let mut msg = Vec::with_capacity(list.len());
@@ -241,7 +241,7 @@ impl<M> RuleList<M> {
         for endpoint in list.iter_mut() {
             let _ = endpoint
                 .call(data)
-                .map_err(|_| msg.push(M::into_message(endpoint.name(), data)));
+                .map_err(|_| msg.push(M2::into_message(endpoint.name(), data)));
 
             if self.is_bail && !msg.is_empty() {
                 msg.shrink_to(1);
