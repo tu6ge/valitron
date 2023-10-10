@@ -222,13 +222,7 @@ impl<M> Validator<'_, M> {
 
         let mut value_map = ValueMap::new(value);
 
-        let message = self.inner_validate(&mut value_map);
-
-        if message.is_empty() {
-            Ok(())
-        } else {
-            Err(message)
-        }
+        self.inner_validate(&mut value_map).ok()
     }
 
     /// run validate with modifiable
@@ -242,13 +236,9 @@ impl<M> Validator<'_, M> {
 
         let mut value_map = ValueMap::new(value);
 
-        let message = self.inner_validate(&mut value_map);
-
-        if message.is_empty() {
-            Ok(T::deserialize(value_map.value()).unwrap())
-        } else {
-            Err(message)
-        }
+        self.inner_validate(&mut value_map)
+            .ok()
+            .map(|_| T::deserialize(value_map.value()).unwrap())
     }
 
     fn inner_validate(self, value_map: &mut ValueMap) -> ValidatorError<M> {
@@ -553,6 +543,14 @@ impl<M> ValidatorError<M> {
     /// total length of the message
     pub fn total(&self) -> usize {
         self.message.values().map(|msg| msg.len()).sum()
+    }
+
+    fn ok(self) -> Result<(), Self> {
+        if self.message.is_empty() {
+            Ok(())
+        } else {
+            Err(self)
+        }
     }
 }
 
