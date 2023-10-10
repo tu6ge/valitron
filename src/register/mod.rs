@@ -307,7 +307,7 @@ impl<M> Validator<'_, M> {
         self.rules.get(names)
     }
 
-    fn exit_message(&self, MessageKey { fields, rule }: &MessageKey) {
+    fn exit_message(&self, MessageKey { fields, rule }: &MessageKey) -> bool {
         debug_assert!(
             self.rule_get(fields).is_some(),
             "the field \"{}\" not found in validator",
@@ -318,6 +318,8 @@ impl<M> Validator<'_, M> {
             self.rule_get(fields).unwrap().contains(rule),
             "rule \"{rule}\" is not found in rules"
         );
+
+        true
     }
 }
 
@@ -341,7 +343,7 @@ impl<'v, M> Validator<'v, M> {
         self.message.extend(list.map(|(key_str, v)| {
             let msg_key = panic_on_err!(field_name::parse_message(key_str));
 
-            self.exit_message(&msg_key);
+            debug_assert!(self.exit_message(&msg_key));
 
             (msg_key, v.into())
         }));
