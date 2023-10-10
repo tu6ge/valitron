@@ -232,6 +232,36 @@ impl<M> Validator<'_, M> {
     }
 
     fn inner_validate(self, value_map: &mut ValueMap) -> ValidatorError<M> {
+        fn handle_msg<M>(
+            rules: RuleList<M>,
+            value_map: &mut ValueMap,
+            message: &mut HashMap<MessageKey<'_>, M>,
+        ) -> Vec<M> {
+            rules
+                .call(value_map)
+                .into_iter()
+                .map(|(rule, msg)| {
+                    message
+                        .remove(&MessageKey::new(value_map.as_index().clone(), rule))
+                        .unwrap_or(msg)
+                })
+                .collect()
+        }
+        self.iter_validate(value_map, handle_msg)
+    }
+
+    /// inner creating message by field name and current value.
+    fn inner_validate2<M2>(self, value_map: &mut ValueMap) -> ValidatorError<M2>
+    where
+        M2: IntoMessage,
+    {
+        self.iter_validate(value_map, |rules, data, _| rules.call_gen_message(data))
+    }
+
+    fn iter_validate<F, T>(self, value_map: &mut ValueMap, handle_msg: F) -> ValidatorError<T>
+    where
+        F: Fn(RuleList<M>, &mut ValueMap, &mut HashMap<MessageKey<'_>, M>) -> Vec<T>,
+    {
         let mut resp_message = ValidatorError::with_capacity(self.rules.len());
 
         let Validator {
@@ -246,18 +276,10 @@ impl<M> Validator<'_, M> {
             }
 
             value_map.index(names);
-            let rule_resp = rules.call(value_map);
-            names = value_map.take_index();
 
-            let field_msg = rule_resp
-                .into_iter()
-                .map(
-                    |(rule, msg)| match message.remove(&MessageKey::new(names.clone(), rule)) {
-                        Some(s) => s,
-                        None => msg,
-                    },
-                )
-                .collect();
+            let field_msg = handle_msg(rules, value_map, &mut message);
+
+            names = value_map.take_index();
 
             resp_message.push(names, field_msg);
 
