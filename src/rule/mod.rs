@@ -22,7 +22,10 @@
 
 use std::slice::Iter;
 
-use crate::value::{FromValue, Value, ValueMap};
+use crate::{
+    register::IntoMessage,
+    value::{FromValue, Value, ValueMap},
+};
 
 use self::boxed::{ErasedRule, RuleIntoBoxed};
 
@@ -216,6 +219,29 @@ impl<M> RuleList<M> {
             let _ = endpoint
                 .call(data)
                 .map_err(|e| msg.push((endpoint.name(), e)));
+
+            if self.is_bail && !msg.is_empty() {
+                msg.shrink_to(1);
+                return msg;
+            }
+        }
+
+        msg.shrink_to_fit();
+        msg
+    }
+
+    #[must_use]
+    pub(crate) fn call_gen_message(self, data: &mut ValueMap) -> Vec<M>
+    where
+        M: IntoMessage,
+    {
+        let RuleList { mut list, .. } = self;
+        let mut msg = Vec::with_capacity(list.len());
+
+        for endpoint in list.iter_mut() {
+            let _ = endpoint
+                .call(data)
+                .map_err(|_| msg.push(M::into_message(endpoint.name(), data)));
 
             if self.is_bail && !msg.is_empty() {
                 msg.shrink_to(1);
