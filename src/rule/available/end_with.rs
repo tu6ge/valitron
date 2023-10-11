@@ -45,11 +45,9 @@ impl<T: Debug> Debug for EndsWith<T> {
     }
 }
 
-impl<T> EndsWith<T> {
-    fn name_in(&self) -> &'static str {
-        "end_with"
-    }
+const NAME: &'static str = "end_with";
 
+impl<T> EndsWith<T> {
     pub const fn as_ref(&self) -> EndsWith<&T> {
         let EndsWith(ref t) = self;
         EndsWith(t)
@@ -73,9 +71,7 @@ where
 impl RuleShortcut for EndsWith<&str> {
     type Message = Message;
 
-    fn name(&self) -> &'static str {
-        self.name_in()
-    }
+    const NAME: &'static str = NAME;
 
     fn message(&self) -> Self::Message {
         self.message_in()
@@ -92,9 +88,7 @@ impl RuleShortcut for EndsWith<&str> {
 impl RuleShortcut for EndsWith<String> {
     type Message = Message;
 
-    fn name(&self) -> &'static str {
-        self.name_in()
-    }
+    const NAME: &'static str = NAME;
 
     fn message(&self) -> Self::Message {
         self.message_in()
@@ -111,9 +105,7 @@ impl RuleShortcut for EndsWith<String> {
 impl RuleShortcut for EndsWith<char> {
     type Message = Message;
 
-    fn name(&self) -> &'static str {
-        self.name_in()
-    }
+    const NAME: &'static str = NAME;
 
     fn message(&self) -> Self::Message {
         self.message_in()

@@ -51,12 +51,12 @@ use crate::{RuleShortcut, Value};
 #[derive(Clone, Debug)]
 pub struct Required;
 
+const NAME: &'static str = "required";
+
 impl RuleShortcut for Required {
     type Message = Message;
 
-    fn name(&self) -> &'static str {
-        "required"
-    }
+    const NAME: &'static str = NAME;
 
     fn message(&self) -> Self::Message {
         Message::new(super::MessageKind::Required)

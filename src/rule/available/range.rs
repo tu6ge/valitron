@@ -43,16 +43,14 @@ impl<T: Debug, Num> Debug for Range<T, Num> {
     }
 }
 
+const NAME: &'static str = "range";
+
 impl<T, Num> Range<T, Num> {
     pub fn new(value: T) -> Self {
         Self {
             value,
             _marker: PhantomData,
         }
-    }
-
-    fn name_in(&self) -> &'static str {
-        "range"
     }
 
     fn message_in(&self) -> Message {
@@ -67,12 +65,13 @@ macro_rules! impl_range {
             T: RangeBounds<$ty>,
         {
             type Message = Message;
-            fn name(&self) -> &'static str {
-                self.name_in()
-            }
+
+            const NAME: &'static str = NAME;
+
             fn message(&self) -> Self::Message {
                 self.message_in()
             }
+
             fn call(&mut self, data: &mut Value) -> bool {
                 match data {
                     Value::$val(n) => self.value.contains(n),
@@ -98,12 +97,13 @@ where
     T: RangeBounds<f32> + Clone + 'static,
 {
     type Message = Message;
-    fn name(&self) -> &'static str {
-        self.name_in()
-    }
+
+    const NAME: &'static str = NAME;
+
     fn message(&self) -> Self::Message {
         self.message_in()
     }
+
     fn call(&mut self, data: &mut Value) -> bool {
         match data {
             Value::Float32(f) => self.value.contains(f.as_ref()),
@@ -117,12 +117,13 @@ where
     T: RangeBounds<f64> + Clone + 'static,
 {
     type Message = Message;
-    fn name(&self) -> &'static str {
-        self.name_in()
-    }
+
+    const NAME: &'static str = NAME;
+
     fn message(&self) -> Self::Message {
         self.message_in()
     }
+
     fn call(&mut self, data: &mut Value) -> bool {
         match data {
             Value::Float64(f) => self.value.contains(f.as_ref()),

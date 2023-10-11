@@ -51,9 +51,7 @@ struct Gt10;
 impl RuleShortcut for Gt10 {
     type Message = MyMessage;
 
-    fn name(&self) -> &'static str {
-        "gt10"
-    }
+    const NAME: &'static str = "gt10";
 
     fn message(&self) -> Self::Message {
         MyMessage::Gt10

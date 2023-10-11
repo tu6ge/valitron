@@ -27,8 +27,12 @@ use super::Message;
 #[derive(Clone)]
 pub struct Trim;
 
+const NAME: &'static str = "trim";
+
 impl RuleShortcut for Trim {
     type Message = Message;
+
+    const NAME: &'static str = NAME;
 
     fn call(&mut self, data: &mut crate::Value) -> bool {
         match data {
@@ -41,10 +45,6 @@ impl RuleShortcut for Trim {
 
     fn message(&self) -> Self::Message {
         Message::new(super::MessageKind::Trim)
-    }
-
-    fn name(&self) -> &'static str {
-        "trim"
     }
 }
 
