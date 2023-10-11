@@ -48,11 +48,9 @@ impl<T: Debug> Debug for Confirm<T> {
     }
 }
 
-impl<T> Confirm<T> {
-    fn name_in(&self) -> &'static str {
-        "confirm"
-    }
+const NAME: &'static str = "confirm";
 
+impl<T> Confirm<T> {
     pub const fn as_ref(&self) -> Confirm<&T> {
         let Confirm(ref t) = self;
         Confirm(t)
@@ -84,9 +82,7 @@ where
 impl RuleShortcut for Confirm<String> {
     type Message = Message;
 
-    fn name(&self) -> &'static str {
-        self.name_in()
-    }
+    const NAME: &'static str = NAME;
 
     fn message(&self) -> Self::Message {
         self.message_in()
@@ -106,9 +102,7 @@ impl RuleShortcut for Confirm<String> {
 impl RuleShortcut for Confirm<&str> {
     type Message = Message;
 
-    fn name(&self) -> &'static str {
-        self.name_in()
-    }
+    const NAME: &'static str = NAME;
 
     fn message(&self) -> Self::Message {
         self.message_in()

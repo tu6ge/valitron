@@ -90,7 +90,7 @@ where
     }
 
     fn name(&self) -> &'static str {
-        self.handler.name()
+        H::THE_NAME
     }
 }
 

@@ -45,11 +45,9 @@ impl<T: Debug> Debug for Contains<T> {
     }
 }
 
-impl<T> Contains<T> {
-    fn name_in(&self) -> &'static str {
-        "contains"
-    }
+const NAME: &'static str = "contains";
 
+impl<T> Contains<T> {
     pub const fn as_ref(&self) -> Contains<&T> {
         let Contains(ref t) = self;
         Contains(t)
@@ -73,9 +71,7 @@ where
 impl RuleShortcut for Contains<&str> {
     type Message = Message;
 
-    fn name(&self) -> &'static str {
-        self.name_in()
-    }
+    const NAME: &'static str = NAME;
 
     fn message(&self) -> Self::Message {
         self.message_in()
@@ -92,9 +88,7 @@ impl RuleShortcut for Contains<&str> {
 impl RuleShortcut for Contains<String> {
     type Message = Message;
 
-    fn name(&self) -> &'static str {
-        self.name_in()
-    }
+    const NAME: &'static str = NAME;
 
     fn message(&self) -> Self::Message {
         self.message_in()
@@ -111,9 +105,7 @@ impl RuleShortcut for Contains<String> {
 impl RuleShortcut for Contains<char> {
     type Message = Message;
 
-    fn name(&self) -> &'static str {
-        self.name_in()
-    }
+    const NAME: &'static str = NAME;
 
     fn message(&self) -> Self::Message {
         self.message_in()

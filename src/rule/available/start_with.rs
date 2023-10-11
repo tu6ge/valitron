@@ -52,11 +52,9 @@ impl<T: Debug> Debug for StartWith<T> {
     }
 }
 
-impl<T> StartWith<T> {
-    fn name_in(&self) -> &'static str {
-        "start_with"
-    }
+const NAME: &'static str = "start_with";
 
+impl<T> StartWith<T> {
     pub const fn as_ref(&self) -> StartWith<&T> {
         let StartWith(ref t) = self;
         StartWith(t)
@@ -80,9 +78,7 @@ where
 impl RuleShortcut for StartWith<&str> {
     type Message = Message;
 
-    fn name(&self) -> &'static str {
-        self.name_in()
-    }
+    const NAME: &'static str = NAME;
 
     fn message(&self) -> Self::Message {
         self.message_in()
@@ -99,9 +95,7 @@ impl RuleShortcut for StartWith<&str> {
 impl RuleShortcut for StartWith<String> {
     type Message = Message;
 
-    fn name(&self) -> &'static str {
-        self.name_in()
-    }
+    const NAME: &'static str = NAME;
 
     fn message(&self) -> Self::Message {
         self.message_in()
@@ -118,9 +112,7 @@ impl RuleShortcut for StartWith<String> {
 impl RuleShortcut for StartWith<char> {
     type Message = Message;
 
-    fn name(&self) -> &'static str {
-        self.name_in()
-    }
+    const NAME: &'static str = NAME;
 
     fn message(&self) -> Self::Message {
         self.message_in()

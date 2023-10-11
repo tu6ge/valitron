@@ -8,9 +8,7 @@
 //! impl RuleShortcut for Gt10 {
 //!     type Message = &'static str;
 //!
-//!     fn name(&self) -> &'static str {
-//!         "gt10"
-//!     }
+//!     const NAME: &'static str = "gt10";
 //!
 //!     fn message(&self) -> Self::Message {
 //!         "the number should be greater than 10"
@@ -46,9 +44,7 @@ mod test;
 /// impl Rule<()> for Gt10 {
 ///     type Message = &'static str;
 ///
-///     fn name(&self) -> &'static str {
-///         "gt10"
-///     }
+///     const THE_NAME: &'static str = "gt10";
 ///
 ///     fn call(&mut self, data: &mut ValueMap) -> Result<(), Self::Message> {
 ///         if data.current().unwrap() > &10 {
@@ -70,7 +66,7 @@ pub trait Rule<T>: 'static + Sized + Clone {
     /// Named rule type, used to distinguish between different rules.
     ///
     /// allow `a-z` | `A-Z` | `0-9` | `_` composed string, and not start with `0-9`
-    fn name(&self) -> &'static str;
+    const THE_NAME: &'static str;
 
     /// Rule specific implementation, data is gived type all field's value, and current field index.
     ///
@@ -337,9 +333,9 @@ mod test_regster {
 
     impl RuleShortcut for Gt10 {
         type Message = u8;
-        fn name(&self) -> &'static str {
-            "gt10"
-        }
+
+        const NAME: &'static str = "gt10";
+
         fn message(&self) -> Self::Message {
             1
         }
@@ -350,6 +346,9 @@ mod test_regster {
 
     #[test]
     fn test() {
+        assert_eq!(Gt10::NAME, "gt10");
+        assert_eq!(Confirm::<&str>::NAME, "confirm");
+
         register(Required);
         register(Required.custom(hander2));
         register(Required.custom(hander));
@@ -384,7 +383,7 @@ pub trait RuleShortcut {
     /// Named rule type, used to distinguish different rules
     ///
     /// allow `a-z` | `A-Z` | `0-9` | `_` composed string, and not start with `0-9`
-    fn name(&self) -> &'static str;
+    const NAME: &'static str;
 
     /// Default rule error message, when validate fails, return the message to user
     fn message(&self) -> Self::Message;
@@ -410,9 +409,8 @@ where
 {
     type Message = T::Message;
 
-    fn name(&self) -> &'static str {
-        self.name()
-    }
+    const THE_NAME: &'static str = T::NAME;
+
     /// Rule specific implementation, data is gived type all field's value, and current field index.
     fn call(&mut self, data: &mut ValueMap) -> Result<(), Self::Message> {
         if self.call_with_relate(data) {
@@ -429,11 +427,11 @@ where
     V: FromValue,
 {
     type Message = M;
+
+    const THE_NAME: &'static str = "custom";
+
     fn call(&mut self, data: &mut ValueMap) -> Result<(), Self::Message> {
         let val = V::from_value(data).expect("argument type can not be matched");
         self.clone()(val)
-    }
-    fn name(&self) -> &'static str {
-        "custom"
     }
 }

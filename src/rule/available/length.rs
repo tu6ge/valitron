@@ -55,11 +55,9 @@ impl<T: Debug> Debug for Length<T> {
     }
 }
 
-impl<T> Length<T> {
-    fn name_in(&self) -> &'static str {
-        "length"
-    }
+const NAME: &'static str = "length";
 
+impl<T> Length<T> {
     fn message_in(&self) -> Message {
         Message::new(super::MessageKind::Length)
     }
@@ -80,9 +78,9 @@ where
     T: RangeBounds<usize>,
 {
     type Message = Message;
-    fn name(&self) -> &'static str {
-        self.name_in()
-    }
+
+    const NAME: &'static str = NAME;
+
     fn message(&self) -> Self::Message {
         self.message_in()
     }
