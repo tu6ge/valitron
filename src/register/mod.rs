@@ -91,9 +91,14 @@ mod tests;
 ///     }
 /// }
 /// ```
-pub struct Validator<'v, M> {
+pub type Validator<'v, M> = InnerValidator<M, HashMap<MessageKey<'v>, M>>;
+
+pub type ValidatorRefine<M> = InnerValidator<M, ()>;
+
+#[doc(hidden)]
+pub struct InnerValidator<M, Msg> {
     rules: HashMap<FieldNames, RuleList<M>>,
-    message: HashMap<MessageKey<'v>, M>,
+    message: Msg,
     is_bail: bool,
 }
 
@@ -107,12 +112,6 @@ impl<M> Default for Validator<'_, M> {
     }
 }
 
-impl<M> Validator<'_, M> {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-
 macro_rules! panic_on_err {
     ($expr:expr) => {
         match $expr {
@@ -122,7 +121,7 @@ macro_rules! panic_on_err {
     };
 }
 
-impl<M> Validator<'_, M> {
+impl<M, Msg> InnerValidator<M, Msg> {
     /// # Register rules
     ///
     /// **Feild support multiple formats:**
@@ -201,6 +200,63 @@ impl<M> Validator<'_, M> {
         self
     }
 
+    fn exist_field(&self, value: &Value) -> bool {
+        for (field, _) in self.rules.iter() {
+            if value.get_with_names(field).is_none() {
+                panic!("field `{}` is not found", field.as_str());
+            }
+        }
+
+        true
+    }
+
+    #[inline(always)]
+    fn rule_get(&self, names: &FieldNames) -> Option<&RuleList<M>> {
+        self.rules.get(names)
+    }
+
+    fn iter_validate<F, T>(self, value_map: &mut ValueMap, handle_msg: F) -> ValidatorError<T>
+    where
+        F: Fn(RuleList<M>, &mut ValueMap, &mut Msg) -> Vec<T>,
+    {
+        let mut resp_message = ValidatorError::with_capacity(self.rules.len());
+
+        let Self {
+            rules,
+            mut message,
+            is_bail,
+        } = self;
+
+        for (mut names, mut rules) in rules.into_iter() {
+            if is_bail {
+                rules.set_bail();
+            }
+
+            value_map.index(names);
+
+            let field_msg = handle_msg(rules, value_map, &mut message);
+
+            names = value_map.take_index();
+
+            resp_message.push(names, field_msg);
+
+            if is_bail && !resp_message.is_empty() {
+                resp_message.shrink_to(1);
+                return resp_message;
+            }
+        }
+
+        resp_message.shrink_to_fit();
+
+        resp_message
+    }
+}
+
+impl<M> Validator<'_, M> {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
     /// run validate without modifiable
     pub fn validate<T>(self, data: T) -> Result<(), ValidatorError<M>>
     where
@@ -250,65 +306,6 @@ impl<M> Validator<'_, M> {
         self.iter_validate(value_map, handle_msg)
     }
 
-    /// inner creating message by field name and current value.
-    fn inner_validate2<M2>(self, value_map: &mut ValueMap) -> ValidatorError<M2>
-    where
-        M2: IntoMessage,
-    {
-        self.iter_validate(value_map, |rules, data, _| rules.call_gen_message(data))
-    }
-
-    fn iter_validate<F, T>(self, value_map: &mut ValueMap, handle_msg: F) -> ValidatorError<T>
-    where
-        F: Fn(RuleList<M>, &mut ValueMap, &mut HashMap<MessageKey<'_>, M>) -> Vec<T>,
-    {
-        let mut resp_message = ValidatorError::with_capacity(self.rules.len());
-
-        let Validator {
-            rules,
-            mut message,
-            is_bail,
-        } = self;
-
-        for (mut names, mut rules) in rules.into_iter() {
-            if is_bail {
-                rules.set_bail();
-            }
-
-            value_map.index(names);
-
-            let field_msg = handle_msg(rules, value_map, &mut message);
-
-            names = value_map.take_index();
-
-            resp_message.push(names, field_msg);
-
-            if is_bail && !resp_message.is_empty() {
-                resp_message.shrink_to(1);
-                return resp_message;
-            }
-        }
-
-        resp_message.shrink_to_fit();
-
-        resp_message
-    }
-
-    fn exist_field(&self, value: &Value) -> bool {
-        for (field, _) in self.rules.iter() {
-            if value.get_with_names(field).is_none() {
-                panic!("field `{}` is not found", field.as_str());
-            }
-        }
-
-        true
-    }
-
-    #[inline(always)]
-    fn rule_get(&self, names: &FieldNames) -> Option<&RuleList<M>> {
-        self.rules.get(names)
-    }
-
     fn exit_message(&self, MessageKey { fields, rule }: &MessageKey) -> bool {
         debug_assert!(
             self.rule_get(fields).is_some(),
@@ -322,6 +319,56 @@ impl<M> Validator<'_, M> {
         );
 
         true
+    }
+}
+
+impl<M> ValidatorRefine<M> {
+    pub fn new() -> Self {
+        Self {
+            rules: HashMap::new(),
+            message: (),
+            is_bail: Default::default(),
+        }
+    }
+
+    /// run validate without modifiable
+    pub fn validate<T, M2>(self, data: T) -> Result<(), ValidatorError<M2>>
+    where
+        T: Serialize,
+        M2: IntoMessage,
+    {
+        let value = data.serialize(Serializer).unwrap();
+
+        debug_assert!(self.exist_field(&value));
+
+        let mut value_map = ValueMap::new(value);
+
+        self.inner_validate(&mut value_map).ok()
+    }
+
+    /// run validate with modifiable
+    pub fn validate_mut<'de, T, M2>(self, data: T) -> Result<T, ValidatorError<M2>>
+    where
+        T: Serialize + serde::de::Deserialize<'de>,
+        M2: IntoMessage,
+    {
+        let value = data.serialize(Serializer).unwrap();
+
+        debug_assert!(self.exist_field(&value));
+
+        let mut value_map = ValueMap::new(value);
+
+        self.inner_validate(&mut value_map)
+            .ok()
+            .map(|_| T::deserialize(value_map.value()).unwrap())
+    }
+
+    /// inner creating message by field name and current value.
+    fn inner_validate<M2>(self, value_map: &mut ValueMap) -> ValidatorError<M2>
+    where
+        M2: IntoMessage,
+    {
+        self.iter_validate(value_map, |rules, data, _| rules.call_gen_message(data))
     }
 }
 
@@ -533,7 +580,7 @@ impl<M> ValidatorError<M> {
         self.message.iter_mut()
     }
 
-    /// ValidatorError<M1> convert to ValidatorError<M2>
+    /// `ValidatorError<M1>` convert to `ValidatorError<M2>`
     pub fn map<M2>(self, f: fn(M) -> M2) -> ValidatorError<M2> {
         ValidatorError {
             message: self
@@ -599,4 +646,11 @@ impl<'key> MessageKey<'key> {
     pub(crate) fn new(fields: FieldNames, rule: &'key str) -> Self {
         Self { fields, rule }
     }
+}
+
+#[test]
+#[cfg(feature = "full")]
+fn test_refine() {
+    use crate::available::Required;
+    let validate = ValidatorRefine::new().rule("foo", Required);
 }

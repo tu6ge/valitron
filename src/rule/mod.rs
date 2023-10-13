@@ -239,9 +239,10 @@ impl<M> RuleList<M> {
         let mut msg = Vec::with_capacity(list.len());
 
         for endpoint in list.iter_mut() {
-            let _ = endpoint
-                .call(data)
-                .map_err(|_| msg.push(M2::into_message(endpoint.name(), data)));
+            let _ = endpoint.call(data).map_err(|_| {
+                let value = data.current().unwrap();
+                msg.push(M2::into_message(endpoint.name(), data.as_index(), value))
+            });
 
             if self.is_bail && !msg.is_empty() {
                 msg.shrink_to(1);
