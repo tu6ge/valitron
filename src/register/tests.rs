@@ -61,7 +61,7 @@ fn multi_messages() {
         available::{Message, Required},
         RuleExt,
     };
-    let mut vali = Validator::<Message>::new()
+    let mut vali = Validator::new()
         .rule("field1", Required)
         .rule("field2", Required)
         .message([("field1.required", "bar")]);

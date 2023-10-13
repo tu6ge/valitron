@@ -91,21 +91,11 @@ mod tests;
 ///     }
 /// }
 /// ```
-pub struct Validator<'v, M = DefaultMessage> {
+pub struct Validator<'v, M> {
     rules: HashMap<FieldNames, RuleList<M>>,
     message: HashMap<MessageKey<'v>, M>,
     is_bail: bool,
 }
-
-/// default message is `Message`
-#[cfg_attr(docsrs, doc(cfg(feature = "full")))]
-#[cfg(feature = "full")]
-type DefaultMessage = Message;
-
-/// default message is `String`
-#[cfg_attr(docsrs, doc(cfg(not(feature = "full"))))]
-#[cfg(not(feature = "full"))]
-type DefaultMessage = String;
 
 impl<M> Default for Validator<'_, M> {
     fn default() -> Self {

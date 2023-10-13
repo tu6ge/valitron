@@ -3,7 +3,7 @@
 use valitron::{RuleShortcut, Validator, Value};
 
 fn main() {
-    let validator = Validator::<MyMessage>::new()
+    let validator = Validator::new()
         .rule("num", Gt10)
         .message([("num.gt10", MyMessage::Gt10)]);
 
