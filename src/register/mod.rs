@@ -96,9 +96,9 @@ pub type Validator<'v, M> = InnerValidator<M, HashMap<MessageKey<'v>, M>>;
 pub type ValidatorRefine<M> = InnerValidator<M, ()>;
 
 #[doc(hidden)]
-pub struct InnerValidator<M, Msg> {
+pub struct InnerValidator<M, List> {
     rules: HashMap<FieldNames, RuleList<M>>,
-    message: Msg,
+    message: List,
     is_bail: bool,
 }
 
@@ -121,7 +121,7 @@ macro_rules! panic_on_err {
     };
 }
 
-impl<M, Msg> InnerValidator<M, Msg> {
+impl<M, List> InnerValidator<M, List> {
     /// # Register rules
     ///
     /// **Feild support multiple formats:**
@@ -217,7 +217,7 @@ impl<M, Msg> InnerValidator<M, Msg> {
 
     fn iter_validate<F, T>(self, value_map: &mut ValueMap, handle_msg: F) -> ValidatorError<T>
     where
-        F: Fn(RuleList<M>, &mut ValueMap, &mut Msg) -> Vec<T>,
+        F: Fn(RuleList<M>, &mut ValueMap, &mut List) -> Vec<T>,
     {
         let mut resp_message = ValidatorError::with_capacity(self.rules.len());
 
@@ -447,17 +447,17 @@ impl<'v, M> Validator<'v, M> {
 }
 
 /// validateable for more types
-pub trait Validatable<M> {
+pub trait Validatable<V, E> {
     /// if not change value
-    fn validate(&self, validator: Validator<M>) -> Result<(), ValidatorError<M>>;
+    fn validate(&self, validator: V) -> Result<(), E>;
 
     /// if need to change value, e.g. `trim`
-    fn validate_mut<'de>(self, validator: Validator<M>) -> Result<Self, ValidatorError<M>>
+    fn validate_mut<'de>(self, validator: V) -> Result<Self, E>
     where
         Self: Deserialize<'de>;
 }
 
-impl<T, M> Validatable<M> for T
+impl<T, M> Validatable<Validator<'_, M>, ValidatorError<M>> for T
 where
     T: Serialize,
     M: 'static,
@@ -467,6 +467,24 @@ where
     }
 
     fn validate_mut<'de>(self, validator: Validator<M>) -> Result<Self, ValidatorError<M>>
+    where
+        Self: Deserialize<'de>,
+    {
+        validator.validate_mut(self)
+    }
+}
+
+impl<T, M, M2> Validatable<ValidatorRefine<M>, ValidatorError<M2>> for T
+where
+    T: Serialize,
+    M: 'static,
+    M2: IntoMessage,
+{
+    fn validate(&self, validator: ValidatorRefine<M>) -> Result<(), ValidatorError<M2>> {
+        validator.validate(self)
+    }
+
+    fn validate_mut<'de>(self, validator: ValidatorRefine<M>) -> Result<Self, ValidatorError<M2>>
     where
         Self: Deserialize<'de>,
     {
