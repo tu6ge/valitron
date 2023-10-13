@@ -34,8 +34,6 @@ use crate::{
     Value,
 };
 
-#[cfg(feature = "full")]
-use crate::available::Message;
 pub use field_name::{FieldName, FieldNames};
 pub(crate) use field_name::{IntoFieldName, Parser};
 use serde::{Deserialize, Serialize};
