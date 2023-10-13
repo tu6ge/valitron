@@ -121,137 +121,6 @@ macro_rules! panic_on_err {
     };
 }
 
-impl<M, List> InnerValidator<M, List> {
-    /// # Register rules
-    ///
-    /// **Feild support multiple formats:**
-    /// - `field1` used to matching struct field
-    /// - `0`,`1`.. used to matching tuple item or tuple struct field
-    /// - `[0]`,`[1]` used to matching array item
-    /// - `[foo]` used to matching struct variant, e.g. `enum Foo{ Color { r: u8, g: u8, b: u8 } }`
-    ///
-    /// fields support nest:
-    /// - `field1.0`
-    /// - `0.color`
-    /// - `[12].1`
-    /// - `foo.1[color]`
-    /// - more combine
-    ///
-    /// fields's BNF:
-    /// ```bnf
-    /// fields                 ::= <tuple_index>
-    ///                          | <array_index>
-    ///                          | <ident>
-    ///                          | <struct_variant_index>
-    ///                          | <fields> '.' <tuple_index>
-    ///                          | <fields> '.' <ident>
-    ///                          | <fields> <array_index>
-    ///                          | <fields> <struct_variant_index>
-    /// tuple_index            ::= <u8>
-    /// array_index            ::= '[' <usize> ']'
-    /// struct_variant_index   ::= '[' <ident> ']'
-    /// ```
-    ///
-    /// **Rule also support multiple formats:**
-    /// - `RuleFoo`
-    /// - `RuleFoo.and(RuleBar)` combineable
-    /// - `custom(handler)` closure usage
-    /// - `RuleFoo.custom(handler)` type and closure
-    /// - `custom(handler).and(RuleFoo)` closure and type
-    /// - `RuleFoo.and(RuleBar).bail()` when first validate error, immediately return error with one message.
-    ///
-    /// *Available Rules*
-    /// - [`Required`]
-    /// - [`StartWith`]
-    /// - [`Confirm`]
-    /// - [`Trim`]
-    /// - [`Range`]
-    /// - customizable
-    ///
-    /// # Panic
-    ///
-    /// - Field format error will be panic
-    /// - Invalid rule name will be panic
-    ///
-    /// [`Required`]: crate::available::required
-    /// [`StartWith`]: crate::available::start_with
-    /// [`Confirm`]: crate::available::confirm
-    /// [`Trim`]: crate::available::trim
-    /// [`Range`]: crate::available::range
-    pub fn rule<F, R>(mut self, field: F, rule: R) -> Self
-    where
-        F: IntoFieldName,
-        R: IntoRuleList<M>,
-    {
-        let names = panic_on_err!(field.into_field());
-        let mut rules = rule.into_list();
-
-        debug_assert!(rules.valid_name(), "invalid rule name");
-
-        self.rules
-            .entry(names)
-            .and_modify(|list| list.merge(&mut rules))
-            .or_insert(rules);
-        self
-    }
-    /// when first validate error is encountered, right away return Err(message).
-    pub fn bail(mut self) -> Self {
-        self.is_bail = true;
-        self
-    }
-
-    fn exist_field(&self, value: &Value) -> bool {
-        for (field, _) in self.rules.iter() {
-            if value.get_with_names(field).is_none() {
-                panic!("field `{}` is not found", field.as_str());
-            }
-        }
-
-        true
-    }
-
-    #[inline(always)]
-    fn rule_get(&self, names: &FieldNames) -> Option<&RuleList<M>> {
-        self.rules.get(names)
-    }
-
-    fn iter_validate<F, T>(self, value_map: &mut ValueMap, handle_msg: F) -> ValidatorError<T>
-    where
-        F: Fn(RuleList<M>, &mut ValueMap, &mut List) -> Vec<T>,
-    {
-        let mut resp_message = ValidatorError::with_capacity(self.rules.len());
-
-        let Self {
-            rules,
-            mut message,
-            is_bail,
-        } = self;
-
-        for (mut names, mut rules) in rules.into_iter() {
-            if is_bail {
-                rules.set_bail();
-            }
-
-            value_map.index(names);
-
-            let field_msg = handle_msg(rules, value_map, &mut message);
-
-            names = value_map.take_index();
-
-            resp_message.push(names, field_msg);
-
-            if is_bail && !resp_message.is_empty() {
-                resp_message.shrink_to(1);
-                return resp_message;
-            }
-        }
-
-        resp_message.shrink_to_fit();
-
-        resp_message
-    }
-}
-
 impl<M> Validator<'_, M> {
     pub fn new() -> Self {
         Self::default()
@@ -443,6 +312,137 @@ impl<'v, M> Validator<'v, M> {
                 .collect(),
             is_bail: self.is_bail,
         }
+    }
+}
+
+impl<M, List> InnerValidator<M, List> {
+    /// # Register rules
+    ///
+    /// **Feild support multiple formats:**
+    /// - `field1` used to matching struct field
+    /// - `0`,`1`.. used to matching tuple item or tuple struct field
+    /// - `[0]`,`[1]` used to matching array item
+    /// - `[foo]` used to matching struct variant, e.g. `enum Foo{ Color { r: u8, g: u8, b: u8 } }`
+    ///
+    /// fields support nest:
+    /// - `field1.0`
+    /// - `0.color`
+    /// - `[12].1`
+    /// - `foo.1[color]`
+    /// - more combine
+    ///
+    /// fields's BNF:
+    /// ```bnf
+    /// fields                 ::= <tuple_index>
+    ///                          | <array_index>
+    ///                          | <ident>
+    ///                          | <struct_variant_index>
+    ///                          | <fields> '.' <tuple_index>
+    ///                          | <fields> '.' <ident>
+    ///                          | <fields> <array_index>
+    ///                          | <fields> <struct_variant_index>
+    /// tuple_index            ::= <u8>
+    /// array_index            ::= '[' <usize> ']'
+    /// struct_variant_index   ::= '[' <ident> ']'
+    /// ```
+    ///
+    /// **Rule also support multiple formats:**
+    /// - `RuleFoo`
+    /// - `RuleFoo.and(RuleBar)` combineable
+    /// - `custom(handler)` closure usage
+    /// - `RuleFoo.custom(handler)` type and closure
+    /// - `custom(handler).and(RuleFoo)` closure and type
+    /// - `RuleFoo.and(RuleBar).bail()` when first validate error, immediately return error with one message.
+    ///
+    /// *Available Rules*
+    /// - [`Required`]
+    /// - [`StartWith`]
+    /// - [`Confirm`]
+    /// - [`Trim`]
+    /// - [`Range`]
+    /// - customizable
+    ///
+    /// # Panic
+    ///
+    /// - Field format error will be panic
+    /// - Invalid rule name will be panic
+    ///
+    /// [`Required`]: crate::available::required
+    /// [`StartWith`]: crate::available::start_with
+    /// [`Confirm`]: crate::available::confirm
+    /// [`Trim`]: crate::available::trim
+    /// [`Range`]: crate::available::range
+    pub fn rule<F, R>(mut self, field: F, rule: R) -> Self
+    where
+        F: IntoFieldName,
+        R: IntoRuleList<M>,
+    {
+        let names = panic_on_err!(field.into_field());
+        let mut rules = rule.into_list();
+
+        debug_assert!(rules.valid_name(), "invalid rule name");
+
+        self.rules
+            .entry(names)
+            .and_modify(|list| list.merge(&mut rules))
+            .or_insert(rules);
+        self
+    }
+    /// when first validate error is encountered, right away return Err(message).
+    pub fn bail(mut self) -> Self {
+        self.is_bail = true;
+        self
+    }
+
+    fn exist_field(&self, value: &Value) -> bool {
+        for (field, _) in self.rules.iter() {
+            if value.get_with_names(field).is_none() {
+                panic!("field `{}` is not found", field.as_str());
+            }
+        }
+
+        true
+    }
+
+    #[inline(always)]
+    fn rule_get(&self, names: &FieldNames) -> Option<&RuleList<M>> {
+        self.rules.get(names)
+    }
+
+    fn iter_validate<F, T>(self, value_map: &mut ValueMap, handle_msg: F) -> ValidatorError<T>
+    where
+        F: Fn(RuleList<M>, &mut ValueMap, &mut List) -> Vec<T>,
+    {
+        let mut resp_message = ValidatorError::with_capacity(self.rules.len());
+
+        let Self {
+            rules,
+            mut message,
+            is_bail,
+        } = self;
+
+        for (mut names, mut rules) in rules.into_iter() {
+            if is_bail {
+                rules.set_bail();
+            }
+
+            value_map.index(names);
+
+            let field_msg = handle_msg(rules, value_map, &mut message);
+
+            names = value_map.take_index();
+
+            resp_message.push(names, field_msg);
+
+            if is_bail && !resp_message.is_empty() {
+                resp_message.shrink_to(1);
+                return resp_message;
+            }
+        }
+
+        resp_message.shrink_to_fit();
+
+        resp_message
     }
 }
 
