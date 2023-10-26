@@ -93,6 +93,12 @@ mod tests;
 /// ```
 pub type Validator<'v, M> = InnerValidator<M, HashMap<MessageKey<'v>, M>>;
 
+/// # A validator for build messages
+/// build message with rule name, field name and value
+///
+/// *message need to implement [`IntoMessage`]*
+///
+/// [`IntoMessage`]: message::IntoMessage
 pub type ValidatorRefine<M> = InnerValidator<M, ()>;
 
 #[doc(hidden)]
@@ -100,16 +106,6 @@ pub struct InnerValidator<M, List> {
     rules: HashMap<FieldNames, RuleList<M>>,
     message: List,
     is_bail: bool,
-}
-
-impl<M> Default for Validator<'_, M> {
-    fn default() -> Self {
-        Self {
-            rules: HashMap::new(),
-            message: HashMap::new(),
-            is_bail: false,
-        }
-    }
 }
 
 macro_rules! panic_on_err {
@@ -193,11 +189,7 @@ impl<M> Validator<'_, M> {
 
 impl<M> ValidatorRefine<M> {
     pub fn new() -> Self {
-        Self {
-            rules: HashMap::new(),
-            message: (),
-            is_bail: Default::default(),
-        }
+        Self::default()
     }
 
     /// run validate without modifiable
@@ -315,6 +307,19 @@ impl<'v, M> Validator<'v, M> {
     }
 }
 
+impl<M, List> Default for InnerValidator<M, List>
+where
+    List: Default,
+{
+    fn default() -> Self {
+        Self {
+            rules: HashMap::new(),
+            message: List::default(),
+            is_bail: false,
+        }
+    }
+}
+
 impl<M, List> InnerValidator<M, List> {
     /// # Register rules
     ///
@@ -388,6 +393,7 @@ impl<M, List> InnerValidator<M, List> {
             .or_insert(rules);
         self
     }
+
     /// when first validate error is encountered, right away return Err(message).
     pub fn bail(mut self) -> Self {
         self.is_bail = true;
@@ -443,6 +449,17 @@ impl<M, List> InnerValidator<M, List> {
         resp_message.shrink_to_fit();
 
         resp_message
+    }
+}
+
+impl<M> From<Validator<'_, M>> for ValidatorRefine<M> {
+    fn from(value: Validator<'_, M>) -> Self {
+        let Validator { rules, is_bail, .. } = value;
+        Self {
+            rules,
+            message: (),
+            is_bail,
+        }
     }
 }
 
