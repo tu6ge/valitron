@@ -154,7 +154,11 @@ primitive_ord!(Char(char));
 impl PartialEq<Value> for f32 {
     fn eq(&self, other: &Value) -> bool {
         if let Value::Float32(Float32(f)) = other {
-            self == f
+            if self.is_finite() && f.is_finite() {
+                self == f
+            } else {
+                false
+            }
         } else {
             false
         }
@@ -164,7 +168,11 @@ impl PartialEq<Value> for f32 {
 impl PartialEq<f32> for Value {
     fn eq(&self, other: &f32) -> bool {
         if let Value::Float32(Float32(f)) = self {
-            f == other
+            if f.is_finite() && other.is_finite() {
+                f == other
+            } else {
+                false
+            }
         } else {
             false
         }
@@ -174,7 +182,11 @@ impl PartialEq<f32> for Value {
 impl PartialEq<&Value> for f32 {
     fn eq(&self, other: &&Value) -> bool {
         if let Value::Float32(Float32(f)) = other {
-            self == f
+            if self.is_finite() && f.is_finite() {
+                self == f
+            } else {
+                false
+            }
         } else {
             false
         }
@@ -184,7 +196,11 @@ impl PartialEq<&Value> for f32 {
 impl PartialEq<f32> for &Value {
     fn eq(&self, other: &f32) -> bool {
         if let Value::Float32(Float32(f)) = self {
-            f == other
+            if f.is_finite() && other.is_finite() {
+                f == other
+            } else {
+                false
+            }
         } else {
             false
         }
@@ -193,7 +209,11 @@ impl PartialEq<f32> for &Value {
 impl PartialEq<&mut Value> for f32 {
     fn eq(&self, other: &&mut Value) -> bool {
         if let Value::Float32(Float32(f)) = other {
-            self == f
+            if self.is_finite() && f.is_finite() {
+                self == f
+            } else {
+                false
+            }
         } else {
             false
         }
@@ -203,7 +223,11 @@ impl PartialEq<&mut Value> for f32 {
 impl PartialEq<f32> for &mut Value {
     fn eq(&self, other: &f32) -> bool {
         if let Value::Float32(Float32(f)) = self {
-            f == other
+            if f.is_finite() && other.is_finite() {
+                f == other
+            } else {
+                false
+            }
         } else {
             false
         }
@@ -213,7 +237,11 @@ impl PartialEq<f32> for &mut Value {
 impl PartialEq<Value> for f64 {
     fn eq(&self, other: &Value) -> bool {
         if let Value::Float64(Float64(f)) = other {
-            self == f
+            if self.is_finite() && f.is_finite() {
+                self == f
+            } else {
+                false
+            }
         } else {
             false
         }
@@ -223,7 +251,11 @@ impl PartialEq<Value> for f64 {
 impl PartialEq<f64> for Value {
     fn eq(&self, other: &f64) -> bool {
         if let Value::Float64(Float64(f)) = self {
-            f == other
+            if f.is_finite() && other.is_finite() {
+                f == other
+            } else {
+                false
+            }
         } else {
             false
         }
@@ -233,7 +265,11 @@ impl PartialEq<f64> for Value {
 impl PartialEq<&Value> for f64 {
     fn eq(&self, other: &&Value) -> bool {
         if let Value::Float64(Float64(f)) = other {
-            self == f
+            if self.is_finite() && f.is_finite() {
+                self == f
+            } else {
+                false
+            }
         } else {
             false
         }
@@ -243,7 +279,11 @@ impl PartialEq<&Value> for f64 {
 impl PartialEq<f64> for &Value {
     fn eq(&self, other: &f64) -> bool {
         if let Value::Float64(Float64(f)) = self {
-            f == other
+            if f.is_finite() && other.is_finite() {
+                f == other
+            } else {
+                false
+            }
         } else {
             false
         }
@@ -253,7 +293,11 @@ impl PartialEq<f64> for &Value {
 impl PartialEq<&mut Value> for f64 {
     fn eq(&self, other: &&mut Value) -> bool {
         if let Value::Float64(Float64(f)) = other {
-            self == f
+            if self.is_finite() && f.is_finite() {
+                self == f
+            } else {
+                false
+            }
         } else {
             false
         }
@@ -263,7 +307,11 @@ impl PartialEq<&mut Value> for f64 {
 impl PartialEq<f64> for &mut Value {
     fn eq(&self, other: &f64) -> bool {
         if let Value::Float64(Float64(f)) = self {
-            f == other
+            if f.is_finite() && other.is_finite() {
+                f == other
+            } else {
+                false
+            }
         } else {
             false
         }
@@ -280,4 +328,12 @@ fn all() {
     assert!(&value > 9_u8);
     assert!(&mut value == 10_u8);
     assert!(&mut value > 9_u8);
+
+    let value = Value::Float32(Float32(1.1));
+    let f = 1.1_f32;
+    assert!(value == f);
+
+    let value_nan = Value::Float32(Float32(f32::NAN));
+    let f_nan = f32::NAN;
+    assert!(value_nan != f_nan);
 }
