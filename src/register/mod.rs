@@ -142,10 +142,10 @@ impl<M> Validator<'_, M> {
     ///                          | <array_index>
     ///                          | <ident>
     ///                          | <struct_variant_index>
-    ///                          | <exp> '.' <tuple_index>
-    ///                          | <exp> '.' <ident>
-    ///                          | <exp> <array_index>
-    ///                          | <exp> <struct_variant_index>
+    ///                          | <fields> '.' <tuple_index>
+    ///                          | <fields> '.' <ident>
+    ///                          | <fields> <array_index>
+    ///                          | <fields> <struct_variant_index>
     /// tuple_index            ::= <u8>
     /// array_index            ::= '[' <usize> ']'
     /// struct_variant_index   ::= '[' <ident> ']'
