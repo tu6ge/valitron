@@ -21,9 +21,11 @@
 //! # }
 //! ```
 
-use std::{collections::BTreeMap, mem};
+use std::{collections::BTreeMap, fmt::Display, mem};
 
 use crate::register::{FieldName, FieldNames, Parser};
+
+use self::float::{Float32, Float64};
 
 mod cmp;
 mod float;
@@ -36,7 +38,7 @@ mod float;
 ///
 /// [`Rule`]: crate::rule::Rule
 /// [`RuleShortcut`]: crate::rule::RuleShortcut
-#[derive(Debug, PartialEq, Eq, Clone, Ord, PartialOrd)]
+#[derive(Debug, PartialEq, Eq, Clone, Ord, PartialOrd, Default)]
 pub enum Value {
     Uint8(u8),
     Int8(i8),
@@ -49,6 +51,7 @@ pub enum Value {
     Float32(float::Float32),
     Float64(float::Float64),
     String(String),
+    #[default]
     Unit,
     Boolean(bool),
     Char(char),
@@ -354,6 +357,28 @@ impl FromValue for Bytes {
             Some(bytes)
         } else {
             None
+        }
+    }
+}
+
+impl Display for Value {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Value::Uint8(n) => n.fmt(f),
+            Value::Int8(n) => n.fmt(f),
+            Value::Uint16(n) => n.fmt(f),
+            Value::Int16(n) => n.fmt(f),
+            Value::Uint32(n) => n.fmt(f),
+            Value::Int32(n) => n.fmt(f),
+            Value::Uint64(n) => n.fmt(f),
+            Value::Int64(n) => n.fmt(f),
+            Value::Float32(Float32(n)) => n.fmt(f),
+            Value::Float64(Float64(n)) => n.fmt(f),
+            Value::String(n) => n.fmt(f),
+            Value::Unit => "".fmt(f),
+            Value::Boolean(n) => n.fmt(f),
+            Value::Char(n) => n.fmt(f),
+            _ => unreachable!("unsupported composite type"),
         }
     }
 }
