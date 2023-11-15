@@ -18,7 +18,7 @@
 //!     .validate(
 //!         Validator::new()
 //!             .rule("title", Length(30..40))
-//!             .rule("fruit", Length(4..=4)),
+//!             .rule("fruit", Length::eq(4)),
 //!     )
 //!     .unwrap_err();
 //!
@@ -35,7 +35,7 @@
 //!     .validate(
 //!         Validator::new()
 //!             .rule("title", Length(..10))
-//!             .rule("fruit", Length(2..=2)),
+//!             .rule("fruit", Length::eq(2)),
 //!     )
 //!     .unwrap();
 //! ```
@@ -94,23 +94,39 @@ where
     }
 }
 
-// impl RuleShortcut for Length<usize> {
-//     type Message = Message;
-//     fn name(&self) -> &'static str {
-//         self.name_in()
-//     }
-//     fn message(&self) -> Self::Message {
-//         self.message_in()
-//     }
-//     fn call(&mut self, data: &mut Value) -> bool {
-//         match data {
-//             Value::String(str) => self.0 == str.len(),
-//             Value::Array(arr) => self.0 == arr.len(),
-//             Value::Map(map) => self.0 == map.len(),
-//             _ => false,
-//         }
-//     }
-// }
+#[derive(Clone)]
+pub struct Num(usize);
+
+impl Length<Num> {
+    pub const fn eq(length: usize) -> Self {
+        Self(Num(length))
+    }
+}
+
+impl PartialEq<usize> for Num {
+    fn eq(&self, other: &usize) -> bool {
+        self.0 == *other
+    }
+}
+
+impl RuleShortcut for Length<Num> {
+    type Message = Message;
+
+    const NAME: &'static str = NAME;
+
+    fn message(&self) -> Self::Message {
+        self.message_in()
+    }
+
+    fn call(&mut self, data: &mut Value) -> bool {
+        match data {
+            Value::String(str) => self.0 == str.len(),
+            Value::Array(arr) => self.0 == arr.len(),
+            Value::Map(map) => self.0 == map.len(),
+            _ => false,
+        }
+    }
+}
 
 impl<T> Length<&T> {
     pub const fn copied(self) -> Length<T>
