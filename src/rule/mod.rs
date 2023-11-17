@@ -59,8 +59,6 @@ mod test;
 /// TODO! introduce ValueMap
 pub trait Rule<T>: 'static + Sized + Clone {
     /// custom define returning message type
-    ///
-    /// u8 or String or both
     type Message;
 
     /// Named rule type, used to distinguish between different rules.
