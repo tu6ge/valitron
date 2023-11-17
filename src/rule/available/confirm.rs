@@ -44,7 +44,7 @@ pub struct Confirm<T>(pub T);
 
 impl<T: Debug> Debug for Confirm<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Confirm").field("0", &self.0).finish()
+        f.debug_tuple("Confirm").field(&self.0).finish()
     }
 }
 

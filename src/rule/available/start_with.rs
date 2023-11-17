@@ -48,7 +48,7 @@ pub struct StartWith<T>(pub T);
 
 impl<T: Debug> Debug for StartWith<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("StartWith").field("0", &self.0).finish()
+        f.debug_tuple("StartWith").field(&self.0).finish()
     }
 }
 

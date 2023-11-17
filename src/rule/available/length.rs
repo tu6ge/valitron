@@ -51,7 +51,7 @@ pub struct Length<T>(pub T);
 
 impl<T: Debug> Debug for Length<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Length").field("0", &self.0).finish()
+        f.debug_tuple("Length").field(&self.0).finish()
     }
 }
 
