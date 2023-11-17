@@ -39,7 +39,10 @@ pub struct Range<T, Num> {
 
 impl<T: Debug, Num> Debug for Range<T, Num> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Range").field("value", &self.value).finish()
+        f.debug_struct("Range")
+            .field("value", &self.value)
+            .field("_marker", &format_args!("-"))
+            .finish()
     }
 }
 
