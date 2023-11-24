@@ -1,4 +1,4 @@
-# Valitron is an ergonomics, functional and configurable validator
+# Valitron is an ergonomics, functional and configurable validation
 
 In the future, modularization will be supported
 
