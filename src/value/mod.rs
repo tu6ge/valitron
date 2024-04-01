@@ -105,8 +105,8 @@ pub struct ValueMap {
     pub(crate) index: FieldNames,
 }
 
-pub trait FromValue {
-    fn from_value(value: &mut ValueMap) -> Option<&mut Self>;
+pub trait FromValue<'a>: Sized {
+    fn from_value(value: &'a mut ValueMap) -> Option<Self>;
 }
 
 impl ValueMap {
@@ -284,23 +284,43 @@ impl Value {
     }
 }
 
-impl FromValue for ValueMap {
-    fn from_value(value: &mut ValueMap) -> Option<&mut Self> {
+impl<'a> FromValue<'a> for &'a mut ValueMap {
+    fn from_value(value: &'a mut ValueMap) -> Option<Self> {
+        Some(value)
+    }
+}
+impl<'a> FromValue<'a> for &'a ValueMap {
+    fn from_value(value: &'a mut ValueMap) -> Option<Self> {
         Some(value)
     }
 }
 
-impl FromValue for Value {
-    fn from_value(value: &mut ValueMap) -> Option<&mut Self> {
+impl<'a> FromValue<'a> for &'a mut Value {
+    fn from_value(value: &'a mut ValueMap) -> Option<Self> {
         value.current_mut()
+    }
+}
+impl<'a> FromValue<'a> for &'a Value {
+    fn from_value(value: &'a mut ValueMap) -> Option<Self> {
+        value.current()
     }
 }
 
 macro_rules! primitive_impl {
     ($val:ident($ty:ty)) => {
-        impl FromValue for $ty {
-            fn from_value(value: &mut ValueMap) -> Option<&mut Self> {
+        impl<'a> FromValue<'a> for &'a mut $ty {
+            fn from_value(value: &'a mut ValueMap) -> Option<Self> {
                 if let Some(Value::$val(n)) = value.current_mut() {
+                    Some(n)
+                } else {
+                    None
+                }
+            }
+        }
+
+        impl<'a> FromValue<'a> for &'a $ty {
+            fn from_value(value: &'a mut ValueMap) -> Option<Self> {
+                if let Some(Value::$val(n)) = value.current() {
                     Some(n)
                 } else {
                     None
@@ -322,8 +342,8 @@ primitive_impl!(String(String));
 primitive_impl!(Boolean(bool));
 primitive_impl!(Char(char));
 
-impl FromValue for f32 {
-    fn from_value(value: &mut ValueMap) -> Option<&mut Self> {
+impl<'a> FromValue<'a> for &'a mut f32 {
+    fn from_value(value: &'a mut ValueMap) -> Option<Self> {
         if let Some(Value::Float32(float::Float32(n))) = value.current_mut() {
             Some(n)
         } else {
@@ -332,9 +352,28 @@ impl FromValue for f32 {
     }
 }
 
-impl FromValue for f64 {
-    fn from_value(value: &mut ValueMap) -> Option<&mut Self> {
+impl<'a> FromValue<'a> for &'a f32 {
+    fn from_value(value: &'a mut ValueMap) -> Option<Self> {
+        if let Some(Value::Float32(float::Float32(n))) = value.current() {
+            Some(n)
+        } else {
+            None
+        }
+    }
+}
+
+impl<'a> FromValue<'a> for &'a mut f64 {
+    fn from_value(value: &'a mut ValueMap) -> Option<&'a mut f64> {
         if let Some(Value::Float64(float::Float64(n))) = value.current_mut() {
+            Some(n)
+        } else {
+            None
+        }
+    }
+}
+impl<'a> FromValue<'a> for &'a f64 {
+    fn from_value(value: &'a mut ValueMap) -> Option<Self> {
+        if let Some(Value::Float64(float::Float64(n))) = value.current() {
             Some(n)
         } else {
             None
@@ -344,8 +383,8 @@ impl FromValue for f64 {
 
 pub type Bytes = Vec<u8>;
 
-impl FromValue for Bytes {
-    fn from_value(value: &mut ValueMap) -> Option<&mut Bytes> {
+impl<'a> FromValue<'a> for &'a mut Bytes {
+    fn from_value(value: &'a mut ValueMap) -> Option<Self> {
         if let Some(Value::Bytes(bytes)) = value.current_mut() {
             Some(bytes)
         } else {

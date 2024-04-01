@@ -96,9 +96,9 @@ pub trait RuleExt<M>: private::Sealed {
 
     fn custom<F, V>(self, other: F) -> RuleList<M>
     where
-        F: for<'a> FnOnce(&'a mut V) -> Result<(), M>,
+        F: FnOnce(V) -> Result<(), M>,
         F: Rule<V, Message = M>,
-        V: FromValue + 'static;
+        V: for<'a> FromValue<'a> + 'static;
 }
 
 impl<R, M> RuleExt<M> for R
@@ -118,9 +118,9 @@ where
 
     fn custom<F, V>(self, other: F) -> RuleList<M>
     where
-        F: for<'a> FnOnce(&'a mut V) -> Result<(), M>,
+        F: FnOnce(V) -> Result<(), M>,
         F: Rule<V, Message = M>,
-        V: FromValue + 'static,
+        V: for<'a> FromValue<'a> + 'static,
     {
         RuleList {
             list: vec![ErasedRule::new(self), ErasedRule::new(other)],
@@ -165,9 +165,9 @@ impl<M> RuleList<M> {
 
     pub fn custom<F, V>(mut self, other: F) -> Self
     where
-        F: for<'a> FnOnce(&'a mut V) -> Result<(), M>,
+        F: FnOnce(V) -> Result<(), M>,
         F: Rule<V, Message = M>,
-        V: FromValue + 'static,
+        V: for<'a> FromValue<'a> + 'static,
         M: 'static,
     {
         self.list.push(ErasedRule::new(other));
@@ -283,9 +283,9 @@ pub trait IntoRuleList<M> {
 /// load closure rule
 pub fn custom<F, V, M>(f: F) -> RuleList<M>
 where
-    F: for<'a> FnOnce(&'a mut V) -> Result<(), M>,
+    F: FnOnce(V) -> Result<(), M>,
     F: Rule<V, Message = M>,
-    V: FromValue + 'static,
+    V: for<'a> FromValue<'a> + 'static,
     M: 'static,
 {
     RuleList {
@@ -419,10 +419,10 @@ where
     }
 }
 
-impl<F, V, M> Rule<V> for F
+impl<'a, F, V, M> Rule<V> for F
 where
-    F: for<'a> FnOnce(&'a mut V) -> Result<(), M> + 'static + Clone,
-    V: FromValue,
+    F: FnOnce(V) -> Result<(), M> + 'static + Clone,
+    V: FromValue<'a>,
 {
     type Message = M;
 

@@ -3,7 +3,7 @@
 use serde::{Deserialize, Serialize};
 use valitron::{
     available::{Message, Required, StartWith},
-    custom, RuleExt, Validator, Value,
+    custom, RuleExt, Validator,
 };
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -54,12 +54,9 @@ fn age_limit(n: &mut u8) -> Result<(), Message> {
     Err("age should be between 25 and 45".into())
 }
 
-fn weight_limit(v: &mut Value) -> Result<(), Message> {
-    if let Value::Float32(n) = v {
-        let n = n.get();
-        if n >= 40.0 && n <= 80.0 {
-            return Ok(());
-        }
+fn weight_limit(v: &f32) -> Result<(), Message> {
+    if *v >= 40.0 && *v <= 80.0 {
+        return Ok(());
     }
     Err("weight should be between 40 and 80".into())
 }
