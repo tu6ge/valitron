@@ -38,7 +38,7 @@ mod float;
 ///
 /// [`Rule`]: crate::rule::Rule
 /// [`RuleShortcut`]: crate::rule::RuleShortcut
-#[derive(Debug, PartialEq, Eq, Clone, Ord, PartialOrd, Default)]
+#[derive(Debug, PartialEq, Eq, Clone, Ord, PartialOrd)]
 pub enum Value {
     Uint8(u8),
     Int8(i8),
@@ -51,7 +51,6 @@ pub enum Value {
     Float32(float::Float32),
     Float64(float::Float64),
     String(String),
-    #[default]
     Unit,
     Boolean(bool),
     Char(char),

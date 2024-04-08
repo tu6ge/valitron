@@ -8,15 +8,26 @@ pub trait IntoMessage {
     fn into_message(rule: &'static str, field: &FieldNames, value: &Value) -> Self;
 }
 
-#[derive(Debug, Default)]
+#[doc(hidden)]
+#[derive(Debug)]
 pub struct Formatter<'a> {
     template: &'a str,
     field: FieldNames,
     value: Value,
 }
 
+impl Default for Formatter<'_> {
+    fn default() -> Self {
+        Self {
+            template: "",
+            field: FieldNames::default(),
+            value: Value::Unit,
+        }
+    }
+}
+
 impl<'a> Formatter<'a> {
-    fn template(mut self, template: &'a str) -> Self {
+    pub fn template(mut self, template: &'a str) -> Self {
         self.template = template;
         self
     }
