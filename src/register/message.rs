@@ -21,11 +21,12 @@ macro_rules! panic_on_err {
 
 type CoreValidator<'v> = InnerValidator<&'v str, HashMap<FieldNames, HashMap<&'v str, &'v str>>>;
 
+#[derive(Default)]
 pub struct PhraseValidator<'v>(CoreValidator<'v>);
 
 impl<'v> PhraseValidator<'v> {
     pub fn new() -> Self {
-        Self(CoreValidator::default())
+        Self::default()
     }
 
     pub fn validate<T>(self, data: T) -> Result<(), ValidatorError<String>>

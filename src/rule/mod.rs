@@ -23,7 +23,7 @@
 use std::{collections::HashMap, fmt::Display, slice::Iter};
 
 use crate::{
-    register::{IntoMessage, MessageKey},
+    register::IntoMessage,
     value::{FromValue, Value, ValueMap},
 };
 
@@ -262,8 +262,7 @@ impl<M> RuleList<M> {
     {
         fn replace(s: &str, field: &str, value: &str) -> String {
             let s = s.replace("{field}", field);
-            let s = (&s).replace("{value}", value);
-            s
+            s.replace("{value}", value)
         }
 
         let RuleList { mut list, .. } = self;
