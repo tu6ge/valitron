@@ -156,7 +156,10 @@ where
         validator.validate(self)
     }
 
-    fn validate_mut<'de>(self, validator: StringValidator<'v>) -> Result<Self, ValidatorError<String>>
+    fn validate_mut<'de>(
+        self,
+        validator: StringValidator<'v>,
+    ) -> Result<Self, ValidatorError<String>>
     where
         Self: Deserialize<'de>,
     {
@@ -211,7 +214,7 @@ mod tests {
     }
 
     #[test]
-    fn test_trait(){
+    fn test_trait() {
         let num = (10_i8, 11_i8);
 
         let validator = StringValidator::new()
