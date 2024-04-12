@@ -153,8 +153,8 @@ let validator = Validator::new()
     ("name2.required", "{field} is required"),
     ("name2.length", "{field} must not be {value}"),
     ("address.city.required", "city is required"),
-    ("name3.0", "custom check's message"),
-    ("name4.1", "custom check's message"),
+    ("name3.custom", "custom check's message"),
+    ("name4.custom", "custom check's message"),
   ]);
 
 let data = validator.validate(data);
