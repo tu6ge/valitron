@@ -20,10 +20,10 @@
 //! }
 //! ```
 
-use std::slice::Iter;
+use std::{collections::HashMap, fmt::Display, slice::Iter};
 
 use crate::{
-    register::IntoMessage,
+    register::{IntoMessage, MessageKey},
     value::{FromValue, Value, ValueMap},
 };
 
@@ -240,6 +240,42 @@ impl<M> RuleList<M> {
             let _ = endpoint.call(data).map_err(|_| {
                 let value = data.current().unwrap();
                 msg.push(M2::into_message(endpoint.name(), data.as_index(), value))
+            });
+
+            if self.is_bail && !msg.is_empty() {
+                msg.shrink_to(1);
+                return msg;
+            }
+        }
+
+        msg.shrink_to_fit();
+        msg
+    }
+
+    pub(crate) fn call_string_message<'m>(
+        self,
+        data: &mut ValueMap,
+        message: &HashMap<&'m str, &'m str>,
+    ) -> Vec<String>
+    where
+        M: Display,
+    {
+        fn replace(s: &str, field: &str, value: &str) -> String {
+            let s = s.replace("{field}", field);
+            let s = (&s).replace("{value}", value);
+            s
+        }
+
+        let RuleList { mut list, .. } = self;
+        let mut msg = Vec::with_capacity(list.len());
+
+        for endpoint in list.iter_mut() {
+            let _ = endpoint.call(data).map_err(|def_msg| {
+                let string = def_msg.to_string();
+                let mes = *(message.get(endpoint.name())).unwrap_or(&string.as_str());
+                let value = data.current().unwrap();
+                //let field = data.index;
+                msg.push(replace(mes, data.index.as_str(), &value.to_string()))
             });
 
             if self.is_bail && !msg.is_empty() {
