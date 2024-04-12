@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
-use crate::{rule::IntoRuleList, ser::Serializer, Value, ValueMap};
+use crate::{rule::IntoRuleList, ser::Serializer, Validatable, Value, ValueMap};
 
 use super::{field_name, FieldNames, InnerValidator, IntoFieldName, MessageKey, ValidatorError};
 
@@ -148,6 +148,22 @@ impl<'v> StringValidator<'v> {
     }
 }
 
+impl<'v, T> Validatable<StringValidator<'v>, ValidatorError<String>> for T
+where
+    T: Serialize,
+{
+    fn validate(&self, validator: StringValidator<'v>) -> Result<(), ValidatorError<String>> {
+        validator.validate(self)
+    }
+
+    fn validate_mut<'de>(self, validator: StringValidator<'v>) -> Result<Self, ValidatorError<String>>
+    where
+        Self: Deserialize<'de>,
+    {
+        validator.validate_mut(self)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::marker::PhantomData;
@@ -192,6 +208,16 @@ mod tests {
         assert_eq!(filed.as_str(), "0");
 
         assert_eq!(msg[0], "foo_message");
+    }
+
+    #[test]
+    fn test_trait(){
+        let num = (10_i8, 11_i8);
+
+        let validator = StringValidator::new()
+            .rule("0", Required)
+            .message([("0.required", "foo_message")]);
+        num.validate(validator).unwrap_err();
     }
 
     #[test]
