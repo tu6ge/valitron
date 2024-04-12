@@ -36,7 +36,7 @@ use crate::{
 
 pub use field_name::{FieldName, FieldNames};
 pub(crate) use field_name::{IntoFieldName, Parser};
-pub use message::{Formatter, IntoMessage};
+pub use message::{IntoMessage, StringValidator};
 use serde::{Deserialize, Serialize};
 
 mod field_name;
