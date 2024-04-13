@@ -22,9 +22,9 @@ macro_rules! panic_on_err {
 type CoreValidator<'v> = InnerValidator<&'v str, HashMap<FieldNames, HashMap<&'v str, &'v str>>>;
 
 #[derive(Default)]
-pub struct PhraseValidator<'v>(CoreValidator<'v>);
+pub struct ValidPhrase<'v>(CoreValidator<'v>);
 
-impl<'v> PhraseValidator<'v> {
+impl<'v> ValidPhrase<'v> {
     pub fn new() -> Self {
         Self::default()
     }
@@ -114,7 +114,7 @@ impl<'v> PhraseValidator<'v> {
     fn inner_validate(self, value_map: &mut ValueMap) -> ValidatorError<String> {
         let mut resp_message = ValidatorError::with_capacity(self.0.rules.len());
 
-        let PhraseValidator(InnerValidator {
+        let ValidPhrase(InnerValidator {
             rules,
             message,
             is_bail,
@@ -149,17 +149,17 @@ impl<'v> PhraseValidator<'v> {
     }
 }
 
-impl<'v, T> Validatable<PhraseValidator<'v>, ValidatorError<String>> for T
+impl<'v, T> Validatable<ValidPhrase<'v>, ValidatorError<String>> for T
 where
     T: Serialize,
 {
-    fn validate(&self, validator: PhraseValidator<'v>) -> Result<(), ValidatorError<String>> {
+    fn validate(&self, validator: ValidPhrase<'v>) -> Result<(), ValidatorError<String>> {
         validator.validate(self)
     }
 
     fn validate_mut<'de>(
         self,
-        validator: PhraseValidator<'v>,
+        validator: ValidPhrase<'v>,
     ) -> Result<Self, ValidatorError<String>>
     where
         Self: Deserialize<'de>,
@@ -201,7 +201,7 @@ mod tests {
     fn original() {
         let num = (10_i8, 11_i8);
 
-        let validator = PhraseValidator::new()
+        let validator = ValidPhrase::new()
             .rule("0", Required)
             .message([("0.required", "foo_message")]);
 
@@ -218,7 +218,7 @@ mod tests {
     fn test_trait() {
         let num = (10_i8, 11_i8);
 
-        let validator = PhraseValidator::new()
+        let validator = ValidPhrase::new()
             .rule("0", Required)
             .message([("0.required", "foo_message")]);
         num.validate(validator).unwrap_err();
@@ -228,7 +228,7 @@ mod tests {
     fn field() {
         let num = (10_i8, 11_i8);
 
-        let validator = PhraseValidator::new()
+        let validator = ValidPhrase::new()
             .rule("0", Required)
             .message([("0.required", "{field} is required")]);
 
@@ -245,7 +245,7 @@ mod tests {
     fn default_field() {
         let num = (10_i8, 11_i8);
 
-        let validator = PhraseValidator::new().rule("0", Required);
+        let validator = ValidPhrase::new().rule("0", Required);
 
         let res = validator.validate(num).unwrap_err();
 
@@ -260,7 +260,7 @@ mod tests {
     fn value() {
         let num = (10_i8, 11_i8);
 
-        let validator = PhraseValidator::new()
+        let validator = ValidPhrase::new()
             .rule("0", Required)
             .message([("0.required", "{value} is error value, 8 is true value")]);
 
