@@ -32,7 +32,7 @@ impl PartialEq for Float32 {
 
 impl PartialOrd for Float32 {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.cmp(other))
+        self.get().partial_cmp(&other.get())
     }
 }
 
@@ -87,7 +87,7 @@ impl PartialEq for Float64 {
 
 impl PartialOrd for Float64 {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.cmp(other))
+        self.get().partial_cmp(&other.get())
     }
 }
 
