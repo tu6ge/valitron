@@ -31,6 +31,7 @@ impl PartialEq for Float32 {
 }
 
 impl PartialOrd for Float32 {
+    #[allow(clippy::non_canonical_partial_ord_impl)]
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         self.get().partial_cmp(&other.get())
     }
@@ -86,6 +87,7 @@ impl PartialEq for Float64 {
 }
 
 impl PartialOrd for Float64 {
+    #[allow(clippy::non_canonical_partial_ord_impl)]
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         self.get().partial_cmp(&other.get())
     }
