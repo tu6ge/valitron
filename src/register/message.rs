@@ -19,16 +19,99 @@ macro_rules! panic_on_err {
     };
 }
 
-type CoreValidator<'v> = InnerValidator<&'v str, HashMap<FieldNames, HashMap<&'v str, &'v str>>>;
+type CoreValidator<'v> = InnerValidator<String, HashMap<FieldNames, HashMap<&'v str, &'v str>>>;
 
-#[derive(Default)]
+/// register a string message validator
+/// ## This is an example:
+///
+/// ```rust
+/// # use serde::Serialize;
+/// # use valitron::{custom, RuleExt, RuleShortcut, ValidPhrase};
+/// #[derive(Serialize, Debug)]
+/// struct Person {
+///     introduce: &'static str,
+///     age: u8,
+///     weight: f32,
+/// }
+/// fn run() {
+///     let validator = ValidPhrase::new()
+///         .rule("introduce", Required.and(StartWith("I am")))
+///         .rule("age", custom(age_range))
+///         .message([
+///             ("introduce.required", "{field} is required"),
+///             (
+///                 "introduce.start_with",
+///                 "{field} should be starts with `I am`",
+///             ),
+///             ("age.custom", "age {value} is not in the range"),
+///         ]);
+///     let person = Person {
+///         introduce: "hi",
+///         age: 18,
+///         weight: 20.0,
+///     };
+///     let res = validator.validate(person).unwrap_err();
+///     assert!(res.len() == 2);
+///     assert_eq!(res.get("introduce").unwrap()[0], "introduce should be starts with `I am`");
+///     assert_eq!(res.get("age").unwrap()[0], "age 18 is not in the range");
+/// }
+///
+/// fn age_range(age: &mut u8) -> Result<(), String> {
+///     if *age >= 25 && *age <= 45 {
+///         Ok(())
+///     } else {
+///         Err("age should be between 25 and 45".into())
+///     }
+/// }
+///
+/// #[derive(Clone)]
+/// struct Required;
+///
+/// impl RuleShortcut for Required {
+///     type Message = String;
+///
+///     fn call(&mut self, data: &mut valitron::Value) -> bool {
+///         match data {
+///             valitron::Value::String(s) => s.len() > 0,
+///             _ => false,
+///         }
+///     }
+///     fn message(&self) -> Self::Message {
+///         "required msg".to_string()
+///     }
+///
+///     const NAME: &'static str = "required";
+/// }
+///
+/// #[derive(Clone)]
+/// struct StartWith(&'static str);
+///
+/// impl RuleShortcut for StartWith {
+///     type Message = String;
+///     
+///     fn call(&mut self, data: &mut valitron::Value) -> bool {
+///         match data {
+///             valitron::Value::String(s) => s.starts_with(self.0),
+///             _ => false,
+///         }
+///     }
+///     fn message(&self) -> Self::Message {
+///         "this field must start with xxx".to_string()
+///     }
+///     
+///     const NAME: &'static str = "start_with";
+/// }
+/// ```
+#[derive(Default, Clone)]
 pub struct ValidPhrase<'v>(CoreValidator<'v>);
 
 impl<'v> ValidPhrase<'v> {
+    /// init a new ValidPhrase
     pub fn new() -> Self {
         Self::default()
     }
 
+    /// validate given data
     pub fn validate<T>(self, data: T) -> Result<(), ValidatorError<String>>
     where
         T: Serialize,
@@ -42,6 +125,7 @@ impl<'v> ValidPhrase<'v> {
         self.inner_validate(&mut value_map).ok()
     }
 
+    /// validate given data and can modify it
     pub fn validate_mut<'de, T>(self, data: T) -> Result<T, ValidatorError<String>>
     where
         T: Serialize + serde::de::Deserialize<'de>,
@@ -57,6 +141,7 @@ impl<'v> ValidPhrase<'v> {
             .map(|_| T::deserialize(value_map.value()).unwrap())
     }
 
+    /// custom validation message
     pub fn message<const N: usize>(mut self, list: [(&'v str, &'v str); N]) -> Self {
         list.map(|(key_str, v)| {
             let MessageKey { fields, rule } = panic_on_err!(field_name::parse_message(key_str));
@@ -99,14 +184,16 @@ impl<'v> ValidPhrase<'v> {
     //     todo!()
     // }
 
+    /// register rules
     pub fn rule<F, R>(self, field: F, rule: R) -> Self
     where
         F: IntoFieldName,
-        R: IntoRuleList<&'v str>,
+        R: IntoRuleList<String>,
     {
         Self(self.0.rule(field, rule))
     }
 
+    /// when first validate error is encountered, right away return Err(message).
     pub fn bail(self) -> Self {
         Self(self.0.bail())
     }
@@ -157,10 +244,7 @@ where
         validator.validate(self)
     }
 
-    fn validate_mut<'de>(
-        self,
-        validator: ValidPhrase<'v>,
-    ) -> Result<Self, ValidatorError<String>>
+    fn validate_mut<'de>(self, validator: ValidPhrase<'v>) -> Result<Self, ValidatorError<String>>
     where
         Self: Deserialize<'de>,
     {
@@ -172,7 +256,7 @@ where
 mod tests {
     use std::marker::PhantomData;
 
-    use crate::RuleShortcut;
+    use crate::{RuleExt, RuleShortcut};
 
     use super::*;
 
@@ -180,12 +264,12 @@ mod tests {
     struct Required;
 
     impl RuleShortcut for Required {
-        type Message = &'static str;
+        type Message = String;
 
         const NAME: &'static str = "required";
 
         fn message(&self) -> Self::Message {
-            "{field} is default msg"
+            "{field} is default msg".to_string()
         }
 
         fn call(&mut self, data: &mut Value) -> bool {
@@ -195,6 +279,25 @@ mod tests {
                 false
             }
         }
+    }
+
+    #[derive(Clone)]
+    struct StartWith(&'static str);
+
+    impl RuleShortcut for StartWith {
+        type Message = String;
+
+        fn call(&mut self, data: &mut Value) -> bool {
+            match data {
+                Value::String(s) => s.starts_with(self.0),
+                _ => false,
+            }
+        }
+        fn message(&self) -> Self::Message {
+            "this field must start with xxx".to_string()
+        }
+
+        const NAME: &'static str = "starts_with";
     }
 
     #[test]
@@ -271,5 +374,66 @@ mod tests {
         assert_eq!(filed.as_str(), "0");
 
         assert_eq!(msg[0], "10 is error value, 8 is true value");
+    }
+
+    #[test]
+    fn message() {
+        let validator = ValidPhrase::new()
+            .rule("field1", Required.and(StartWith("foo")))
+            .rule("field2", Required.and(StartWith("foo2")))
+            .message([("field1.required", "msg1")]);
+        let message_list = validator.0.get_message();
+        assert_eq!(
+            message_list
+                .get(&("field1".into()))
+                .unwrap()
+                .get(&"required")
+                .unwrap(),
+            &"msg1"
+        );
+        assert_eq!(message_list.len(), 1);
+        assert_eq!(message_list.get(&("field1".into())).unwrap().len(), 1);
+
+        let validator2 = validator.clone().message([("field1.starts_with", "msg2")]);
+        let message_list2 = validator2.0.get_message();
+        assert_eq!(
+            message_list2
+                .get(&("field1".into()))
+                .unwrap()
+                .get(&"required")
+                .unwrap(),
+            &"msg1"
+        );
+        assert_eq!(
+            message_list2
+                .get(&("field1".into()))
+                .unwrap()
+                .get(&"starts_with")
+                .unwrap(),
+            &"msg2"
+        );
+        assert_eq!(message_list2.len(), 1);
+        assert_eq!(message_list2.get(&("field1".into())).unwrap().len(), 2);
+
+        let validator3 = validator2.clone().message([("field1.required", "msg3")]);
+        let message_list3 = validator3.0.get_message();
+        assert_eq!(
+            message_list3
+                .get(&("field1".into()))
+                .unwrap()
+                .get(&"required")
+                .unwrap(),
+            &"msg3"
+        );
+        assert_eq!(
+            message_list3
+                .get(&("field1".into()))
+                .unwrap()
+                .get(&"starts_with")
+                .unwrap(),
+            &"msg2"
+        );
+        assert_eq!(message_list3.len(), 1);
+        assert_eq!(message_list3.get(&("field1".into())).unwrap().len(), 2);
     }
 }

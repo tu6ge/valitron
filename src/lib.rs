@@ -100,7 +100,7 @@ pub mod rule;
 mod ser;
 pub mod value;
 
-pub use register::{Validatable, Validator};
+pub use register::{ValidPhrase, Validatable, Validator};
 pub use rule::{custom, Rule, RuleExt, RuleShortcut};
 pub use value::{FromValue, Value, ValueMap};
 
