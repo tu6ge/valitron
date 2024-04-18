@@ -120,7 +120,7 @@ where
         };
         RuleList {
             list: if is_dup {
-                vec![ErasedRule::new(other)]
+                vec![ErasedRule::new(self)]
             } else {
                 vec![ErasedRule::<M>::new(self), ErasedRule::new(other)]
             },
