@@ -464,6 +464,7 @@ impl<M, List> InnerValidator<M, List> {
         resp_message
     }
 
+    #[cfg(test)]
     pub(crate) fn get_message(&self) -> &List {
         &self.message
     }
