@@ -65,7 +65,7 @@ macro_rules! impl_range {
     ($val:ident($ty:ty)) => {
         impl<T> RuleShortcut for Range<T, $ty>
         where
-            T: RangeBounds<$ty>,
+            T: RangeBounds<$ty> + Clone,
         {
             type Message = Message;
 

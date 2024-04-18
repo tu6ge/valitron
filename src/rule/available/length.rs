@@ -75,7 +75,7 @@ impl<T> Length<T> {
 
 impl<T> RuleShortcut for Length<T>
 where
-    T: RangeBounds<usize>,
+    T: RangeBounds<usize> + Clone,
 {
     type Message = Message;
 
