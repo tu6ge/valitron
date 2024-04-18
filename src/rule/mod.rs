@@ -8,9 +8,7 @@
 //! impl RuleShortcut for Gt10 {
 //!     type Message = &'static str;
 //!
-//!     fn name(&self) -> &'static str {
-//!         "gt10"
-//!     }
+//!     const NAME: &'static str = "gt10";
 //!
 //!     fn message(&self) -> Self::Message {
 //!         "the number should be greater than 10"
@@ -22,9 +20,12 @@
 //! }
 //! ```
 
-use std::slice::Iter;
+use std::{collections::HashMap, fmt::Display, slice::Iter};
 
-use crate::value::{FromValue, Value, ValueMap};
+use crate::{
+    register::IntoMessage,
+    value::{FromValue, Value, ValueMap},
+};
 
 use self::boxed::{ErasedRule, RuleIntoBoxed};
 
@@ -46,9 +47,7 @@ mod test;
 /// impl Rule<()> for Gt10 {
 ///     type Message = &'static str;
 ///
-///     fn name(&self) -> &'static str {
-///         "gt10"
-///     }
+///     const THE_NAME: &'static str = "gt10";
 ///
 ///     fn call(&mut self, data: &mut ValueMap) -> Result<(), Self::Message> {
 ///         if data.current().unwrap() > &10 {
@@ -63,14 +62,12 @@ mod test;
 /// TODO! introduce ValueMap
 pub trait Rule<T>: 'static + Sized + Clone {
     /// custom define returning message type
-    ///
-    /// u8 or String or both
     type Message;
 
     /// Named rule type, used to distinguish between different rules.
     ///
     /// allow `a-z` | `A-Z` | `0-9` | `_` composed string, and not start with `0-9`
-    fn name(&self) -> &'static str;
+    const THE_NAME: &'static str;
 
     /// Rule specific implementation, data is gived type all field's value, and current field index.
     ///
@@ -83,11 +80,19 @@ pub trait Rule<T>: 'static + Sized + Clone {
     }
 }
 
+mod private {
+    use super::Rule;
+
+    pub trait Sealed {}
+
+    impl<R> Sealed for R where R: Rule<()> {}
+}
+
 /// Rule extension, it can coupling some rules, such as
 /// ```rust,ignore
 /// Rule1.and(Rule2).and(Rule3)
 /// ```
-pub trait RuleExt<M> {
+pub trait RuleExt<M>: private::Sealed {
     fn and<R>(self, other: R) -> RuleList<M>
     where
         R: Rule<(), Message = M>;
@@ -165,10 +170,9 @@ impl<M> Clone for RuleList<M> {
     }
 }
 
-impl<M> RuleList<M>
-where
-    M: 'static,
-{
+
+
+impl<M> RuleList<M> {
     pub fn remove_duplicate(&mut self, other: &ErasedRule<M>) {
         let name = other.name();
 
@@ -200,6 +204,7 @@ where
     pub fn and<R>(mut self, other: R) -> Self
     where
         R: Rule<(), Message = M>,
+        M: 'static,
     {
         let other = ErasedRule::new(other);
         self.remove_duplicate(&other);
@@ -213,6 +218,7 @@ where
         F: for<'a> FnOnce(&'a mut V) -> Result<(), M>,
         F: Rule<V, Message = M>,
         V: FromValue + 'static,
+        M: 'static,
     {
         self.list.push(ErasedRule::new(other));
         self
@@ -240,6 +246,10 @@ where
         self.list.len()
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.list.is_empty()
+    }
+
     pub(crate) fn merge(&mut self, other: &mut RuleList<M>) {
         for new_rule in &other.list {
             self.remove_duplicate(new_rule);
@@ -252,15 +262,79 @@ where
     #[must_use]
     pub(crate) fn call(self, data: &mut ValueMap) -> Vec<(&'static str, M)> {
         let RuleList { mut list, .. } = self;
-        let mut msg = Vec::new();
+        let mut msg = Vec::with_capacity(list.len());
+
         for endpoint in list.iter_mut() {
             let _ = endpoint
                 .call(data)
                 .map_err(|e| msg.push((endpoint.name(), e)));
+
             if self.is_bail && !msg.is_empty() {
+                msg.shrink_to(1);
                 return msg;
             }
         }
+
+        msg.shrink_to_fit();
+        msg
+    }
+
+    #[must_use]
+    pub(crate) fn call_gen_message<M2>(self, data: &mut ValueMap) -> Vec<M2>
+    where
+        M2: IntoMessage,
+    {
+        let RuleList { mut list, .. } = self;
+        let mut msg = Vec::with_capacity(list.len());
+
+        for endpoint in list.iter_mut() {
+            let _ = endpoint.call(data).map_err(|_| {
+                let value = data.current().unwrap();
+                msg.push(M2::into_message(endpoint.name(), data.as_index(), value))
+            });
+
+            if self.is_bail && !msg.is_empty() {
+                msg.shrink_to(1);
+                return msg;
+            }
+        }
+
+        msg.shrink_to_fit();
+        msg
+    }
+
+    pub(crate) fn call_string_message<'m>(
+        self,
+        data: &mut ValueMap,
+        message: &HashMap<&'m str, &'m str>,
+    ) -> Vec<String>
+    where
+        M: Display,
+    {
+        fn replace(s: &str, field: &str, value: &str) -> String {
+            let s = s.replace("{field}", field);
+            s.replace("{value}", value)
+        }
+
+        let RuleList { mut list, .. } = self;
+        let mut msg = Vec::with_capacity(list.len());
+
+        for endpoint in list.iter_mut() {
+            let _ = endpoint.call(data).map_err(|def_msg| {
+                let string = def_msg.to_string();
+                let mes = *(message.get(endpoint.name())).unwrap_or(&string.as_str());
+                let value = data.current().unwrap();
+                //let field = data.index;
+                msg.push(replace(mes, data.index.as_str(), &value.to_string()))
+            });
+
+            if self.is_bail && !msg.is_empty() {
+                msg.shrink_to(1);
+                return msg;
+            }
+        }
+
+        msg.shrink_to_fit();
         msg
     }
 
@@ -270,14 +344,12 @@ where
 
     /// check the rule name is existing
     pub(crate) fn contains(&self, rule: &str) -> bool {
-        self.iter()
-            .map(|endpoint| endpoint.name())
-            .any(|name| name == rule)
+        self.iter().map(ErasedRule::name).any(|name| name == rule)
     }
 
     /// check all rule names is valid or not
     pub(crate) fn valid_name(&self) -> bool {
-        self.iter().map(|endpoint| endpoint.name()).all(|name| {
+        self.iter().map(ErasedRule::name).all(|name| {
             let mut chares = name.chars();
             let first = match chares.next() {
                 Some(ch) => ch,
@@ -301,6 +373,7 @@ where
     #[must_use]
     pub(crate) fn map<M2>(self, f: fn(M) -> M2) -> RuleList<M2>
     where
+        M: 'static,
         M2: 'static,
     {
         let list = self
@@ -371,9 +444,9 @@ mod test_regster {
 
     impl RuleShortcut for Gt10 {
         type Message = u8;
-        fn name(&self) -> &'static str {
-            "gt10"
-        }
+
+        const NAME: &'static str = "gt10";
+
         fn message(&self) -> Self::Message {
             1
         }
@@ -384,6 +457,9 @@ mod test_regster {
 
     #[test]
     fn test() {
+        assert_eq!(Gt10::NAME, "gt10");
+        assert_eq!(Confirm::<&str>::NAME, "confirm");
+
         register(Required);
         register(Required.custom(hander2));
         register(Required.custom(hander));
@@ -411,14 +487,14 @@ mod test_regster {
 }
 
 /// used by convenient implementation custom rules.
-pub trait RuleShortcut {
+pub trait RuleShortcut: Clone {
     /// custom define returning message type
     type Message;
 
     /// Named rule type, used to distinguish different rules
     ///
     /// allow `a-z` | `A-Z` | `0-9` | `_` composed string, and not start with `0-9`
-    fn name(&self) -> &'static str;
+    const NAME: &'static str;
 
     /// Default rule error message, when validate fails, return the message to user
     fn message(&self) -> Self::Message;
@@ -444,9 +520,8 @@ where
 {
     type Message = T::Message;
 
-    fn name(&self) -> &'static str {
-        self.name()
-    }
+    const THE_NAME: &'static str = T::NAME;
+
     /// Rule specific implementation, data is gived type all field's value, and current field index.
     fn call(&mut self, data: &mut ValueMap) -> Result<(), Self::Message> {
         if self.call_with_relate(data) {
@@ -463,11 +538,11 @@ where
     V: FromValue,
 {
     type Message = M;
+
+    const THE_NAME: &'static str = "custom";
+
     fn call(&mut self, data: &mut ValueMap) -> Result<(), Self::Message> {
         let val = V::from_value(data).expect("argument type can not be matched");
         self.clone()(val)
-    }
-    fn name(&self) -> &'static str {
-        "custom"
     }
 }

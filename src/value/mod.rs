@@ -21,9 +21,11 @@
 //! # }
 //! ```
 
-use std::{collections::BTreeMap, mem};
+use std::{collections::BTreeMap, fmt::Display, mem};
 
 use crate::register::{FieldName, FieldNames, Parser};
+
+use self::float::{Float32, Float64};
 
 mod cmp;
 mod float;
@@ -119,6 +121,12 @@ impl ValueMap {
 
     /// change index
     pub fn index(&mut self, index: FieldNames) {
+        debug_assert!(
+            self.value.get_with_names(&index).is_some(),
+            "field `{}` is not exist",
+            index.as_str()
+        );
+
         self.index = index;
     }
 
@@ -127,6 +135,10 @@ impl ValueMap {
         let mut x = FieldNames::default();
         mem::swap(&mut self.index, &mut x);
         x
+    }
+
+    pub(crate) fn as_index(&self) -> &FieldNames {
+        &self.index
     }
 
     /// get current field value
@@ -312,6 +324,7 @@ primitive_impl!(Uint32(u32));
 primitive_impl!(Int32(i32));
 primitive_impl!(Uint64(u64));
 primitive_impl!(Int64(i64));
+primitive_impl!(String(String));
 primitive_impl!(Boolean(bool));
 primitive_impl!(Char(char));
 
@@ -343,6 +356,28 @@ impl FromValue for Bytes {
             Some(bytes)
         } else {
             None
+        }
+    }
+}
+
+impl Display for Value {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Value::Uint8(n) => n.fmt(f),
+            Value::Int8(n) => n.fmt(f),
+            Value::Uint16(n) => n.fmt(f),
+            Value::Int16(n) => n.fmt(f),
+            Value::Uint32(n) => n.fmt(f),
+            Value::Int32(n) => n.fmt(f),
+            Value::Uint64(n) => n.fmt(f),
+            Value::Int64(n) => n.fmt(f),
+            Value::Float32(Float32(n)) => n.fmt(f),
+            Value::Float64(Float64(n)) => n.fmt(f),
+            Value::String(n) => n.fmt(f),
+            Value::Unit => "".fmt(f),
+            Value::Boolean(n) => n.fmt(f),
+            Value::Char(n) => n.fmt(f),
+            _ => unreachable!("unsupported composite type"),
         }
     }
 }

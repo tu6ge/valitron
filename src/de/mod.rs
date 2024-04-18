@@ -1,4 +1,4 @@
-use std::{collections::BTreeMap, fmt::Display, vec::IntoIter};
+use std::{collections::BTreeMap, vec::IntoIter};
 
 use serde::de::{
     DeserializeSeed, Deserializer, EnumAccess, Expected, IntoDeserializer, MapAccess, SeqAccess,
@@ -57,18 +57,25 @@ impl Value {
 }
 
 #[derive(Debug)]
-pub struct Error;
+pub struct Error {
+    is_str: bool,
+}
 
 impl serde::de::Error for Error {
-    fn custom<T: Display>(msg: T) -> Self {
-        todo!("{msg}")
+    fn custom<T>(_: T) -> Self {
+        Self { is_str: false }
     }
 }
 
 impl std::error::Error for Error {}
 impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        "deseralize error".fmt(f)
+        if self.is_str {
+            "valitron unsupport &str deserializer, use #[serde(skip_deserializing)] ignore it"
+                .fmt(f)
+        } else {
+            "deseralize error".fmt(f)
+        }
     }
 }
 
@@ -135,15 +142,11 @@ impl<'de> Deserializer<'de> for Value {
 
     deserialize_primitive!(deserialize_char, Char, visit_char);
 
-    fn deserialize_str<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    fn deserialize_str<V>(self, _visitor: V) -> Result<V::Value, Self::Error>
     where
         V: Visitor<'de>,
     {
-        if let Value::String(n) = self {
-            visitor.visit_str(&n)
-        } else {
-            Err(self.invalid_type(&visitor))
-        }
+        Err(Error { is_str: true })
     }
 
     fn deserialize_string<V>(self, visitor: V) -> Result<V::Value, Self::Error>
@@ -333,11 +336,11 @@ impl<'de> Deserializer<'de> for Value {
         }
     }
 
-    fn deserialize_ignored_any<V>(self, _visitor: V) -> Result<V::Value, Self::Error>
+    fn deserialize_ignored_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
     where
         V: Visitor<'de>,
     {
-        unreachable!()
+        visitor.visit_unit()
     }
 
     fn is_human_readable(&self) -> bool {

@@ -19,7 +19,7 @@
 //!     .validate(
 //!         Validator::new()
 //!             .rule("title", StartWith("hello"))
-//!             .rule("other", StartWith("bar"))
+//!             .rule("other", StartWith("bar")),
 //!     )
 //!     .unwrap_err();
 //!
@@ -37,18 +37,32 @@
 //!     .unwrap();
 //! ```
 
-use std::fmt::Display;
+use std::fmt::{Debug, Display};
 
 use crate::{RuleShortcut, Value};
 
 use super::Message;
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct StartWith<T>(pub T);
 
+impl<T: Debug> Debug for StartWith<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_tuple("StartWith").field(&self.0).finish()
+    }
+}
+
+const NAME: &'static str = "start_with";
+
 impl<T> StartWith<T> {
-    fn name_in(&self) -> &'static str {
-        "start_with"
+    pub const fn as_ref(&self) -> StartWith<&T> {
+        let StartWith(ref t) = self;
+        StartWith(t)
+    }
+
+    pub fn as_mut(&mut self) -> StartWith<&mut T> {
+        let StartWith(ref mut t) = self;
+        StartWith(t)
     }
 }
 
@@ -64,9 +78,7 @@ where
 impl RuleShortcut for StartWith<&str> {
     type Message = Message;
 
-    fn name(&self) -> &'static str {
-        self.name_in()
-    }
+    const NAME: &'static str = NAME;
 
     fn message(&self) -> Self::Message {
         self.message_in()
@@ -80,12 +92,27 @@ impl RuleShortcut for StartWith<&str> {
     }
 }
 
+impl RuleShortcut for StartWith<String> {
+    type Message = Message;
+
+    const NAME: &'static str = NAME;
+
+    fn message(&self) -> Self::Message {
+        self.message_in()
+    }
+
+    fn call(&mut self, value: &mut Value) -> bool {
+        match value {
+            Value::String(s) => s.starts_with(&self.0),
+            _ => false,
+        }
+    }
+}
+
 impl RuleShortcut for StartWith<char> {
     type Message = Message;
 
-    fn name(&self) -> &'static str {
-        self.name_in()
-    }
+    const NAME: &'static str = NAME;
 
     fn message(&self) -> Self::Message {
         self.message_in()
@@ -96,5 +123,44 @@ impl RuleShortcut for StartWith<char> {
             Value::String(s) => s.starts_with(self.0),
             _ => false,
         }
+    }
+}
+
+impl<T> StartWith<&T> {
+    pub const fn copied(self) -> StartWith<T>
+    where
+        T: Copy,
+    {
+        StartWith(*self.0)
+    }
+
+    pub fn cloned(self) -> StartWith<T>
+    where
+        T: Clone,
+    {
+        StartWith(self.0.clone())
+    }
+}
+
+impl<T> StartWith<&mut T> {
+    pub fn copied(self) -> StartWith<T>
+    where
+        T: Copy,
+    {
+        StartWith(*self.0)
+    }
+
+    pub fn cloned(self) -> StartWith<T>
+    where
+        T: Clone,
+    {
+        StartWith(self.0.clone())
+    }
+}
+
+impl<T: PartialEq> PartialEq for StartWith<T> {
+    #[inline]
+    fn eq(&self, other: &Self) -> bool {
+        self.0 == other.0
     }
 }

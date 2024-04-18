@@ -128,6 +128,19 @@ impl<const N: usize> From<[FieldName; N]> for FieldNames {
     }
 }
 
+impl From<String> for FieldNames {
+    fn from(string: String) -> Self {
+        Self { string }
+    }
+}
+impl From<&str> for FieldNames {
+    fn from(string: &str) -> Self {
+        Self {
+            string: string.to_owned(),
+        }
+    }
+}
+
 /// Convert to FieldName trait
 pub trait IntoFieldName {
     type Error: std::fmt::Display;
@@ -377,16 +390,16 @@ impl Display for ParserError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         use ParserError::*;
         match self {
-            DotStart => "`.` should not be start".fmt(f),
+            DotStart => "`.` can not be start".fmt(f),
             BracketRight => "`]` should to stay behind `[`".fmt(f),
             ParseTupleIndex => "tuple index is not u8 type".fmt(f),
-            TupleClose => "after tuple index should be `.` or `[` or eof".fmt(f),
+            TupleClose => "after tuple index must be `.` or `[` or eof".fmt(f),
             Undefined => "undefined character".fmt(f),
             ParseArrayIndex => "array index is not usize type".fmt(f),
-            ArrayClose => "after `]` should be `.` or `[` or eof".fmt(f),
+            ArrayClose => "after `]` must be `.` or `[` or eof".fmt(f),
             BracketSyntaxError => "bracket syntax error".fmt(f),
-            DotIsLast => "`.` should not be end".fmt(f),
-            DotTieLeftBracket => "after `.` should not be `[`".fmt(f),
+            DotIsLast => "`.` can not be end".fmt(f),
+            DotTieLeftBracket => "after `.` can not be `[`".fmt(f),
         }
     }
 }

@@ -3,7 +3,7 @@
 use valitron::{RuleShortcut, Validator, Value};
 
 fn main() {
-    let validator = Validator::<MyMessage>::new()
+    let validator = Validator::new()
         .rule("num", Gt10)
         .message([("num.gt10", MyMessage::Gt10)]);
 
@@ -35,12 +35,13 @@ struct Gt10;
 
 impl RuleShortcut for Gt10 {
     type Message = MyMessage;
-    fn name(&self) -> &'static str {
-        "gt10"
-    }
+
+    const NAME: &'static str = "gt10";
+
     fn message(&self) -> Self::Message {
         MyMessage::Gt10
     }
+
     fn call(&mut self, data: &mut Value) -> bool {
         data > 10_u8
     }
@@ -51,12 +52,13 @@ struct Lt20;
 
 impl RuleShortcut for Lt20 {
     type Message = MyMessage2;
-    fn name(&self) -> &'static str {
-        "gt10"
-    }
+
+    const NAME: &'static str = "lt20";
+
     fn message(&self) -> Self::Message {
         MyMessage2::Lt20
     }
+
     fn call(&mut self, data: &mut Value) -> bool {
         data < 20_u8
     }

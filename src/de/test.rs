@@ -132,3 +132,42 @@ fn test_option() {
         }
     );
 }
+
+#[test]
+fn unsupport_str() {
+    #[derive(Deserialize, Debug)]
+    struct A<'a> {
+        str: &'a str,
+        num: u8,
+    }
+
+    let value = Value::Struct({
+        let mut map = BTreeMap::new();
+        map.insert(Value::StructKey("str".into()), Value::String("foo".into()));
+        map.insert(Value::StructKey("num".into()), Value::Uint8(11));
+        map
+    });
+
+    let err = A::deserialize(value).unwrap_err();
+    println!("{err}")
+}
+
+#[test]
+fn skip_str() {
+    #[derive(Deserialize, Debug)]
+    struct A<'a> {
+        #[serde(skip_deserializing)]
+        str: &'a str,
+        num: u8,
+    }
+
+    let value = Value::Struct({
+        let mut map = BTreeMap::new();
+        map.insert(Value::StructKey("str".into()), Value::String("foo".into()));
+        map.insert(Value::StructKey("num".into()), Value::Uint8(11));
+        map
+    });
+
+    let a = A::deserialize(value).unwrap();
+    assert!(a.str.is_empty());
+}

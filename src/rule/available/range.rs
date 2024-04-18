@@ -26,7 +26,7 @@
 //!     .unwrap();
 //! ```
 
-use std::{marker::PhantomData, ops::RangeBounds};
+use std::{fmt::Debug, marker::PhantomData, ops::RangeBounds};
 
 use super::Message;
 use crate::{RuleShortcut, Value};
@@ -37,16 +37,23 @@ pub struct Range<T, Num> {
     _marker: PhantomData<Num>,
 }
 
+impl<T: Debug, Num> Debug for Range<T, Num> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Range")
+            .field("value", &self.value)
+            .field("_marker", &format_args!("-"))
+            .finish()
+    }
+}
+
+const NAME: &'static str = "range";
+
 impl<T, Num> Range<T, Num> {
     pub fn new(value: T) -> Self {
         Self {
             value,
             _marker: PhantomData,
         }
-    }
-
-    fn name_in(&self) -> &'static str {
-        "range"
     }
 
     fn message_in(&self) -> Message {
@@ -58,15 +65,16 @@ macro_rules! impl_range {
     ($val:ident($ty:ty)) => {
         impl<T> RuleShortcut for Range<T, $ty>
         where
-            T: RangeBounds<$ty> + Clone + 'static,
+            T: RangeBounds<$ty> + Clone,
         {
             type Message = Message;
-            fn name(&self) -> &'static str {
-                self.name_in()
-            }
+
+            const NAME: &'static str = NAME;
+
             fn message(&self) -> Self::Message {
                 self.message_in()
             }
+
             fn call(&mut self, data: &mut Value) -> bool {
                 match data {
                     Value::$val(n) => self.value.contains(n),
@@ -92,12 +100,13 @@ where
     T: RangeBounds<f32> + Clone + 'static,
 {
     type Message = Message;
-    fn name(&self) -> &'static str {
-        self.name_in()
-    }
+
+    const NAME: &'static str = NAME;
+
     fn message(&self) -> Self::Message {
         self.message_in()
     }
+
     fn call(&mut self, data: &mut Value) -> bool {
         match data {
             Value::Float32(f) => self.value.contains(f.as_ref()),
@@ -111,12 +120,13 @@ where
     T: RangeBounds<f64> + Clone + 'static,
 {
     type Message = Message;
-    fn name(&self) -> &'static str {
-        self.name_in()
-    }
+
+    const NAME: &'static str = NAME;
+
     fn message(&self) -> Self::Message {
         self.message_in()
     }
+
     fn call(&mut self, data: &mut Value) -> bool {
         match data {
             Value::Float64(f) => self.value.contains(f.as_ref()),

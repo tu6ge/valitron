@@ -33,7 +33,7 @@
 //!     .unwrap();
 //! ```
 
-use std::fmt::Display;
+use std::fmt::{Debug, Display};
 
 use crate::{register::FieldNames, value::ValueMap, RuleShortcut, Value};
 
@@ -42,9 +42,23 @@ use super::{Message, MessageKind};
 #[derive(Clone)]
 pub struct Confirm<T>(pub T);
 
+impl<T: Debug> Debug for Confirm<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_tuple("Confirm").field(&self.0).finish()
+    }
+}
+
+const NAME: &'static str = "confirm";
+
 impl<T> Confirm<T> {
-    fn name_in(&self) -> &'static str {
-        "confirm"
+    pub const fn as_ref(&self) -> Confirm<&T> {
+        let Confirm(ref t) = self;
+        Confirm(t)
+    }
+
+    pub fn as_mut(&mut self) -> Confirm<&mut T> {
+        let Confirm(ref mut t) = self;
+        Confirm(t)
     }
 }
 
@@ -68,9 +82,7 @@ where
 impl RuleShortcut for Confirm<String> {
     type Message = Message;
 
-    fn name(&self) -> &'static str {
-        self.name_in()
-    }
+    const NAME: &'static str = NAME;
 
     fn message(&self) -> Self::Message {
         self.message_in()
@@ -90,9 +102,7 @@ impl RuleShortcut for Confirm<String> {
 impl RuleShortcut for Confirm<&str> {
     type Message = Message;
 
-    fn name(&self) -> &'static str {
-        self.name_in()
-    }
+    const NAME: &'static str = NAME;
 
     fn message(&self) -> Self::Message {
         self.message_in()
@@ -106,6 +116,45 @@ impl RuleShortcut for Confirm<&str> {
 
     fn call(&mut self, _value: &mut Value) -> bool {
         unreachable!()
+    }
+}
+
+impl<T> Confirm<&T> {
+    pub const fn copied(self) -> Confirm<T>
+    where
+        T: Copy,
+    {
+        Confirm(*self.0)
+    }
+
+    pub fn cloned(self) -> Confirm<T>
+    where
+        T: Clone,
+    {
+        Confirm(self.0.clone())
+    }
+}
+
+impl<T> Confirm<&mut T> {
+    pub fn copied(self) -> Confirm<T>
+    where
+        T: Copy,
+    {
+        Confirm(*self.0)
+    }
+
+    pub fn cloned(self) -> Confirm<T>
+    where
+        T: Clone,
+    {
+        Confirm(self.0.clone())
+    }
+}
+
+impl<T: PartialEq> PartialEq for Confirm<T> {
+    #[inline]
+    fn eq(&self, other: &Self) -> bool {
+        self.0 == other.0
     }
 }
 
