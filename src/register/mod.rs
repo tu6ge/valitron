@@ -25,6 +25,7 @@ use std::{
     error::Error,
     fmt::Display,
     hash::{Hash, Hasher},
+    ops::Index,
 };
 
 use crate::{
@@ -554,6 +555,16 @@ where
         f.debug_struct("ValidatorError")
             .field("message", &self.message)
             .finish()
+    }
+}
+
+impl<M> Index<&str> for ValidatorError<M> {
+    type Output = Vec<M>;
+
+    fn index(&self, index: &str) -> &Self::Output {
+        self.message
+            .get(&(index.into()))
+            .expect("this field is not found")
     }
 }
 

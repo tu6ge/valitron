@@ -33,16 +33,13 @@ fn test_validator() {
     let res = validator.validate(person).unwrap_err();
 
     assert!(res.len() == 3);
+    assert_eq!(res["age"][0].to_string(), "age should be between 25 and 45");
     assert_eq!(
-        res.get("age").unwrap()[0].to_string(),
-        "age should be between 25 and 45"
-    );
-    assert_eq!(
-        res.get("weight").unwrap()[0].to_string(),
+        res["weight"][0].to_string(),
         "weight should be between 40 and 80",
     );
     assert_eq!(
-        res.get("name").unwrap()[0].to_string(),
+        res["name"][0].to_string(),
         "name should be starts with `hello`",
     );
 }
@@ -77,7 +74,7 @@ fn test_has_tuple() {
     assert!(res.len() == 1);
 
     assert_eq!(
-        res.get(0).unwrap()[0].to_string(),
+        res["0"][0].to_string(),
         "first item should be start with `hello`"
     );
 }
@@ -90,7 +87,7 @@ fn test_has_array() {
 
     assert!(res.len() == 1);
     assert_eq!(
-        res.get([1]).unwrap()[0].to_string(),
+        res["[1]"][0].to_string(),
         "this field must be start with `hello`"
     );
 }
