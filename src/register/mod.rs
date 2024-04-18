@@ -333,7 +333,6 @@ where
     }
 }
 
-
 impl<M, List> InnerValidator<M, List> {
     /// # Register rules
     ///
