@@ -170,8 +170,6 @@ impl<M> Clone for RuleList<M> {
     }
 }
 
-
-
 impl<M> RuleList<M> {
     pub fn remove_duplicate(&mut self, other: &ErasedRule<M>) {
         let name = other.name();

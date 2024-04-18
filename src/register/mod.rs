@@ -712,7 +712,6 @@ impl<'key> MessageKey<'key> {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::{FieldNames, Validator, ValidatorError};
