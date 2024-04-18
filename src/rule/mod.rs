@@ -436,7 +436,7 @@ mod test_regster {
 }
 
 /// used by convenient implementation custom rules.
-pub trait RuleShortcut {
+pub trait RuleShortcut: Clone {
     /// custom define returning message type
     type Message;
 
