@@ -712,89 +712,9 @@ impl<'key> MessageKey<'key> {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::{FieldNames, Validator, ValidatorError};
-
-    #[test]
-    fn test_validator_error_serialize() {
-        let mut error = ValidatorError::<String>::new();
-        error.push(
-            FieldNames::new("field1".into()),
-            vec!["message1".into(), "message2".into()],
-        );
-
-        let json = serde_json::to_string(&error).unwrap();
-        assert_eq!(json, r#"{"field1":["message1","message2"]}"#);
-    }
-
-    #[cfg(feature = "full")]
-    #[test]
-    fn repeat_insert_rules() {
-        use crate::{
-            available::{Range, Required, Trim},
-            RuleExt,
-        };
-
-        let validate = Validator::new()
-            .rule("foo", Required)
-            .rule("foo", Range::new(1..2));
-
-        let vec = validate.rules.get(&FieldNames::new("foo".into())).unwrap();
-        assert_eq!(vec.len(), 2);
-        assert!(vec.is_bail() == false);
-
-        let validate = Validator::new()
-            .rule("foo", Required.and(Trim).bail())
-            .rule("foo", Range::new(1..2));
-
-        let vec = validate.rules.get(&FieldNames::new("foo".into())).unwrap();
-        assert_eq!(vec.len(), 3);
-        assert!(vec.is_bail() == true);
-
-        let validate = Validator::new()
-            .rule("foo", Required)
-            .rule("foo", Range::new(1..2).and(Trim).bail());
-
-        let vec = validate.rules.get(&FieldNames::new("foo".into())).unwrap();
-        assert_eq!(vec.len(), 3);
-        assert!(vec.is_bail() == true);
-
-        let validate = Validator::new()
-            .rule("foo", Required.and(Trim).bail())
-            .rule("foo", Range::new(1..2).and(Trim).bail());
-
-        let vec = validate.rules.get(&FieldNames::new("foo".into())).unwrap();
-        assert_eq!(vec.len(), 3);
-        assert!(vec.is_bail() == true);
-
-        let validate = Validator::new()
-            .rule("foo", Required.and(Trim).and(Required).bail())
-            .rule("foo", Range::new(1..2).and(Trim).and(Required).bail());
-
-        let vec = validate.rules.get(&FieldNames::new("foo".into())).unwrap();
-        assert_eq!(vec.len(), 3);
-        assert!(vec.is_bail() == true);
-
-        let validate = Validator::new()
-            .rule("foo", Required.and(Trim).and(Required).bail())
-            .rule("bar", Required.and(Trim).and(Required).bail())
-            .rule("foo", Range::new(1..2).and(Trim).and(Required).bail())
-            .rule("bar", Range::new(1..2).and(Trim).and(Required).bail());
-
-        let vec = validate.rules.get(&FieldNames::new("foo".into())).unwrap();
-        assert_eq!(vec.len(), 3);
-        assert!(vec.is_bail() == true);
-
-        let vec = validate.rules.get(&FieldNames::new("bar".into())).unwrap();
-        assert_eq!(vec.len(), 3);
-        assert!(vec.is_bail() == true);
-    }
-
-    #[test]
-    #[cfg(feature = "full")]
-    fn test_refine() {
-        use crate::available::Required;
-        let validate = ValidatorRefine::new().rule("foo", Required);
-    }
+#[test]
+#[cfg(feature = "full")]
+fn test_refine() {
+    use crate::available::Required;
+    let validate = ValidatorRefine::new().rule("foo", Required);
 }

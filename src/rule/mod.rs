@@ -114,10 +114,10 @@ where
         R2: Rule<(), Message = M>,
     {
         let is_dup = {
-            if self.name() != other.name() {
+            if R::THE_NAME != R2::THE_NAME {
                 false
             } else {
-                match self.name() {
+                match R::THE_NAME {
                     "custom" => false,
                     _ => true,
                 }
