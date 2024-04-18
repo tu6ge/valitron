@@ -320,6 +320,20 @@ where
     }
 }
 
+impl<M, List> Clone for InnerValidator<M, List>
+where
+    List: Clone,
+{
+    fn clone(&self) -> Self {
+        Self {
+            rules: self.rules.clone(),
+            message: self.message.clone(),
+            is_bail: self.is_bail,
+        }
+    }
+}
+
+
 impl<M, List> InnerValidator<M, List> {
     /// # Register rules
     ///
@@ -449,6 +463,10 @@ impl<M, List> InnerValidator<M, List> {
         resp_message.shrink_to_fit();
 
         resp_message
+    }
+
+    pub(crate) fn get_message(&self) -> &List {
+        &self.message
     }
 }
 
