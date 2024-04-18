@@ -113,8 +113,22 @@ where
     where
         R2: Rule<(), Message = M>,
     {
+        let is_dup = {
+            if R::THE_NAME != R2::THE_NAME {
+                false
+            } else {
+                match R::THE_NAME {
+                    "custom" => false,
+                    _ => true,
+                }
+            }
+        };
         RuleList {
-            list: vec![ErasedRule::new(self), ErasedRule::new(other)],
+            list: if is_dup {
+                vec![ErasedRule::new(self)]
+            } else {
+                vec![ErasedRule::<M>::new(self), ErasedRule::new(other)]
+            },
             ..Default::default()
         }
     }
@@ -157,12 +171,43 @@ impl<M> Clone for RuleList<M> {
 }
 
 impl<M> RuleList<M> {
+    pub fn remove_duplicate(&mut self, other: &ErasedRule<M>) {
+        let name = other.name();
+
+        let duplicate_rules: Vec<usize> = self
+            .list
+            .iter()
+            .enumerate()
+            .filter(|(_index, exist_rule)| {
+                if exist_rule.name() != name {
+                    return false;
+                }
+                match name {
+                    "custom" => false,
+                    _ => true,
+                }
+            })
+            .map(|(index, _)| index)
+            .rev()
+            .collect();
+
+        for index in duplicate_rules {
+            // Use `swap_remove` to get better performence because we don't
+            // mind the order of rule list. If the order should be kept in
+            // the future, please use `remove` instead of `swap_remove`.
+            self.list.swap_remove(index);
+        }
+    }
+
     pub fn and<R>(mut self, other: R) -> Self
     where
         R: Rule<(), Message = M>,
         M: 'static,
     {
-        self.list.push(ErasedRule::new(other));
+        let other = ErasedRule::new(other);
+        self.remove_duplicate(&other);
+
+        self.list.push(other);
         self
     }
 
@@ -204,6 +249,10 @@ impl<M> RuleList<M> {
     }
 
     pub(crate) fn merge(&mut self, other: &mut RuleList<M>) {
+        for new_rule in &other.list {
+            self.remove_duplicate(new_rule);
+        }
+
         self.list.append(&mut other.list);
         self.is_bail = self.is_bail || other.is_bail;
     }
