@@ -96,7 +96,7 @@ type CoreValidator<'v> = InnerValidator<String, HashMap<FieldNames, HashMap<&'v 
 ///         }
 ///     }
 ///     fn message(&self) -> Self::Message {
-///         "this field must start with xxx".to_string()
+///         format!("this field must start with {}", self.0)
 ///     }
 ///     
 ///     const NAME: &'static str = "start_with";
@@ -294,7 +294,7 @@ mod tests {
             }
         }
         fn message(&self) -> Self::Message {
-            "this field must start with xxx".to_string()
+            format!("this field must start with {}", self.0)
         }
 
         const NAME: &'static str = "starts_with";
