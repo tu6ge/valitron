@@ -20,11 +20,11 @@ pub use contains::Contains;
 pub use email::Email;
 pub use end_with::EndsWith;
 pub use length::Length;
+pub use not::Not;
 pub use range::Range;
 pub use required::Required;
 pub use start_with::StartWith;
 pub use trim::Trim;
-pub use not::Not;
 
 /// Error message, it is returned when build-in rules validate fail
 #[derive(Debug, Clone, Eq, PartialEq, Serialize)]

@@ -1,5 +1,5 @@
 //! Reverse existing rules
-//! 
+//!
 //! # Examples
 //! ```
 //! # use serde::Serialize;
@@ -16,7 +16,7 @@
 //!     .validate(Validator::new().rule("email", Not(Contains('@'))))
 //!     .unwrap();
 //!
-//! 
+//!
 //!
 //! let input = Input {
 //!     email: String::from("user@foo.com"),
@@ -24,7 +24,7 @@
 //! let err = input
 //!     .validate(Validator::new().rule("email", Not(Contains('@'))))
 //!     .unwrap_err();
-//! 
+//!
 //! assert!(matches!(
 //!     err.get("email").unwrap()[0].kind(),
 //!     MessageKind::Contains(_)
