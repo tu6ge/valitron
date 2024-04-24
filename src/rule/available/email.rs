@@ -195,7 +195,7 @@ impl<'a> Cursor<'a> {
                         idna::domain_to_ascii(domain).ok().map(|d| {
                             // https://datatracker.ietf.org/doc/html/rfc5321#section-4.5.3.1.1
                             if d.chars().count() > 255 {
-                                return EmailToken::IllegalChar
+                                return EmailToken::IllegalChar;
                             }
                             self.is_idna_domain = true;
                             EmailToken::IdnaDomain
@@ -295,6 +295,7 @@ impl<'a> Cursor<'a> {
 
 #[cfg(test)]
 mod tests {
+
     use crate::available::email::EmailToken;
 
     use super::Cursor;
@@ -374,8 +375,7 @@ mod tests {
 
     #[test]
     fn parse() {
-        let tests =
-            vec![
+        let list = vec![
             ("email@here.com", true),
             ("weirder-email@here.and.there.com", true),
             (r#"!def!xyz%abc@example.com"#, true),
@@ -388,14 +388,23 @@ mod tests {
             ("test@domain.with.idn.tld.उदाहरण.परीक्षा", true),
             (r#""test@test"@example.com"#, false),
             // max length for domain name labels is 63 characters per RFC 1034
-            ("a@atm.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", true),
-            ("a@aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.atm", true),
+            (
+                "a@atm.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                true,
+            ),
+            (
+                "a@aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.atm",
+                true,
+            ),
             (
                 "a@aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.bbbbbbbbbb.atm",
                 true,
             ),
             // 64 * a
-            ("a@atm.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", false),
+            (
+                "a@atm.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                false,
+            ),
             ("", false),
             ("abc", false),
             ("abc@", false),
@@ -426,7 +435,7 @@ mod tests {
             ("John.Doe@exam_ple.com", false),
         ];
 
-        for (input, expected) in tests {
+        for (input, expected) in list {
             let output = Cursor::new(input).parse();
             // println!("{} - {}", input, expected);
             assert_eq!(
@@ -436,4 +445,5 @@ mod tests {
             );
         }
     }
+
 }
