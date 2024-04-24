@@ -6,6 +6,7 @@ use serde::Serialize;
 
 pub mod confirm;
 pub mod contains;
+pub mod email;
 pub mod end_with;
 pub mod length;
 pub mod range;
