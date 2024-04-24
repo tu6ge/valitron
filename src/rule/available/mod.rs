@@ -9,6 +9,7 @@ pub mod contains;
 pub mod email;
 pub mod end_with;
 pub mod length;
+pub mod not;
 pub mod range;
 pub mod required;
 pub mod start_with;
@@ -23,6 +24,7 @@ pub use range::Range;
 pub use required::Required;
 pub use start_with::StartWith;
 pub use trim::Trim;
+pub use not::Not;
 
 /// Error message, it is returned when build-in rules validate fail
 #[derive(Debug, Clone, Eq, PartialEq, Serialize)]
