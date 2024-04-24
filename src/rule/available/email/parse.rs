@@ -1,14 +1,12 @@
-// /^[a-zA-Z0-9.!#$%&'*+\/=?^_`{|}~-]+@
-// [a-zA-Z0-9]
-// (?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])
-// ?
-// (?:\.[a-zA-Z0-9]
-//    (?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])
-//    ?
-// )*$/
+
 
 use std::str::CharIndices;
 
+/// # valid email address
+/// 
+/// This is twice as efficient as [validator]
+/// 
+/// [validator]: https://github.com/Keats/validator
 #[inline]
 pub fn validate_email(email: &str) -> bool {
     let mut parse = Cursor::new(email);

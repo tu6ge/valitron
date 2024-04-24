@@ -15,6 +15,19 @@ fn criterion_benchmark(c: &mut Criterion) {
     });
 }
 
+//email validate          time:   [12.942 µs 12.957 µs 12.975 µs]
+//                        change: [-1.7710% -0.9200% -0.0549%] (p = 0.04 < 0.05)
+//                        Change within noise threshold.
+//Found 12 outliers among 100 measurements (12.00%)
+//  5 (5.00%) high mild
+//  7 (7.00%) high severe
+//
+//email validate out      time:   [23.147 µs 23.178 µs 23.214 µs]
+//                        change: [-1.1500% -0.3149% +0.5635%] (p = 0.48 > 0.05)
+//                        No change in performance detected.
+//Found 12 outliers among 100 measurements (12.00%)
+//  3 (3.00%) high mild
+//  9 (9.00%) high severe
 criterion_group!(benches, criterion_benchmark);
 criterion_main!(benches);
 
