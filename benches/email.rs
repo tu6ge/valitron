@@ -1,5 +1,5 @@
 use criterion::{criterion_group, criterion_main, Criterion};
-use valitron::available::email::Cursor;
+use valitron::available::email::validate_email;
 
 fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("email validate", |b| {
@@ -80,7 +80,7 @@ fn parse() {
     ];
 
     for (input, expected) in list {
-        let output = Cursor::new(input).parse();
+        let output = validate_email(input);
         // println!("{} - {}", input, expected);
         assert_eq!(
             output, expected,

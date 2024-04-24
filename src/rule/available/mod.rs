@@ -22,6 +22,7 @@ pub use range::Range;
 pub use required::Required;
 pub use start_with::StartWith;
 pub use trim::Trim;
+pub use email::Email;
 
 /// Error message, it is returned when build-in rules validate fail
 #[derive(Debug, Clone, Eq, PartialEq, Serialize)]
@@ -56,6 +57,9 @@ pub enum MessageKind {
     /// as range rule
     Range,
 
+    /// as email
+    Email,
+
     /// other way, it used by other type converting Message stopover
     Fallback(String),
 }
@@ -74,6 +78,7 @@ impl Serialize for MessageKind {
             MessageKind::EndsWith(_) => serializer.serialize_str("end_with"),
             MessageKind::Contains(_) => serializer.serialize_str("contains"),
             MessageKind::Trim => serializer.serialize_str("trim"),
+            MessageKind::Email => serializer.serialize_str("email"),
             MessageKind::Fallback(s) => serializer.serialize_str(s),
         }
     }
@@ -136,6 +141,7 @@ impl Display for MessageKind {
             MessageKind::Trim => unreachable!(),
             MessageKind::Range => "the value not in the range".fmt(f),
             MessageKind::Length => "the value's length not in the range".fmt(f),
+            MessageKind::Email => "the value is not a email address".fmt(f),
             MessageKind::Fallback(s) => s.fmt(f),
         }
     }
