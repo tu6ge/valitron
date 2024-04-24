@@ -716,5 +716,5 @@ impl<'key> MessageKey<'key> {
 #[cfg(feature = "full")]
 fn test_refine() {
     use crate::available::Required;
-    let validate = ValidatorRefine::new().rule("foo", Required);
+    let _ = ValidatorRefine::new().rule("foo", Required);
 }
