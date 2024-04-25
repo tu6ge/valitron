@@ -48,7 +48,7 @@ impl<T: Debug> Debug for Confirm<T> {
     }
 }
 
-impl<T: Copy> Copy for Confirm<T> {}
+crate::__impl_copy!(Confirm);
 
 crate::__impl_deref!(Confirm);
 

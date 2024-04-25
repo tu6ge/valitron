@@ -52,7 +52,7 @@ impl<T: Debug> Debug for StartWith<T> {
     }
 }
 
-impl<T: Copy> Copy for StartWith<T> {}
+crate::__impl_copy!(StartWith);
 
 crate::__impl_deref!(StartWith);
 

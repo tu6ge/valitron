@@ -45,7 +45,7 @@ impl<T: Debug> Debug for Not<T> {
     }
 }
 
-impl<T: Copy> Copy for Not<T> {}
+crate::__impl_copy!(Not);
 
 impl<T: RuleShortcut> RuleShortcut for Not<T> {
     type Message = T::Message;

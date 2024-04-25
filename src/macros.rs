@@ -38,3 +38,12 @@ macro_rules! __impl_deref {
         }
     };
 }
+
+/// Private API.
+#[doc(hidden)]
+#[macro_export]
+macro_rules! __impl_copy {
+    ($ident:ident) => {
+        impl<T: Copy> Copy for $ident<T> {}
+    };
+}

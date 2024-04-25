@@ -45,7 +45,7 @@ impl<T: Debug> Debug for EndsWith<T> {
     }
 }
 
-impl<T: Copy> Copy for EndsWith<T> {}
+crate::__impl_copy!(EndsWith);
 
 crate::__impl_deref!(EndsWith);
 
