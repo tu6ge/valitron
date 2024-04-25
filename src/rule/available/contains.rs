@@ -45,6 +45,8 @@ impl<T: Debug> Debug for Contains<T> {
     }
 }
 
+impl<T: Copy> Copy for Contains<T> {}
+
 const NAME: &'static str = "contains";
 
 impl<T> Contains<T> {

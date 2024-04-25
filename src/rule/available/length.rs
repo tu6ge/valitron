@@ -54,6 +54,7 @@ impl<T: Debug> Debug for Length<T> {
         f.debug_tuple("Length").field(&self.0).finish()
     }
 }
+impl<T: Copy> Copy for Length<T> {}
 
 const NAME: &'static str = "length";
 
@@ -94,7 +95,7 @@ where
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub struct Num(usize);
 
 impl Length<Num> {

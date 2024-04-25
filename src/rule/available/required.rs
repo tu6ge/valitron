@@ -48,7 +48,7 @@
 use super::Message;
 use crate::{RuleShortcut, Value};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct Required;
 
 const NAME: &'static str = "required";
