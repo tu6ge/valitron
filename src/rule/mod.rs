@@ -22,9 +22,10 @@
 //! }
 //! ```
 
-use std::{future::Future, slice::Iter};
+use std::{future::Future, pin::Pin, slice::Iter};
 
 use async_trait::async_trait;
+use futures::FutureExt;
 
 use crate::value::{FromValue, Value, ValueMap};
 
@@ -64,11 +65,11 @@ mod test;
 ///
 /// TODO! introduce ValueMap
 #[async_trait]
-pub trait Rule<T>: 'static + Sized + Clone + Send {
+pub trait Rule<T, M>: 'static + Sized + Clone + Send {
     /// custom define returning message type
     ///
     /// u8 or String or both
-    type Message;
+    type Future: Future<Output = Result<(), M>> + Sync;
 
     /// Named rule type, used to distinguish between different rules.
     ///
@@ -78,10 +79,10 @@ pub trait Rule<T>: 'static + Sized + Clone + Send {
     /// Rule specific implementation, data is gived type all field's value, and current field index.
     ///
     /// success returning Ok(()), or else returning message.
-    async fn call<'r>(&'r mut self, data: &'r mut ValueMap) -> Result<(), Self::Message>;
+    fn call<'r>(&mut self, data: &'static mut ValueMap) -> Self::Future;
 
     #[doc(hidden)]
-    fn into_boxed(self) -> RuleIntoBoxed<Self, Self::Message, T> {
+    fn into_boxed(self) -> RuleIntoBoxed<Self, M, T> {
         RuleIntoBoxed::new(self)
     }
 }
@@ -89,36 +90,36 @@ pub trait Rule<T>: 'static + Sized + Clone + Send {
 mod private {
     use super::Rule;
 
-    pub trait Sealed {}
+    pub trait Sealed<M> {}
 
-    impl<R> Sealed for R where R: Rule<()> {}
+    impl<R, M> Sealed<M> for R where R: Rule<(), M> {}
 }
 
 /// Rule extension, it can coupling some rules, such as
 /// ```rust,ignore
 /// Rule1.and(Rule2).and(Rule3)
 /// ```
-pub trait RuleExt<M>: private::Sealed {
+pub trait RuleExt<M>: private::Sealed<M> {
     fn and<R>(self, other: R) -> RuleList<M>
     where
-        R: Rule<(), Message = M>;
+        R: Rule<(), M>;
 
     fn custom<F, V, Fut>(self, other: F) -> RuleList<M>
     where
         F: for<'a> FnOnce(&'a mut V) -> Fut + Send + 'static + Clone,
         Fut: Future<Output = Result<(), M>> + Send,
-        F: Rule<V, Message = M>,
+        F: Rule<V, M>,
         V: FromValue + 'static;
 }
 
 impl<R, M> RuleExt<M> for R
 where
-    R: Rule<(), Message = M>,
+    R: Rule<(), M>,
     M: 'static,
 {
     fn and<R2>(self, other: R2) -> RuleList<M>
     where
-        R2: Rule<(), Message = M>,
+        R2: Rule<(), M>,
     {
         RuleList {
             list: vec![ErasedRule::<M>::new(self), ErasedRule::new(other)],
@@ -130,7 +131,7 @@ where
     where
         F: for<'a> FnOnce(&'a mut V) -> Fut + Send + 'static + Clone,
         Fut: Future<Output = Result<(), M>> + Send,
-        F: Rule<V, Message = M>,
+        F: Rule<V, M>,
         V: FromValue + 'static,
     {
         RuleList {
@@ -167,7 +168,7 @@ impl<M> Clone for RuleList<M> {
 impl<M> RuleList<M> {
     pub fn and<R>(mut self, other: R) -> Self
     where
-        R: Rule<(), Message = M>,
+        R: Rule<(), M>,
         M: 'static,
     {
         self.list.push(ErasedRule::new(other));
@@ -178,7 +179,7 @@ impl<M> RuleList<M> {
     where
         F: for<'a> FnOnce(&'a mut V) -> Fut + Send + 'static + Clone,
         Fut: Future<Output = Result<(), M>> + Send,
-        F: Rule<V, Message = M>,
+        F: Rule<V, M>,
         V: FromValue + 'static,
         M: 'static,
     {
@@ -218,7 +219,10 @@ impl<M> RuleList<M> {
     }
 
     #[must_use]
-    pub(crate) async fn call(self, data: &mut ValueMap) -> Vec<(&'static str, M)> {
+    pub(crate) async fn call(self, data: &'static mut ValueMap) -> Vec<(&'static str, M)>
+    where
+        M: 'static,
+    {
         let RuleList { mut list, .. } = self;
         let mut msg = Vec::with_capacity(list.len());
 
@@ -300,7 +304,7 @@ pub fn custom<F, V, M, Fut>(f: F) -> RuleList<M>
 where
     F: for<'a> FnOnce(&'a mut V) -> Fut + Send + 'static + Clone,
     Fut: Future<Output = Result<(), M>> + Send,
-    F: Rule<V, Message = M>,
+    F: Rule<V, M>,
     V: FromValue + 'static,
     M: 'static,
 {
@@ -315,18 +319,18 @@ impl<M> IntoRuleList<M> for RuleList<M> {
         self
     }
 }
-impl<R, M> IntoRuleList<M> for R
-where
-    R: Rule<(), Message = M>,
-    M: 'static,
-{
-    fn into_list(self) -> RuleList<M> {
-        RuleList {
-            list: vec![ErasedRule::new(self)],
-            ..Default::default()
-        }
-    }
-}
+// impl<R, M> IntoRuleList<M> for R
+// where
+//     R: Rule<(),  M>,
+//     M: 'static,
+// {
+//     fn into_list(self) -> RuleList<M> {
+//         RuleList {
+//             list: vec![ErasedRule::new(self)],
+//             ..Default::default()
+//         }
+//     }
+// }
 
 #[cfg(all(test, feature = "full"))]
 mod test_regster {
@@ -388,10 +392,9 @@ mod test_regster {
 }
 
 /// used by convenient implementation custom rules.
-#[async_trait]
-pub trait RuleShortcut {
+pub trait RuleShortcut<M>: 'static + Sized + Clone + Send {
     /// custom define returning message type
-    type Message;
+    type Future: Future<Output = bool> + Sync + 'static;
 
     /// Named rule type, used to distinguish different rules
     ///
@@ -399,7 +402,7 @@ pub trait RuleShortcut {
     fn name(&self) -> &'static str;
 
     /// Default rule error message, when validate fails, return the message to user
-    fn message(&self) -> Self::Message;
+    fn message(&self) -> M;
 
     /// Rule specific implementation, data is gived type all field's value, and current field index.
     /// when the method return true, call_message will return Ok(()), or else return Err(String)
@@ -407,49 +410,52 @@ pub trait RuleShortcut {
     /// *Panic*
     /// when not found value
     #[must_use]
-    async fn call_with_relate(&mut self, data: &mut ValueMap) -> bool {
+    fn call_with_relate(&mut self, data: &mut ValueMap) -> Self::Future {
         self.call(data.current_mut().expect("not found value with fields"))
-            .await
     }
 
     /// Rule specific implementation, data is current field's value
     #[must_use]
-    async fn call(&mut self, data: &mut Value) -> bool;
+    fn call(&mut self, data: &mut Value) -> Self::Future;
 }
 
-#[async_trait]
-impl<T> Rule<()> for T
+impl<T, M> Rule<(), M> for T
 where
-    T: RuleShortcut + 'static + Clone + Send,
+    T: RuleShortcut<M> + 'static + Clone + Sized + Sync,
+    M: 'static,
 {
-    type Message = T::Message;
+    type Future = Pin<Box<dyn Future<Output = Result<(), M>> + Sync>>;
 
     fn name(&self) -> &'static str {
         self.name()
     }
     /// Rule specific implementation, data is gived type all field's value, and current field index.
-    async fn call<'r>(&'r mut self, data: &'r mut ValueMap) -> Result<(), Self::Message> {
-        if self.call_with_relate(data).await {
-            Ok(())
-        } else {
-            Err(self.message())
-        }
+    fn call<'r>(&mut self, data: &'static mut ValueMap) -> Self::Future {
+        Box::pin(self.call_with_relate(data).then(|b| async move {
+            if b {
+                Ok(())
+            } else {
+                Err(self.message())
+            }
+        }))
     }
 }
 
-#[async_trait]
-impl<F, V, M, Fut> Rule<V> for F
+impl<F, V, M, Fut> Rule<V, M> for F
 where
-    F: for<'a> FnOnce(&'a mut V) -> Fut + Send + 'static + Clone,
-    Fut: Future<Output = Result<(), M>> + Send,
-    V: FromValue + Send,
+    F: for<'a> FnOnce(&'a mut V) -> Fut + Clone + Send + 'static,
+    Fut: Future<Output = Result<(), M>> + Sync + 'static,
+    V: FromValue + Sync,
+    M: 'static,
 {
-    type Message = M;
+    type Future = Pin<Box<dyn Future<Output = Result<(), M>> + Sync>>;
 
-    async fn call<'r>(&'r mut self, data: &'r mut ValueMap) -> Result<(), Self::Message> {
-        let val = V::from_value(data).expect("argument type can not be matched");
-        let hander = self.clone();
-        hander(val).await
+    fn call<'r>(&mut self, data: &'static mut ValueMap) -> Self::Future {
+        Box::pin({
+            let val = V::from_value(data).expect("argument type can not be matched");
+            let hander = self.clone();
+            hander(val)
+        })
     }
 
     fn name(&self) -> &'static str {

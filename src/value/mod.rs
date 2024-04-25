@@ -100,6 +100,9 @@ pub enum Value {
 unsafe impl Sync for Value {}
 unsafe impl Sync for ValueMap {}
 
+unsafe impl Send for Value {}
+unsafe impl Send for ValueMap {}
+
 /// contain full [`Value`] and cursor
 ///
 /// [`Value`]: self::Value

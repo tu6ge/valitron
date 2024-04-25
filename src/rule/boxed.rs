@@ -11,7 +11,7 @@ pub struct ErasedRule<M>(pub(super) Box<dyn BoxedRule<M>>);
 impl<M> ErasedRule<M> {
     pub fn new<H, S>(handler: H) -> Self
     where
-        H: Rule<S, Message = M>,
+        H: Rule<S, M>,
         S: 'static,
         M: 'static,
     {
@@ -21,7 +21,7 @@ impl<M> ErasedRule<M> {
     pub fn name(&self) -> &'static str {
         self.0.name()
     }
-    pub async fn call(&mut self, data: &mut ValueMap) -> Result<(), M> {
+    pub async fn call(&mut self, data: &'static mut ValueMap) -> Result<(), M> {
         self.0.call(data).await
     }
 
@@ -44,7 +44,7 @@ impl<M> Clone for ErasedRule<M> {
 pub trait BoxedRule<M>: Send {
     fn clone_box(&self) -> Box<dyn BoxedRule<M>>;
 
-    async fn call<'b>(&'b mut self, data: &'b mut ValueMap) -> Result<(), M>;
+    async fn call(&mut self, data: &'static mut ValueMap) -> Result<(), M>;
 
     fn name(&self) -> &'static str;
 }
@@ -81,7 +81,7 @@ where
 #[async_trait]
 impl<H, M, T> BoxedRule<M> for RuleIntoBoxed<H, M, T>
 where
-    H: Rule<T, Message = M> + Clone + Send,
+    H: Rule<T, M> + Clone + Send,
     T: 'static,
     M: 'static,
 {
@@ -89,7 +89,7 @@ where
         Box::new(self.clone())
     }
 
-    async fn call<'b>(&'b mut self, data: &'b mut ValueMap) -> Result<(), M> {
+    async fn call(&mut self, data: &'static mut ValueMap) -> Result<(), M> {
         self.handler.call(data).await
     }
 
@@ -122,7 +122,7 @@ where
         Box::new(self.clone())
     }
 
-    async fn call<'b>(&'b mut self, data: &'b mut ValueMap) -> Result<(), M2> {
+    async fn call(&mut self, data: &'static mut ValueMap) -> Result<(), M2> {
         self.inner.call(data).await.map_err(self.layer)
     }
 

@@ -247,7 +247,7 @@ impl<M> Validator<'_, M> {
         }
     }
 
-    async fn inner_validate(self, value_map: &mut ValueMap) -> ValidatorError<M> {
+    async fn inner_validate(self, value_map: &'static mut ValueMap) -> ValidatorError<M> {
         let mut resp_message = ValidatorError::with_capacity(self.rules.len());
 
         let Validator {
