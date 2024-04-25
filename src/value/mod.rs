@@ -97,6 +97,9 @@ pub enum Value {
     StructVariant(&'static str, BTreeMap<Value, Value>),
 }
 
+unsafe impl Sync for Value {}
+unsafe impl Sync for ValueMap {}
+
 /// contain full [`Value`] and cursor
 ///
 /// [`Value`]: self::Value
