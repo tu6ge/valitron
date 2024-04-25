@@ -45,7 +45,7 @@ mod parse;
 
 pub use parse::validate_email;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct Email;
 
 const NAME: &'static str = "email";

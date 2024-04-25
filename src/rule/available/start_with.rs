@@ -52,6 +52,8 @@ impl<T: Debug> Debug for StartWith<T> {
     }
 }
 
+impl<T: Copy> Copy for StartWith<T> {}
+
 const NAME: &'static str = "start_with";
 
 impl<T> StartWith<T> {

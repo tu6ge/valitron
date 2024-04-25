@@ -24,7 +24,7 @@ use crate::{RuleShortcut, Value};
 
 use super::Message;
 
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub struct Trim;
 
 const NAME: &'static str = "trim";
