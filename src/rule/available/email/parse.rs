@@ -34,6 +34,14 @@ pub struct Cursor<'a> {
     at_index: usize,
 }
 
+macro_rules! name_chars {
+    () => {
+        'a'..='z' | 'A'..='Z' | '!' | '#' | '$' | '%'
+        | '&' | '\'' | '*' | '+' | '-' | '/' | '='
+        | '?' | '^' | '_' | '`' | '{' | '}' | '|' | '~'
+    };
+}
+
 impl<'a> Cursor<'a> {
     pub fn new(source: &'a str) -> Self {
         Self {
@@ -54,53 +62,13 @@ impl<'a> Cursor<'a> {
 
         if self.token.len() == 0 {
             match char {
-                'a'..='z'
-                | 'A'..='Z'
-                | '!'
-                | '#'
-                | '$'
-                | '%'
-                | '&'
-                | '\''
-                | '*'
-                | '+'
-                | '-'
-                | '/'
-                | '='
-                | '?'
-                | '^'
-                | '_'
-                | '`'
-                | '{'
-                | '}'
-                | '|'
-                | '~' => {
+                name_chars!() => {
                     let mut iter = self.char.clone();
                     let mut current_usize = start_usize;
                     loop {
                         match iter.next() {
                             Some((last_usize, con)) => match con {
-                                'a'..='z'
-                                | 'A'..='Z'
-                                | '!'
-                                | '#'
-                                | '$'
-                                | '%'
-                                | '&'
-                                | '\''
-                                | '*'
-                                | '+'
-                                | '-'
-                                | '/'
-                                | '='
-                                | '?'
-                                | '^'
-                                | '_'
-                                | '`'
-                                | '{'
-                                | '}'
-                                | '|'
-                                | '~' => {
+                                name_chars!() => {
                                     current_usize = last_usize;
                                     self.char.next();
                                 }
