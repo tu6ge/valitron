@@ -31,13 +31,25 @@
 //!     MessageKind::Length
 //! ));
 //!
+//! let mut title_rule = Length(..10);
+//!
 //! input
 //!     .validate(
 //!         Validator::new()
-//!             .rule("title", Length(..10))
+//!             .rule("title", title_rule)
 //!             .rule("fruit", Length::eq(2)),
 //!     )
 //!     .unwrap();
+//!
+//! *title_rule = ..4;
+//!
+//! input
+//!     .validate(
+//!         Validator::new()
+//!             .rule("title", title_rule)
+//!             .rule("fruit", Length::eq(2)),
+//!     )
+//!     .unwrap_err();
 //! ```
 
 use std::{fmt::Debug, ops::RangeBounds};
@@ -55,6 +67,8 @@ impl<T: Debug> Debug for Length<T> {
     }
 }
 impl<T: Copy> Copy for Length<T> {}
+
+crate::__impl_deref!(Length);
 
 const NAME: &'static str = "length";
 

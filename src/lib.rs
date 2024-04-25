@@ -100,6 +100,9 @@ pub mod rule;
 mod ser;
 pub mod value;
 
+#[macro_use]
+pub(crate) mod macros;
+
 pub use register::{ValidPhrase, Validatable, Validator};
 pub use rule::{custom, Rule, RuleExt, RuleShortcut};
 pub use value::{FromValue, Value, ValueMap};

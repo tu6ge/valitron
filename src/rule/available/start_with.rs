@@ -54,6 +54,8 @@ impl<T: Debug> Debug for StartWith<T> {
 
 impl<T: Copy> Copy for StartWith<T> {}
 
+crate::__impl_deref!(StartWith);
+
 const NAME: &'static str = "start_with";
 
 impl<T> StartWith<T> {

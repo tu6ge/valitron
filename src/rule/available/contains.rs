@@ -22,12 +22,23 @@
 //!     MessageKind::Contains(_)
 //! ));
 //!
+//! let mut email_rule = Contains('@');
+//!
 //! let input = Input {
 //!     email: String::from("user@foo.com"),
 //! };
 //! input
-//!     .validate(Validator::new().rule("email", Contains('@')))
+//!     .validate(Validator::new().rule("email", email_rule))
 //!     .unwrap();
+//!
+//! *email_rule = 'A';
+//!
+//! let input = Input {
+//!     email: String::from("user@foo.com"),
+//! };
+//! input
+//!     .validate(Validator::new().rule("email", email_rule))
+//!     .unwrap_err();
 //! ```
 
 use std::fmt::{Debug, Display};
@@ -46,6 +57,8 @@ impl<T: Debug> Debug for Contains<T> {
 }
 
 impl<T: Copy> Copy for Contains<T> {}
+
+crate::__impl_deref!(Contains);
 
 const NAME: &'static str = "contains";
 
