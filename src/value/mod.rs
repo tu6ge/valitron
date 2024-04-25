@@ -21,7 +21,7 @@
 //! # }
 //! ```
 
-use std::{collections::BTreeMap, mem};
+use std::{collections::BTreeMap, mem, sync::Mutex};
 
 use crate::register::{FieldName, FieldNames, Parser};
 
@@ -112,7 +112,7 @@ pub struct ValueMap {
 }
 
 pub trait FromValue {
-    fn from_value(value: &mut ValueMap) -> Option<&mut Self>;
+    fn from_value(value: Mutex<ValueMap>) -> Mutex<Self>;
 }
 
 impl ValueMap {
@@ -291,71 +291,71 @@ impl Value {
 }
 
 impl FromValue for ValueMap {
-    fn from_value(value: &mut ValueMap) -> Option<&mut Self> {
-        Some(value)
+    fn from_value(value: Mutex<ValueMap>) -> Mutex<Self> {
+        value
     }
 }
 
-impl FromValue for Value {
-    fn from_value(value: &mut ValueMap) -> Option<&mut Self> {
-        value.current_mut()
-    }
-}
+// impl<'f> FromValue<'f> for Value {
+//     fn from_value(value: Mutex<ValueMap>) -> Option<&'f mut Self> {
+//         value.lock().unwrap().current_mut()
+//     }
+// }
 
-macro_rules! primitive_impl {
-    ($val:ident($ty:ty)) => {
-        impl FromValue for $ty {
-            fn from_value(value: &mut ValueMap) -> Option<&mut Self> {
-                if let Some(Value::$val(n)) = value.current_mut() {
-                    Some(n)
-                } else {
-                    None
-                }
-            }
-        }
-    };
-}
+// macro_rules! primitive_impl {
+//     ($val:ident($ty:ty)) => {
+//         impl<'f> FromValue<'f> for $ty {
+//             fn from_value(value: Mutex<ValueMap>) -> Option<&'f mut Self> {
+//                 if let Some(Value::$val(n)) = value.lock().unwrap().current_mut() {
+//                     Some(n)
+//                 } else {
+//                     None
+//                 }
+//             }
+//         }
+//     };
+// }
 
-primitive_impl!(Uint8(u8));
-primitive_impl!(Int8(i8));
-primitive_impl!(Uint16(u16));
-primitive_impl!(Int16(i16));
-primitive_impl!(Uint32(u32));
-primitive_impl!(Int32(i32));
-primitive_impl!(Uint64(u64));
-primitive_impl!(Int64(i64));
-primitive_impl!(String(String));
-primitive_impl!(Boolean(bool));
-primitive_impl!(Char(char));
+// primitive_impl!(Uint8(u8));
+// primitive_impl!(Int8(i8));
+// primitive_impl!(Uint16(u16));
+// primitive_impl!(Int16(i16));
+// primitive_impl!(Uint32(u32));
+// primitive_impl!(Int32(i32));
+// primitive_impl!(Uint64(u64));
+// primitive_impl!(Int64(i64));
+// primitive_impl!(String(String));
+// primitive_impl!(Boolean(bool));
+// primitive_impl!(Char(char));
 
-impl FromValue for f32 {
-    fn from_value(value: &mut ValueMap) -> Option<&mut Self> {
-        if let Some(Value::Float32(float::Float32(n))) = value.current_mut() {
-            Some(n)
-        } else {
-            None
-        }
-    }
-}
+// impl<'f> FromValue<'f> for f32 {
+//     fn from_value(value: Mutex<ValueMap>) -> Option<&'f mut Self> {
+//         if let Some(Value::Float32(float::Float32(n))) = value.lock().unwrap().current_mut() {
+//             Some(n)
+//         } else {
+//             None
+//         }
+//     }
+// }
 
-impl FromValue for f64 {
-    fn from_value(value: &mut ValueMap) -> Option<&mut Self> {
-        if let Some(Value::Float64(float::Float64(n))) = value.current_mut() {
-            Some(n)
-        } else {
-            None
-        }
-    }
-}
+// impl<'f> FromValue<'f> for f64 {
+//     fn from_value(value: Mutex<ValueMap>) -> Option<&'f mut Self> {
+//         if let Some(Value::Float64(float::Float64(n))) = value.lock().unwrap().current_mut() {
+//             Some(n)
+//         } else {
+//             None
+//         }
+//     }
+// }
 
-pub type Bytes = Vec<u8>;
+// pub type Bytes = Vec<u8>;
 
-impl FromValue for Bytes {
-    fn from_value(value: &mut ValueMap) -> Option<&mut Bytes> {
-        if let Some(Value::Bytes(bytes)) = value.current_mut() {
-            Some(bytes)
-        } else {
-            None
-        }
-    }
-}
+// impl FromValue for Bytes {
+//     fn from_value(value: &mut ValueMap) -> Option<&mut Bytes> {
+//         if let Some(Value::Bytes(bytes)) = value.current_mut() {
+//             Some(bytes)
+//         } else {
+//             None
+//         }
+//     }
+// }

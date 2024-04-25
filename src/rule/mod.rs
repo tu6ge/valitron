@@ -22,7 +22,7 @@
 //! }
 //! ```
 
-use std::{future::Future, pin::Pin, slice::Iter};
+use std::{future::Future, pin::Pin, slice::Iter, sync::{Arc, Mutex}};
 
 use async_trait::async_trait;
 use futures::FutureExt;
@@ -64,7 +64,6 @@ mod test;
 /// ```
 ///
 /// TODO! introduce ValueMap
-#[async_trait]
 pub trait Rule<T, M>: 'static + Sized + Clone + Send {
     /// custom define returning message type
     ///
@@ -79,7 +78,7 @@ pub trait Rule<T, M>: 'static + Sized + Clone + Send {
     /// Rule specific implementation, data is gived type all field's value, and current field index.
     ///
     /// success returning Ok(()), or else returning message.
-    fn call<'r>(&mut self, data: &'static mut ValueMap) -> Self::Future;
+    fn call<'r>(&mut self, data: Mutex<ValueMap>) -> Self::Future;
 
     #[doc(hidden)]
     fn into_boxed(self) -> RuleIntoBoxed<Self, M, T> {
@@ -106,7 +105,7 @@ pub trait RuleExt<M>: private::Sealed<M> {
 
     fn custom<F, V, Fut>(self, other: F) -> RuleList<M>
     where
-        F: for<'a> FnOnce(&'a mut V) -> Fut + Send + 'static + Clone,
+        F: FnOnce(Mutex<ValueMap>) -> Fut + Send + 'static + Clone,
         Fut: Future<Output = Result<(), M>> + Send,
         F: Rule<V, M>,
         V: FromValue + 'static;
@@ -129,7 +128,7 @@ where
 
     fn custom<F, V, Fut>(self, other: F) -> RuleList<M>
     where
-        F: for<'a> FnOnce(&'a mut V) -> Fut + Send + 'static + Clone,
+        F: FnOnce(Mutex<ValueMap>) -> Fut + Send + 'static + Clone,
         Fut: Future<Output = Result<(), M>> + Send,
         F: Rule<V, M>,
         V: FromValue + 'static,
@@ -177,7 +176,7 @@ impl<M> RuleList<M> {
 
     pub fn custom<F, V, Fut>(mut self, other: F) -> Self
     where
-        F: for<'a> FnOnce(&'a mut V) -> Fut + Send + 'static + Clone,
+        F: FnOnce(Mutex<ValueMap>) -> Fut + Send + 'static + Clone,
         Fut: Future<Output = Result<(), M>> + Send,
         F: Rule<V, M>,
         V: FromValue + 'static,
@@ -219,16 +218,20 @@ impl<M> RuleList<M> {
     }
 
     #[must_use]
-    pub(crate) async fn call(self, data: &'static mut ValueMap) -> Vec<(&'static str, M)>
-    where
-        M: 'static,
+    pub(crate) async fn call(self, data: Arc<Mutex<ValueMap>>) -> Vec<(&'static str, M)>
+// where
+    //     M: 'static,
     {
         let RuleList { mut list, .. } = self;
         let mut msg = Vec::with_capacity(list.len());
 
+        //let arc_data = Arc::new(data);
+
         for endpoint in list.iter_mut() {
+
+            let d = data.clone();
             let _ = endpoint
-                .call(data)
+                .call(d)
                 .await
                 .map_err(|e| msg.push((endpoint.name(), e)));
 
@@ -302,7 +305,7 @@ pub trait IntoRuleList<M> {
 /// load closure rule
 pub fn custom<F, V, M, Fut>(f: F) -> RuleList<M>
 where
-    F: for<'a> FnOnce(&'a mut V) -> Fut + Send + 'static + Clone,
+    F: FnOnce(Mutex<ValueMap>) -> Fut + Send + 'static + Clone,
     Fut: Future<Output = Result<(), M>> + Send,
     F: Rule<V, M>,
     V: FromValue + 'static,
@@ -410,8 +413,13 @@ pub trait RuleShortcut<M>: 'static + Sized + Clone + Send {
     /// *Panic*
     /// when not found value
     #[must_use]
-    fn call_with_relate(&mut self, data: &mut ValueMap) -> Self::Future {
-        self.call(data.current_mut().expect("not found value with fields"))
+    fn call_with_relate(&mut self, data: Mutex<ValueMap>) -> Self::Future {
+        self.call(
+            data.lock()
+                .unwrap()
+                .current_mut()
+                .expect("not found value with fields"),
+        )
     }
 
     /// Rule specific implementation, data is current field's value
@@ -430,7 +438,7 @@ where
         self.name()
     }
     /// Rule specific implementation, data is gived type all field's value, and current field index.
-    fn call<'r>(&mut self, data: &'static mut ValueMap) -> Self::Future {
+    fn call<'r>(&mut self, data: Mutex<ValueMap>) -> Self::Future {
         Box::pin(self.call_with_relate(data).then(|b| async move {
             if b {
                 Ok(())
@@ -443,16 +451,16 @@ where
 
 impl<F, V, M, Fut> Rule<V, M> for F
 where
-    F: for<'a> FnOnce(&'a mut V) -> Fut + Clone + Send + 'static,
+    F: FnOnce(Mutex<V>) -> Fut + Clone + Send + 'static,
     Fut: Future<Output = Result<(), M>> + Sync + 'static,
-    V: FromValue + Sync,
+    V: FromValue,
     M: 'static,
 {
     type Future = Pin<Box<dyn Future<Output = Result<(), M>> + Sync>>;
 
-    fn call<'r>(&mut self, data: &'static mut ValueMap) -> Self::Future {
+    fn call<'r>(&mut self, data: Mutex<ValueMap>) -> Self::Future {
         Box::pin({
-            let val = V::from_value(data).expect("argument type can not be matched");
+            let val = V::from_value(data);
             let hander = self.clone();
             hander(val)
         })

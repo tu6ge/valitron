@@ -1,4 +1,4 @@
-use std::marker::PhantomData;
+use std::{marker::PhantomData, pin::Pin, sync::{Arc, Mutex}};
 
 use async_trait::async_trait;
 
@@ -21,7 +21,7 @@ impl<M> ErasedRule<M> {
     pub fn name(&self) -> &'static str {
         self.0.name()
     }
-    pub async fn call(&mut self, data: &'static mut ValueMap) -> Result<(), M> {
+    pub async fn call(&mut self, data: Arc<Mutex<ValueMap>>) -> Result<(), M> {
         self.0.call(data).await
     }
 
@@ -44,7 +44,7 @@ impl<M> Clone for ErasedRule<M> {
 pub trait BoxedRule<M>: Send {
     fn clone_box(&self) -> Box<dyn BoxedRule<M>>;
 
-    async fn call(&mut self, data: &'static mut ValueMap) -> Result<(), M>;
+    async fn call(&mut self, data: Arc<Mutex<ValueMap>>) -> Result<(), M>;
 
     fn name(&self) -> &'static str;
 }
@@ -89,8 +89,9 @@ where
         Box::new(self.clone())
     }
 
-    async fn call(&mut self, data: &'static mut ValueMap) -> Result<(), M> {
-        self.handler.call(data).await
+    async fn call(&mut self, data: Arc<Mutex<ValueMap>>) -> Result<(), M> {
+        let d = Arc::into_inner(data).unwrap();
+        self.handler.call(d).await
     }
 
     fn name(&self) -> &'static str {
@@ -122,7 +123,7 @@ where
         Box::new(self.clone())
     }
 
-    async fn call(&mut self, data: &'static mut ValueMap) -> Result<(), M2> {
+    async fn call(&mut self, data: Arc<Mutex<ValueMap>>) -> Result<(), M2> {
         self.inner.call(data).await.map_err(self.layer)
     }
 

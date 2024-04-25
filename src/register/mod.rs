@@ -21,10 +21,7 @@ use std::{
     collections::{
         hash_map::{IntoIter, Iter, IterMut, Keys},
         HashMap,
-    },
-    error::Error,
-    fmt::Display,
-    hash::{Hash, Hasher},
+    }, error::Error, fmt::Display, hash::{Hash, Hasher}, intrinsics::drop_in_place, pin::Pin, sync::{Arc, Mutex}
 };
 
 use crate::{
@@ -218,9 +215,9 @@ impl<M> Validator<'_, M> {
     {
         let value = data.serialize(Serializer).unwrap();
 
-        let mut value_map = ValueMap::new(value);
+        let mut value_map = Mutex::new(ValueMap::new(value));
 
-        let message = self.inner_validate(&mut value_map).await;
+        let message = self.inner_validate(value_map).await;
 
         if message.is_empty() {
             Ok(())
@@ -236,18 +233,19 @@ impl<M> Validator<'_, M> {
     {
         let value = data.serialize(Serializer).unwrap();
 
-        let mut value_map = ValueMap::new(value);
+        let mut value_map = Mutex::new(ValueMap::new(value));
 
-        let message = self.inner_validate(&mut value_map).await;
+        let message = self.inner_validate(value_map).await;
 
         if message.is_empty() {
-            Ok(T::deserialize(value_map.value()).unwrap())
+            todo!()
+            //Ok(T::deserialize(value_map.value()).unwrap())
         } else {
             Err(message)
         }
     }
 
-    async fn inner_validate(self, value_map: &'static mut ValueMap) -> ValidatorError<M> {
+    async fn inner_validate(self, value_map: Mutex<ValueMap>) -> ValidatorError<M> {
         let mut resp_message = ValidatorError::with_capacity(self.rules.len());
 
         let Validator {
@@ -256,14 +254,24 @@ impl<M> Validator<'_, M> {
             is_bail,
         } = self;
 
-        for (mut names, mut rules) in rules.into_iter() {
+        let arc_map = Arc::new(value_map);
+
+        for (names, mut rules) in rules.into_iter() {
             if is_bail {
                 rules.set_bail();
             }
 
-            value_map.index(names);
-            let rule_resp = rules.call(value_map).await;
-            names = value_map.take_index();
+            let arc_clone = arc_map.clone();
+
+            let mut value_mut = arc_clone.lock().unwrap();
+            value_mut.index(names.clone());
+            drop(value_mut);
+
+           // arc_map.lock().unwrap().index(names);
+
+            //arc_map.get_mut().index(names);
+            let rule_resp = rules.call(arc_clone).await;
+        
 
             let field_msg = rule_resp
                 .into_iter()
