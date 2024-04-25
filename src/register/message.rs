@@ -10,15 +10,6 @@ pub trait IntoMessage {
     fn into_message(rule: &'static str, field: &FieldNames, value: &Value) -> Self;
 }
 
-macro_rules! panic_on_err {
-    ($expr:expr) => {
-        match $expr {
-            Ok(x) => x,
-            Err(err) => panic!("{err}"),
-        }
-    };
-}
-
 type CoreValidator<'v> = InnerValidator<String, HashMap<FieldNames, HashMap<&'v str, &'v str>>>;
 
 /// register a string message validator
@@ -144,7 +135,8 @@ impl<'v> ValidPhrase<'v> {
     /// custom validation message
     pub fn message<const N: usize>(mut self, list: [(&'v str, &'v str); N]) -> Self {
         list.map(|(key_str, v)| {
-            let MessageKey { fields, rule } = panic_on_err!(field_name::parse_message(key_str));
+            let MessageKey { fields, rule } =
+                crate::panic_on_err!(field_name::parse_message(key_str));
 
             debug_assert!(
                 self.0.rule_get(&fields).is_some(),

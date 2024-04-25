@@ -109,15 +109,6 @@ pub struct InnerValidator<M, List> {
     is_bail: bool,
 }
 
-macro_rules! panic_on_err {
-    ($expr:expr) => {
-        match $expr {
-            Ok(x) => x,
-            Err(err) => panic!("{err}"),
-        }
-    };
-}
-
 impl<M> Validator<'_, M> {
     pub fn new() -> Self {
         Self::default()
@@ -252,7 +243,7 @@ impl<'v, M> Validator<'v, M> {
         Msg: Into<M>,
     {
         self.message.extend(list.map(|(key_str, v)| {
-            let msg_key = panic_on_err!(field_name::parse_message(key_str));
+            let msg_key = crate::panic_on_err!(field_name::parse_message(key_str));
 
             debug_assert!(self.exit_message(&msg_key));
 
@@ -396,7 +387,7 @@ impl<M, List> InnerValidator<M, List> {
         F: IntoFieldName,
         R: IntoRuleList<M>,
     {
-        let names = panic_on_err!(field.into_field());
+        let names = crate::panic_on_err!(field.into_field());
         let mut rules = rule.into_list();
 
         debug_assert!(rules.valid_name(), "invalid rule name");

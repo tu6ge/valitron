@@ -47,3 +47,15 @@ macro_rules! __impl_copy {
         impl<T: Copy> Copy for $ident<T> {}
     };
 }
+
+/// Private API.
+#[doc(hidden)]
+#[macro_export]
+macro_rules! panic_on_err {
+    ($expr:expr) => {
+        match $expr {
+            Ok(x) => x,
+            Err(err) => panic!("{err}"),
+        }
+    };
+}
