@@ -66,7 +66,7 @@ impl<T: Debug> Debug for Length<T> {
         f.debug_tuple("Length").field(&self.0).finish()
     }
 }
-impl<T: Copy> Copy for Length<T> {}
+crate::__impl_copy!(Length);
 
 crate::__impl_deref!(Length);
 

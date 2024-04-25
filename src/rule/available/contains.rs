@@ -56,7 +56,7 @@ impl<T: Debug> Debug for Contains<T> {
     }
 }
 
-impl<T: Copy> Copy for Contains<T> {}
+crate::__impl_copy!(Contains);
 
 crate::__impl_deref!(Contains);
 
