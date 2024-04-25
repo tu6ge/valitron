@@ -31,10 +31,21 @@
 //! ));
 //! ```
 
+use core::fmt;
+use std::fmt::Debug;
+
 use crate::{RuleShortcut, Value};
 
 #[derive(Clone)]
 pub struct Not<T>(pub T);
+
+impl<T: Debug> Debug for Not<T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_tuple("Not").field(&self.0).finish()
+    }
+}
+
+impl<T: Copy> Copy for Not<T> {}
 
 impl<T: RuleShortcut> RuleShortcut for Not<T> {
     type Message = T::Message;
@@ -47,5 +58,37 @@ impl<T: RuleShortcut> RuleShortcut for Not<T> {
 
     fn call(&mut self, value: &mut Value) -> bool {
         !self.0.call(value)
+    }
+}
+
+impl<T> Not<&T> {
+    pub const fn copied(self) -> Not<T>
+    where
+        T: Copy,
+    {
+        Not(*self.0)
+    }
+
+    pub fn cloned(self) -> Not<T>
+    where
+        T: Clone,
+    {
+        Not(self.0.clone())
+    }
+}
+
+impl<T> Not<&mut T> {
+    pub fn copied(self) -> Not<T>
+    where
+        T: Copy,
+    {
+        Not(*self.0)
+    }
+
+    pub fn cloned(self) -> Not<T>
+    where
+        T: Clone,
+    {
+        Not(self.0.clone())
     }
 }
