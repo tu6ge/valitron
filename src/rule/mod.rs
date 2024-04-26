@@ -22,7 +22,12 @@
 //! }
 //! ```
 
-use std::{future::Future, pin::Pin, slice::Iter, sync::{Arc, Mutex}};
+use std::{
+    future::Future,
+    pin::Pin,
+    slice::Iter,
+    sync::{Arc, Mutex},
+};
 
 use async_trait::async_trait;
 use futures::FutureExt;
@@ -78,7 +83,7 @@ pub trait Rule<T, M>: 'static + Sized + Clone + Send {
     /// Rule specific implementation, data is gived type all field's value, and current field index.
     ///
     /// success returning Ok(()), or else returning message.
-    fn call<'r>(&mut self, data: Mutex<ValueMap>) -> Self::Future;
+    fn call<'r>(self, data: Mutex<ValueMap>) -> Self::Future;
 
     #[doc(hidden)]
     fn into_boxed(self) -> RuleIntoBoxed<Self, M, T> {
@@ -105,8 +110,8 @@ pub trait RuleExt<M>: private::Sealed<M> {
 
     fn custom<F, V, Fut>(self, other: F) -> RuleList<M>
     where
-        F: FnOnce(Mutex<ValueMap>) -> Fut + Send + 'static + Clone,
-        Fut: Future<Output = Result<(), M>> + Send,
+        F: FnOnce(Mutex<ValueMap>) -> Fut + 'static + Clone,
+        Fut: Future<Output = Result<(), M>>,
         F: Rule<V, M>,
         V: FromValue + 'static;
 }
@@ -128,8 +133,8 @@ where
 
     fn custom<F, V, Fut>(self, other: F) -> RuleList<M>
     where
-        F: FnOnce(Mutex<ValueMap>) -> Fut + Send + 'static + Clone,
-        Fut: Future<Output = Result<(), M>> + Send,
+        F: FnOnce(Mutex<ValueMap>) -> Fut + 'static + Clone,
+        Fut: Future<Output = Result<(), M>>,
         F: Rule<V, M>,
         V: FromValue + 'static,
     {
@@ -176,8 +181,8 @@ impl<M> RuleList<M> {
 
     pub fn custom<F, V, Fut>(mut self, other: F) -> Self
     where
-        F: FnOnce(Mutex<ValueMap>) -> Fut + Send + 'static + Clone,
-        Fut: Future<Output = Result<(), M>> + Send,
+        F: FnOnce(Mutex<ValueMap>) -> Fut + 'static + Clone,
+        Fut: Future<Output = Result<(), M>>,
         F: Rule<V, M>,
         V: FromValue + 'static,
         M: 'static,
@@ -228,7 +233,6 @@ impl<M> RuleList<M> {
         //let arc_data = Arc::new(data);
 
         for endpoint in list.iter_mut() {
-
             let d = data.clone();
             let _ = endpoint
                 .call(d)
@@ -305,8 +309,8 @@ pub trait IntoRuleList<M> {
 /// load closure rule
 pub fn custom<F, V, M, Fut>(f: F) -> RuleList<M>
 where
-    F: FnOnce(Mutex<ValueMap>) -> Fut + Send + 'static + Clone,
-    Fut: Future<Output = Result<(), M>> + Send,
+    F: FnOnce(Mutex<ValueMap>) -> Fut + 'static + Clone,
+    Fut: Future<Output = Result<(), M>>,
     F: Rule<V, M>,
     V: FromValue + 'static,
     M: 'static,
@@ -322,6 +326,7 @@ impl<M> IntoRuleList<M> for RuleList<M> {
         self
     }
 }
+
 // impl<R, M> IntoRuleList<M> for R
 // where
 //     R: Rule<(),  M>,
@@ -413,7 +418,7 @@ pub trait RuleShortcut<M>: 'static + Sized + Clone + Send {
     /// *Panic*
     /// when not found value
     #[must_use]
-    fn call_with_relate(&mut self, data: Mutex<ValueMap>) -> Self::Future {
+    fn call_with_relate(self, data: Mutex<ValueMap>) -> Self::Future {
         self.call(
             data.lock()
                 .unwrap()
@@ -424,13 +429,12 @@ pub trait RuleShortcut<M>: 'static + Sized + Clone + Send {
 
     /// Rule specific implementation, data is current field's value
     #[must_use]
-    fn call(&mut self, data: &mut Value) -> Self::Future;
+    fn call(self, data: &mut Value) -> Self::Future;
 }
 
 impl<T, M> Rule<(), M> for T
 where
-    T: RuleShortcut<M> + 'static + Clone + Sized + Sync,
-    M: 'static,
+    T: RuleShortcut<M> + Clone + Sync,
 {
     type Future = Pin<Box<dyn Future<Output = Result<(), M>> + Sync>>;
 
@@ -438,8 +442,10 @@ where
         self.name()
     }
     /// Rule specific implementation, data is gived type all field's value, and current field index.
-    fn call<'r>(&mut self, data: Mutex<ValueMap>) -> Self::Future {
-        Box::pin(self.call_with_relate(data).then(|b| async move {
+    fn call(self, data: Mutex<ValueMap>) -> Self::Future {
+        //let this = self.clone();
+        //todo!()
+        Box::pin(self.clone().call_with_relate(data).then(|b| async move {
             if b {
                 Ok(())
             } else {
@@ -454,14 +460,13 @@ where
     F: FnOnce(Mutex<V>) -> Fut + Clone + Send + 'static,
     Fut: Future<Output = Result<(), M>> + Sync + 'static,
     V: FromValue,
-    M: 'static,
 {
     type Future = Pin<Box<dyn Future<Output = Result<(), M>> + Sync>>;
 
-    fn call<'r>(&mut self, data: Mutex<ValueMap>) -> Self::Future {
+    fn call<'r>(self, data: Mutex<ValueMap>) -> Self::Future {
         Box::pin({
             let val = V::from_value(data);
-            let hander = self.clone();
+            let hander = self;
             hander(val)
         })
     }

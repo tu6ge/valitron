@@ -296,11 +296,12 @@ impl FromValue for ValueMap {
     }
 }
 
-// impl<'f> FromValue<'f> for Value {
-//     fn from_value(value: Mutex<ValueMap>) -> Option<&'f mut Self> {
-//         value.lock().unwrap().current_mut()
-//     }
-// }
+impl FromValue for Value {
+    fn from_value(value: Mutex<ValueMap>) -> Mutex<Self> {
+        todo!()
+        //value.lock().unwrap().current_mut()
+    }
+}
 
 // macro_rules! primitive_impl {
 //     ($val:ident($ty:ty)) => {

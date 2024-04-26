@@ -21,7 +21,13 @@ use std::{
     collections::{
         hash_map::{IntoIter, Iter, IterMut, Keys},
         HashMap,
-    }, error::Error, fmt::Display, hash::{Hash, Hasher}, intrinsics::drop_in_place, pin::Pin, sync::{Arc, Mutex}
+    },
+    error::Error,
+    fmt::Display,
+    hash::{Hash, Hasher},
+    intrinsics::drop_in_place,
+    pin::Pin,
+    sync::{Arc, Mutex},
 };
 
 use crate::{
@@ -129,7 +135,7 @@ macro_rules! panic_on_err {
     };
 }
 
-impl<M> Validator<'_, M> {
+impl<M: Send> Validator<'_, M> {
     /// # Register rules
     ///
     /// **Feild support multiple formats:**
@@ -215,9 +221,11 @@ impl<M> Validator<'_, M> {
     {
         let value = data.serialize(Serializer).unwrap();
 
-        let mut value_map = Mutex::new(ValueMap::new(value));
+        let value_map = Mutex::new(ValueMap::new(value));
 
-        let message = self.inner_validate(value_map).await;
+        let arc_map = Arc::new(value_map);
+
+        let message = self.inner_validate(arc_map).await;
 
         if message.is_empty() {
             Ok(())
@@ -233,9 +241,11 @@ impl<M> Validator<'_, M> {
     {
         let value = data.serialize(Serializer).unwrap();
 
-        let mut value_map = Mutex::new(ValueMap::new(value));
+        let value_map = Mutex::new(ValueMap::new(value));
 
-        let message = self.inner_validate(value_map).await;
+        let arc_map = Arc::new(value_map);
+
+        let message = self.inner_validate(arc_map).await;
 
         if message.is_empty() {
             todo!()
@@ -245,7 +255,7 @@ impl<M> Validator<'_, M> {
         }
     }
 
-    async fn inner_validate(self, value_map: Mutex<ValueMap>) -> ValidatorError<M> {
+    async fn inner_validate(self, value_map: Arc<Mutex<ValueMap>>) -> ValidatorError<M> {
         let mut resp_message = ValidatorError::with_capacity(self.rules.len());
 
         let Validator {
@@ -254,7 +264,7 @@ impl<M> Validator<'_, M> {
             is_bail,
         } = self;
 
-        let arc_map = Arc::new(value_map);
+        let arc_map = Arc::clone(&value_map);
 
         for (names, mut rules) in rules.into_iter() {
             if is_bail {
@@ -267,11 +277,10 @@ impl<M> Validator<'_, M> {
             value_mut.index(names.clone());
             drop(value_mut);
 
-           // arc_map.lock().unwrap().index(names);
+            // arc_map.lock().unwrap().index(names);
 
             //arc_map.get_mut().index(names);
             let rule_resp = rules.call(arc_clone).await;
-        
 
             let field_msg = rule_resp
                 .into_iter()
@@ -314,7 +323,7 @@ impl<M> Validator<'_, M> {
     }
 }
 
-impl<'v, M> Validator<'v, M> {
+impl<'v, M: Send> Validator<'v, M> {
     /// Custom validate error message
     ///
     /// Every rule has a default message, the method should be replace it with your need.
@@ -400,17 +409,18 @@ pub trait Validatable<M> {
         validator: Validator<'v, M>,
     ) -> Result<Self, ValidatorError<M>>
     where
-        Self: Sized + Deserialize<'de>;
+        Self: Sized + Deserialize<'de> + Send;
 }
 
 #[async_trait]
 impl<T, M> Validatable<M> for T
 where
-    T: Serialize + Sync + Send,
+    T: Serialize + Sync,
     M: 'static + Send,
 {
     async fn validate<'v>(&'v self, validator: Validator<'v, M>) -> Result<(), ValidatorError<M>> {
-        validator.validate(self).await
+        todo!()
+        //validator.validate(self).await
     }
 
     async fn validate_mut<'de, 'v>(
@@ -418,9 +428,10 @@ where
         validator: Validator<'v, M>,
     ) -> Result<Self, ValidatorError<M>>
     where
-        Self: Sized + Deserialize<'de>,
+        Self: Sized + Deserialize<'de> + Send,
     {
-        validator.validate_mut(self).await
+        todo!()
+        //validator.validate_mut(self).await
     }
 }
 
@@ -436,6 +447,8 @@ impl<M: Clone> Clone for ValidatorError<M> {
         }
     }
 }
+
+unsafe impl<M> Send for ValidatorError<M> {}
 
 impl<M: PartialEq<M>> PartialEq<Self> for ValidatorError<M> {
     fn eq(&self, other: &Self) -> bool {

@@ -1,4 +1,8 @@
-use std::{marker::PhantomData, pin::Pin, sync::{Arc, Mutex}};
+use std::{
+    marker::PhantomData,
+    pin::Pin,
+    sync::{Arc, Mutex},
+};
 
 use async_trait::async_trait;
 
@@ -90,8 +94,9 @@ where
     }
 
     async fn call(&mut self, data: Arc<Mutex<ValueMap>>) -> Result<(), M> {
-        let d = Arc::into_inner(data).unwrap();
-        self.handler.call(d).await
+        todo!()
+        // let d = Arc::into_inner(data).unwrap();
+        // self.handler.call(d).await
     }
 
     fn name(&self) -> &'static str {
