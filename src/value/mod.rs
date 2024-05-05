@@ -106,6 +106,7 @@ unsafe impl Send for ValueMap {}
 /// contain full [`Value`] and cursor
 ///
 /// [`Value`]: self::Value
+#[derive(Debug, Clone)]
 pub struct ValueMap {
     pub(crate) value: Value,
     pub(crate) index: FieldNames,

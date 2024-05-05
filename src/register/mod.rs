@@ -245,11 +245,12 @@ impl<M: Send> Validator<'_, M> {
 
         let arc_map = Arc::new(value_map);
 
-        let message = self.inner_validate(arc_map).await;
+        let message = self.inner_validate(arc_map.clone()).await;
 
         if message.is_empty() {
-            todo!()
-            //Ok(T::deserialize(value_map.value()).unwrap())
+            let val = arc_map.lock().unwrap();
+            let v = val.clone().value();
+            Ok(T::deserialize(v).unwrap())
         } else {
             Err(message)
         }
@@ -277,9 +278,7 @@ impl<M: Send> Validator<'_, M> {
             value_mut.index(names.clone());
             drop(value_mut);
 
-            // arc_map.lock().unwrap().index(names);
-
-            //arc_map.get_mut().index(names);
+   
             let rule_resp = rules.call(arc_clone).await;
 
             let field_msg = rule_resp

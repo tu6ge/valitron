@@ -16,8 +16,9 @@ impl<M> ErasedRule<M> {
     pub fn new<H, S>(handler: H) -> Self
     where
         H: Rule<S, M>,
-        S: 'static,
-        M: 'static,
+        S: 'static + Send,
+        M: 'static + Send,
+        <H as Rule<S,M>>::Future: Send,
     {
         Self(Box::new(handler.into_boxed()))
     }
@@ -25,7 +26,7 @@ impl<M> ErasedRule<M> {
     pub fn name(&self) -> &'static str {
         self.0.name()
     }
-    pub async fn call(&mut self, data: Arc<Mutex<ValueMap>>) -> Result<(), M> {
+    pub async fn call(self, data: Mutex<ValueMap>) -> Result<(), M> {
         self.0.call(data).await
     }
 
@@ -48,7 +49,7 @@ impl<M> Clone for ErasedRule<M> {
 pub trait BoxedRule<M>: Send {
     fn clone_box(&self) -> Box<dyn BoxedRule<M>>;
 
-    async fn call(&mut self, data: Arc<Mutex<ValueMap>>) -> Result<(), M>;
+    async fn call(self: Box<Self>, data: Mutex<ValueMap>) -> Result<(), M>;
 
     fn name(&self) -> &'static str;
 }
@@ -58,6 +59,8 @@ pub struct RuleIntoBoxed<H, M, T> {
     _marker: PhantomData<fn() -> T>,
     _message: PhantomData<fn() -> M>,
 }
+
+unsafe impl<H, M, T> Send for RuleIntoBoxed<H, M, T> {}
 
 impl<H, M, T> RuleIntoBoxed<H, M, T> {
     pub(super) fn new(handler: H) -> Self {
@@ -86,17 +89,16 @@ where
 impl<H, M, T> BoxedRule<M> for RuleIntoBoxed<H, M, T>
 where
     H: Rule<T, M> + Clone + Send,
-    T: 'static,
-    M: 'static,
+    T: 'static + Send,
+    M: 'static + Send,
+    <H as Rule<T,M>>::Future: Send,
 {
     fn clone_box(&self) -> Box<dyn BoxedRule<M>> {
         Box::new(self.clone())
     }
 
-    async fn call(&mut self, data: Arc<Mutex<ValueMap>>) -> Result<(), M> {
-        todo!()
-        // let d = Arc::into_inner(data).unwrap();
-        // self.handler.call(d).await
+    async fn call(self: Box<Self>, data: Mutex<ValueMap>) -> Result<(), M> {
+        (self.handler).call(data).await
     }
 
     fn name(&self) -> &'static str {
@@ -128,7 +130,7 @@ where
         Box::new(self.clone())
     }
 
-    async fn call(&mut self, data: Arc<Mutex<ValueMap>>) -> Result<(), M2> {
+    async fn call(self: Box<Self>, data: Mutex<ValueMap>) -> Result<(), M2> {
         self.inner.call(data).await.map_err(self.layer)
     }
 

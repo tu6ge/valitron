@@ -106,24 +106,28 @@ mod private {
 pub trait RuleExt<M>: private::Sealed<M> {
     fn and<R>(self, other: R) -> RuleList<M>
     where
-        R: Rule<(), M>;
+        R: Rule<(), M>,
+        <R as Rule<(),M>>::Future: Send,;
 
     fn custom<F, V, Fut>(self, other: F) -> RuleList<M>
     where
         F: FnOnce(Mutex<ValueMap>) -> Fut + 'static + Clone,
         Fut: Future<Output = Result<(), M>>,
         F: Rule<V, M>,
-        V: FromValue + 'static;
+        V: FromValue + 'static + Send,
+        <F as Rule<V,M>>::Future: Send,;
 }
 
 impl<R, M> RuleExt<M> for R
 where
     R: Rule<(), M>,
-    M: 'static,
+    M: 'static + Send,
+    <R as Rule<(),M>>::Future: Send,
 {
     fn and<R2>(self, other: R2) -> RuleList<M>
     where
         R2: Rule<(), M>,
+        <R2 as Rule<(),M>>::Future: Send,
     {
         RuleList {
             list: vec![ErasedRule::<M>::new(self), ErasedRule::new(other)],
@@ -136,7 +140,8 @@ where
         F: FnOnce(Mutex<ValueMap>) -> Fut + 'static + Clone,
         Fut: Future<Output = Result<(), M>>,
         F: Rule<V, M>,
-        V: FromValue + 'static,
+        V: FromValue + 'static + Send,
+        <F as Rule<V,M>>::Future: Send,
     {
         RuleList {
             list: vec![ErasedRule::new(self), ErasedRule::new(other)],
@@ -173,7 +178,8 @@ impl<M> RuleList<M> {
     pub fn and<R>(mut self, other: R) -> Self
     where
         R: Rule<(), M>,
-        M: 'static,
+        M: 'static + Send,
+        <R as Rule<(),M>>::Future: Send,
     {
         self.list.push(ErasedRule::new(other));
         self
@@ -184,8 +190,9 @@ impl<M> RuleList<M> {
         F: FnOnce(Mutex<ValueMap>) -> Fut + 'static + Clone,
         Fut: Future<Output = Result<(), M>>,
         F: Rule<V, M>,
-        V: FromValue + 'static,
-        M: 'static,
+        V: FromValue + 'static + Send,
+        M: 'static + Send,
+        <F as Rule<V,M>>::Future: Send,
     {
         self.list.push(ErasedRule::new(other));
         self
@@ -224,26 +231,26 @@ impl<M> RuleList<M> {
 
     #[must_use]
     pub(crate) async fn call(self, data: Arc<Mutex<ValueMap>>) -> Vec<(&'static str, M)>
-// where
-    //     M: 'static,
+    // where
+    //     M: Clone,
     {
-        let RuleList { mut list, .. } = self;
+        let RuleList { list, .. } = self;
         let mut msg = Vec::with_capacity(list.len());
 
-        //let arc_data = Arc::new(data);
+        todo!();
 
-        for endpoint in list.iter_mut() {
-            let d = data.clone();
-            let _ = endpoint
-                .call(d)
-                .await
-                .map_err(|e| msg.push((endpoint.name(), e)));
+        // for endpoint in list.into_iter() {
+        //     let d = data.clone();
+        //     let _ = endpoint
+        //         .call(d)
+        //         .await
+        //         .map_err(|e| msg.push((endpoint.name(), e.clone())));
 
-            if self.is_bail && !msg.is_empty() {
-                msg.shrink_to_fit();
-                return msg;
-            }
-        }
+        //     if self.is_bail && !msg.is_empty() {
+        //         msg.shrink_to_fit();
+        //         return msg;
+        //     }
+        // }
 
         msg.shrink_to_fit();
         msg
@@ -312,8 +319,9 @@ where
     F: FnOnce(Mutex<ValueMap>) -> Fut + 'static + Clone,
     Fut: Future<Output = Result<(), M>>,
     F: Rule<V, M>,
-    V: FromValue + 'static,
-    M: 'static,
+    V: FromValue + 'static + Send,
+    M: 'static + Send,
+    <F as Rule<V,M>>::Future: Send,
 {
     RuleList {
         list: vec![ErasedRule::new(f)],
