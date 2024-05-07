@@ -135,7 +135,7 @@ macro_rules! panic_on_err {
     };
 }
 
-impl<M: Send> Validator<'_, M> {
+impl<M: Send + Clone> Validator<'_, M> {
     /// # Register rules
     ///
     /// **Feild support multiple formats:**
@@ -322,7 +322,7 @@ impl<M: Send> Validator<'_, M> {
     }
 }
 
-impl<'v, M: Send> Validator<'v, M> {
+impl<'v, M: Send + Clone> Validator<'v, M> {
     /// Custom validate error message
     ///
     /// Every rule has a default message, the method should be replace it with your need.

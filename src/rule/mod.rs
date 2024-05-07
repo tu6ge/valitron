@@ -231,26 +231,26 @@ impl<M> RuleList<M> {
 
     #[must_use]
     pub(crate) async fn call(self, data: Arc<Mutex<ValueMap>>) -> Vec<(&'static str, M)>
-    // where
-    //     M: Clone,
+    where
+        M: Clone,
     {
         let RuleList { list, .. } = self;
         let mut msg = Vec::with_capacity(list.len());
 
-        todo!();
+        //todo!();
 
-        // for endpoint in list.into_iter() {
-        //     let d = data.clone();
-        //     let _ = endpoint
-        //         .call(d)
-        //         .await
-        //         .map_err(|e| msg.push((endpoint.name(), e.clone())));
+        for endpoint in list.into_iter() {
+            let d = data.lock().unwrap();
+            let _ = endpoint
+                .call(d)
+                .await
+                .map_err(|e| msg.push((endpoint.name(), e.clone())));
 
-        //     if self.is_bail && !msg.is_empty() {
-        //         msg.shrink_to_fit();
-        //         return msg;
-        //     }
-        // }
+            if self.is_bail && !msg.is_empty() {
+                msg.shrink_to_fit();
+                return msg;
+            }
+        }
 
         msg.shrink_to_fit();
         msg
