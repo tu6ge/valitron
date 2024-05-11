@@ -650,6 +650,10 @@ impl<M> ValidatorError<M> {
         self.message.is_empty()
     }
 
+    pub fn is_ok(&self) -> bool {
+        self.is_empty()
+    }
+
     pub fn len(&self) -> usize {
         self.message.len()
     }
