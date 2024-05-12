@@ -1,3 +1,40 @@
+//! validater value by regex, supported `String`, other types always return false.
+//!
+//! # Examples
+//! ```
+//! # use serde::Serialize;
+//! # use valitron::{available::{Regex, MessageKind}, Validatable, Validator};
+//! #[derive(Serialize, Debug)]
+//! struct Input {
+//!     title: String,
+//! }
+//!
+//! let input = Input {
+//!     title: String::from("ac"),
+//! };
+//! let err = input
+//!     .validate(
+//!         Validator::new()
+//!             .rule("title", Regex::new(r"...")),
+//!     )
+//!     .unwrap_err();
+//!
+//! assert!(matches!(
+//!     err.get("title").unwrap()[0].kind(),
+//!     MessageKind::Regex
+//! ));
+//!
+//! let input = Input {
+//!     title: String::from("abc"),
+//! };
+//! input
+//!     .validate(
+//!         Validator::new()
+//!             .rule("title", Regex::new(r"...")),
+//!     )
+//!     .unwrap();
+//! ```
+
 use crate::RuleShortcut;
 
 use super::Message;
