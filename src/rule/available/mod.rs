@@ -11,6 +11,7 @@ pub mod end_with;
 pub mod length;
 pub mod not;
 pub mod range;
+pub mod regex;
 pub mod required;
 pub mod start_with;
 pub mod trim;
@@ -22,6 +23,7 @@ pub use end_with::EndsWith;
 pub use length::Length;
 pub use not::Not;
 pub use range::Range;
+pub use regex::Regex;
 pub use required::Required;
 pub use start_with::StartWith;
 pub use trim::Trim;
@@ -62,6 +64,9 @@ pub enum MessageKind {
     /// as email
     Email,
 
+    /// as regex rule
+    Regex,
+
     /// other way, it used by other type converting Message stopover
     Fallback(String),
 }
@@ -82,6 +87,7 @@ impl Serialize for MessageKind {
             MessageKind::Trim => serializer.serialize_str("trim"),
             MessageKind::Email => serializer.serialize_str("email"),
             MessageKind::Fallback(s) => serializer.serialize_str(s),
+            MessageKind::Regex => serializer.serialize_str("regex"),
         }
     }
 }
@@ -145,6 +151,7 @@ impl Display for MessageKind {
             MessageKind::Length => "the value's length not in the range".fmt(f),
             MessageKind::Email => "the value is not a email address".fmt(f),
             MessageKind::Fallback(s) => s.fmt(f),
+            MessageKind::Regex => "regular matching failed".fmt(f),
         }
     }
 }

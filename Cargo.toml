@@ -10,7 +10,7 @@ repository = "https://github.com/tu6ge/valitron"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-full = ["serde/derive", "idna"]
+full = ["serde/derive", "idna", "regex"]
 
 [package.metadata.docs.rs]
 all-features = true
@@ -46,6 +46,7 @@ harness = false
 [dependencies]
 serde = { version = "^1.0" }
 idna = { version = "0.5", optional = true }
+regex = { version = "1", default-features = false, features = ["std"], optional = true }
 
 [dev-dependencies]
 serde = { version = "^1.0", features = ["derive"] }
@@ -60,3 +61,4 @@ thiserror = "1.0.29"
 actix-web = { version = "4.4.0" }
 
 rocket = "=0.5.0-rc.3"
+
