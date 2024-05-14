@@ -52,8 +52,8 @@ fn age_limit(n: &mut u8) -> Result<(), Message> {
 |Usage| Description|
 |---|--- |
 | `Required` | one rule |
-| `Required.and(StartsWith("foo"))` | two rules |
-| `Required.and(StartsWith('a')).bail()`| two rules and bail|
+| `Required.and(StartsWith("foo"))` | multi rules |
+| `Required.and(StartsWith('a')).bail()`| multi rules and bail|
 | `custom(my_handler)` | custom handler rule |
 | `Required.custom(my_handler)` | rule and handler rule |
 | `Not(StartsWith("foo"))` | negative rule |
