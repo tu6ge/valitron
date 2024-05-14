@@ -13,16 +13,16 @@
 //!     email: String::from("hi"),
 //! };
 //! input
-//!     .validate(Validator::new().rule("email", Not(Contains('@'))))
+//!     .validate(Validator::new().rule("email", Not(Contains("example.com"))))
 //!     .unwrap();
 //!
 //!
 //!
 //! let input = Input {
-//!     email: String::from("user@foo.com"),
+//!     email: String::from("user@example.com"),
 //! };
 //! let err = input
-//!     .validate(Validator::new().rule("email", Not(Contains('@'))))
+//!     .validate(Validator::new().rule("email", Not(Contains("example.com"))))
 //!     .unwrap_err();
 //!
 //! assert!(matches!(
