@@ -109,7 +109,7 @@ where
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub struct Num(usize);
 
 impl Length<Num> {
