@@ -144,74 +144,117 @@ impl RuleShortcut for Egt<&str> {
     }
 }
 
-impl RuleShortcut for Lt<u8> {
-    type Message = Message;
+macro_rules! impl_lt_num {
+    ($ty:ty) => {
+        impl RuleShortcut for $ty {
+            type Message = Message;
 
-    const NAME: &'static str = "lt";
+            const NAME: &'static str = "lt";
 
-    fn message(&self) -> Self::Message {
-        self.message_in()
-    }
+            fn message(&self) -> Self::Message {
+                self.message_in()
+            }
 
-    fn call_with_relate(&mut self, value: &mut ValueMap) -> bool {
-        value.current().unwrap() < self.0
-    }
+            fn call_with_relate(&mut self, value: &mut ValueMap) -> bool {
+                value.current().unwrap() < self.0
+            }
 
-    fn call(&mut self, _value: &mut Value) -> bool {
-        unreachable!()
-    }
+            fn call(&mut self, _value: &mut Value) -> bool {
+                unreachable!()
+            }
+        }
+    };
 }
 
-impl RuleShortcut for Elt<u8> {
-    type Message = Message;
+impl_lt_num!(Lt<u8>);
+impl_lt_num!(Lt<i8>);
+impl_lt_num!(Lt<u16>);
+impl_lt_num!(Lt<i16>);
+impl_lt_num!(Lt<u32>);
+impl_lt_num!(Lt<i32>);
 
-    const NAME: &'static str = "elt";
+macro_rules! impl_elt_num {
+    ($ty:ty) => {
+        impl RuleShortcut for $ty {
+            type Message = Message;
 
-    fn message(&self) -> Self::Message {
-        self.message_in()
-    }
+            const NAME: &'static str = "elt";
 
-    fn call_with_relate(&mut self, value: &mut ValueMap) -> bool {
-        value.current().unwrap() <= self.0
-    }
+            fn message(&self) -> Self::Message {
+                self.message_in()
+            }
 
-    fn call(&mut self, _value: &mut Value) -> bool {
-        unreachable!()
-    }
+            fn call_with_relate(&mut self, value: &mut ValueMap) -> bool {
+                value.current().unwrap() <= self.0
+            }
+
+            fn call(&mut self, _value: &mut Value) -> bool {
+                unreachable!()
+            }
+        }
+    };
 }
 
-impl RuleShortcut for Gt<u8> {
-    type Message = Message;
+impl_elt_num!(Elt<u8>);
+impl_elt_num!(Elt<i8>);
+impl_elt_num!(Elt<u16>);
+impl_elt_num!(Elt<i16>);
+impl_elt_num!(Elt<u32>);
+impl_elt_num!(Elt<i32>);
 
-    const NAME: &'static str = "gt";
+macro_rules! impl_gt_num {
+    ($ty:ty) => {
+        impl RuleShortcut for $ty {
+            type Message = Message;
 
-    fn message(&self) -> Self::Message {
-        self.message_in()
-    }
+            const NAME: &'static str = "gt";
 
-    fn call_with_relate(&mut self, value: &mut ValueMap) -> bool {
-        value.current().unwrap() > self.0
-    }
+            fn message(&self) -> Self::Message {
+                self.message_in()
+            }
 
-    fn call(&mut self, _value: &mut Value) -> bool {
-        unreachable!()
-    }
+            fn call_with_relate(&mut self, value: &mut ValueMap) -> bool {
+                value.current().unwrap() > self.0
+            }
+
+            fn call(&mut self, _value: &mut Value) -> bool {
+                unreachable!()
+            }
+        }
+    };
+}
+impl_gt_num!(Gt<u8>);
+impl_gt_num!(Gt<i8>);
+impl_gt_num!(Gt<u16>);
+impl_gt_num!(Gt<i16>);
+impl_gt_num!(Gt<u32>);
+impl_gt_num!(Gt<i32>);
+
+macro_rules! impl_egt_num {
+    ($ty:ty) => {
+        impl RuleShortcut for $ty {
+            type Message = Message;
+
+            const NAME: &'static str = "egt";
+
+            fn message(&self) -> Self::Message {
+                self.message_in()
+            }
+
+            fn call_with_relate(&mut self, value: &mut ValueMap) -> bool {
+                value.current().unwrap() >= self.0
+            }
+
+            fn call(&mut self, _value: &mut Value) -> bool {
+                unreachable!()
+            }
+        }
+    };
 }
 
-impl RuleShortcut for Egt<u8> {
-    type Message = Message;
-
-    const NAME: &'static str = "egt";
-
-    fn message(&self) -> Self::Message {
-        self.message_in()
-    }
-
-    fn call_with_relate(&mut self, value: &mut ValueMap) -> bool {
-        value.current().unwrap() >= self.0
-    }
-
-    fn call(&mut self, _value: &mut Value) -> bool {
-        unreachable!()
-    }
-}
+impl_egt_num!(Egt<u8>);
+impl_egt_num!(Egt<i8>);
+impl_egt_num!(Egt<u16>);
+impl_egt_num!(Egt<i16>);
+impl_egt_num!(Egt<u32>);
+impl_egt_num!(Egt<i32>);
