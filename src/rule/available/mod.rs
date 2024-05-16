@@ -4,6 +4,7 @@ use std::fmt::Display;
 
 use serde::Serialize;
 
+pub mod compare;
 pub mod confirm;
 pub mod contains;
 pub mod email;
@@ -16,6 +17,7 @@ pub mod required;
 pub mod start_with;
 pub mod trim;
 
+pub use compare::{Egt, Elt, Gt, Lt};
 pub use confirm::Confirm;
 pub use contains::Contains;
 pub use email::Email;
@@ -42,6 +44,8 @@ pub enum MessageKind {
 
     /// as confrim rule, only one argument is other field name.
     Confirm(String),
+
+    Compare(String, String),
 
     /// as contains rule
     Contains(String),
@@ -81,6 +85,7 @@ impl Serialize for MessageKind {
             MessageKind::Range => serializer.serialize_str("range"),
             MessageKind::Length => serializer.serialize_str("length"),
             MessageKind::Confirm(_) => serializer.serialize_str("confirm"),
+            MessageKind::Compare(_, _) => serializer.serialize_str("compare"),
             MessageKind::StartWith(_) => serializer.serialize_str("start_with"),
             MessageKind::EndsWith(_) => serializer.serialize_str("end_with"),
             MessageKind::Contains(_) => serializer.serialize_str("contains"),
@@ -141,6 +146,9 @@ impl Display for MessageKind {
         match self {
             MessageKind::Confirm(str) => {
                 write!(f, "this field value must be equal to `{}` field", str)
+            }
+            MessageKind::Compare(ty, str) => {
+                write!(f, "this field value must be {} to `{}` field", ty, str)
             }
             MessageKind::Required => "this field is required".fmt(f),
             MessageKind::StartWith(str) => write!(f, "this field must be start with `{}`", str),
