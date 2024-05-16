@@ -18,7 +18,7 @@
 //! Validator::new().rule("max", Gt("min"))
 //!     .validate(&input)
 //!     .unwrap();
-//! 
+//!
 //! Validator::new().rule("max", Lt(30_u8))
 //!     .validate(&input)
 //!     .unwrap();
