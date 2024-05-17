@@ -36,15 +36,15 @@ mod boxed;
 #[cfg(test)]
 mod test;
 
-/// Trait used by creating Rule
+/// Trait used by creating CoreRule
 ///
 /// # Example
 /// ```rust
-/// # use valitron::{Rule, ValueMap};
+/// # use valitron::{CoreRule, ValueMap};
 /// #[derive(Clone)]
 /// struct Gt10;
 ///
-/// impl Rule<()> for Gt10 {
+/// impl CoreRule<()> for Gt10 {
 ///     type Message = &'static str;
 ///
 ///     const THE_NAME: &'static str = "gt10";
