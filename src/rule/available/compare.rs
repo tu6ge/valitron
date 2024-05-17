@@ -26,7 +26,7 @@
 
 use std::fmt::Display;
 
-use crate::{register::FieldNames, RuleShortcut, Value, ValueMap};
+use crate::{register::FieldNames, Rule, Value, ValueMap};
 
 use super::{Message, MessageKind};
 
@@ -66,7 +66,7 @@ impl_compare!(Elt<T>, "less and equal");
 impl_compare!(Gt<T>, "greater");
 impl_compare!(Egt<T>, "greater and equal");
 
-impl RuleShortcut for Lt<&str> {
+impl Rule for Lt<&str> {
     type Message = Message;
 
     const NAME: &'static str = "lt";
@@ -86,7 +86,7 @@ impl RuleShortcut for Lt<&str> {
     }
 }
 
-impl RuleShortcut for Elt<&str> {
+impl Rule for Elt<&str> {
     type Message = Message;
 
     const NAME: &'static str = "elt";
@@ -105,7 +105,7 @@ impl RuleShortcut for Elt<&str> {
         unreachable!()
     }
 }
-impl RuleShortcut for Gt<&str> {
+impl Rule for Gt<&str> {
     type Message = Message;
 
     const NAME: &'static str = "gt";
@@ -124,7 +124,7 @@ impl RuleShortcut for Gt<&str> {
         unreachable!()
     }
 }
-impl RuleShortcut for Egt<&str> {
+impl Rule for Egt<&str> {
     type Message = Message;
 
     const NAME: &'static str = "egt";
@@ -146,7 +146,7 @@ impl RuleShortcut for Egt<&str> {
 
 macro_rules! impl_lt_num {
     ($ty:ty) => {
-        impl RuleShortcut for $ty {
+        impl Rule for $ty {
             type Message = Message;
 
             const NAME: &'static str = "lt";
@@ -175,7 +175,7 @@ impl_lt_num!(Lt<i32>);
 
 macro_rules! impl_elt_num {
     ($ty:ty) => {
-        impl RuleShortcut for $ty {
+        impl Rule for $ty {
             type Message = Message;
 
             const NAME: &'static str = "elt";
@@ -204,7 +204,7 @@ impl_elt_num!(Elt<i32>);
 
 macro_rules! impl_gt_num {
     ($ty:ty) => {
-        impl RuleShortcut for $ty {
+        impl Rule for $ty {
             type Message = Message;
 
             const NAME: &'static str = "gt";
@@ -232,7 +232,7 @@ impl_gt_num!(Gt<i32>);
 
 macro_rules! impl_egt_num {
     ($ty:ty) => {
-        impl RuleShortcut for $ty {
+        impl Rule for $ty {
             type Message = Message;
 
             const NAME: &'static str = "egt";

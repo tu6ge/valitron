@@ -248,14 +248,14 @@ where
 mod tests {
     use std::marker::PhantomData;
 
-    use crate::{RuleExt, RuleShortcut};
+    use crate::{RuleExt, Rule};
 
     use super::*;
 
     #[derive(Clone, Copy)]
     struct Required;
 
-    impl RuleShortcut for Required {
+    impl Rule for Required {
         type Message = String;
 
         const NAME: &'static str = "required";
@@ -276,7 +276,7 @@ mod tests {
     #[derive(Clone)]
     struct StartWith(&'static str);
 
-    impl RuleShortcut for StartWith {
+    impl Rule for StartWith {
         type Message = String;
 
         fn call(&mut self, data: &mut Value) -> bool {

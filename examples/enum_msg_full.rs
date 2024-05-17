@@ -1,7 +1,7 @@
 use serde::Serialize;
 use valitron::{
     available::{Message, Required, StartWith, Trim},
-    RuleExt, RuleShortcut, Validator, Value,
+    RuleExt, Rule, Validator, Value,
 };
 
 #[derive(Debug, Serialize)]
@@ -48,7 +48,7 @@ impl From<Message> for MyMessage {
 #[derive(Clone)]
 struct Gt10;
 
-impl RuleShortcut for Gt10 {
+impl Rule for Gt10 {
     type Message = MyMessage;
 
     const NAME: &'static str = "gt10";

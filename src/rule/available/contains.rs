@@ -43,7 +43,7 @@
 
 use std::fmt::{Debug, Display};
 
-use crate::{RuleShortcut, Value};
+use crate::{Rule, Value};
 
 use super::Message;
 
@@ -83,7 +83,7 @@ where
     }
 }
 
-impl RuleShortcut for Contains<&str> {
+impl Rule for Contains<&str> {
     type Message = Message;
 
     const NAME: &'static str = NAME;
@@ -100,7 +100,7 @@ impl RuleShortcut for Contains<&str> {
     }
 }
 
-impl RuleShortcut for Contains<String> {
+impl Rule for Contains<String> {
     type Message = Message;
 
     const NAME: &'static str = NAME;
@@ -117,7 +117,7 @@ impl RuleShortcut for Contains<String> {
     }
 }
 
-impl RuleShortcut for Contains<char> {
+impl Rule for Contains<char> {
     type Message = Message;
 
     const NAME: &'static str = NAME;

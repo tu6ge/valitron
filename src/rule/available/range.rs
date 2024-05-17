@@ -29,7 +29,7 @@
 use std::{fmt::Debug, marker::PhantomData, ops::RangeBounds};
 
 use super::Message;
-use crate::{RuleShortcut, Value};
+use crate::{Rule, Value};
 
 #[derive(Clone)]
 pub struct Range<T, Num> {
@@ -65,7 +65,7 @@ impl<T, Num> Range<T, Num> {
 
 macro_rules! impl_range {
     ($val:ident($ty:ty)) => {
-        impl<T> RuleShortcut for Range<T, $ty>
+        impl<T> Rule for Range<T, $ty>
         where
             T: RangeBounds<$ty> + Clone,
         {
@@ -97,7 +97,7 @@ impl_range!(Uint64(u64));
 impl_range!(Int64(i64));
 impl_range!(Char(char));
 
-impl<T> RuleShortcut for Range<T, f32>
+impl<T> Rule for Range<T, f32>
 where
     T: RangeBounds<f32> + Clone + 'static,
 {
@@ -117,7 +117,7 @@ where
     }
 }
 
-impl<T> RuleShortcut for Range<T, f64>
+impl<T> Rule for Range<T, f64>
 where
     T: RangeBounds<f64> + Clone + 'static,
 {

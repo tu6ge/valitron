@@ -20,7 +20,7 @@
 //! assert_eq!(new_input.title, "hi");
 //! ```
 
-use crate::{RuleShortcut, Value};
+use crate::{Rule, Value};
 
 use super::Message;
 
@@ -29,7 +29,7 @@ pub struct Trim;
 
 const NAME: &'static str = "trim";
 
-impl RuleShortcut for Trim {
+impl Rule for Trim {
     type Message = Message;
 
     const NAME: &'static str = NAME;

@@ -35,7 +35,7 @@
 //!     .unwrap();
 //! ```
 
-use crate::RuleShortcut;
+use crate::Rule;
 
 use super::Message;
 
@@ -48,7 +48,7 @@ impl<'a> Regex<'a> {
     }
 }
 
-impl<'a> RuleShortcut for Regex<'a> {
+impl<'a> Rule for Regex<'a> {
     type Message = Message;
 
     const NAME: &'static str = "regex";

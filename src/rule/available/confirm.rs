@@ -35,7 +35,7 @@
 
 use std::fmt::{Debug, Display};
 
-use crate::{register::FieldNames, value::ValueMap, RuleShortcut, Value};
+use crate::{register::FieldNames, value::ValueMap, Rule, Value};
 
 use super::{Message, MessageKind};
 
@@ -83,7 +83,7 @@ where
     }
 }
 
-impl RuleShortcut for Confirm<String> {
+impl Rule for Confirm<String> {
     type Message = Message;
 
     const NAME: &'static str = NAME;
@@ -103,7 +103,7 @@ impl RuleShortcut for Confirm<String> {
     }
 }
 
-impl RuleShortcut for Confirm<&str> {
+impl Rule for Confirm<&str> {
     type Message = Message;
 
     const NAME: &'static str = NAME;
@@ -168,7 +168,7 @@ mod tests {
 
     use super::Confirm;
 
-    use crate::{register::FieldNames, rule::Rule, ser::to_value, RuleShortcut, Value, ValueMap};
+    use crate::{register::FieldNames, rule::Rule, ser::to_value, Value, ValueMap};
 
     #[test]
     fn test_confirm() {

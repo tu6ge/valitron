@@ -54,7 +54,7 @@
 
 use std::{fmt::Debug, ops::RangeBounds};
 
-use crate::{RuleShortcut, Value};
+use crate::{Rule, Value};
 
 use super::Message;
 
@@ -88,7 +88,7 @@ impl<T> Length<T> {
     }
 }
 
-impl<T> RuleShortcut for Length<T>
+impl<T> Rule for Length<T>
 where
     T: RangeBounds<usize> + Clone,
 {
@@ -124,7 +124,7 @@ impl PartialEq<usize> for Num {
     }
 }
 
-impl RuleShortcut for Length<Num> {
+impl Rule for Length<Num> {
     type Message = Message;
 
     const NAME: &'static str = NAME;

@@ -2,14 +2,14 @@ use std::marker::PhantomData;
 
 use crate::value::ValueMap;
 
-use super::Rule;
+use super::CoreRule;
 
 pub struct ErasedRule<M>(pub(super) Box<dyn BoxedRule<M>>);
 
 impl<M> ErasedRule<M> {
     pub fn new<H, S>(handler: H) -> Self
     where
-        H: Rule<S, Message = M>,
+        H: CoreRule<S, Message = M>,
         S: 'static,
         M: 'static,
     {
@@ -77,7 +77,7 @@ where
 
 impl<H, M, T> BoxedRule<M> for RuleIntoBoxed<H, M, T>
 where
-    H: Rule<T, Message = M> + Clone,
+    H: CoreRule<T, Message = M> + Clone,
     T: 'static,
     M: 'static,
 {

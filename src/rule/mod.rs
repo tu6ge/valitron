@@ -60,7 +60,7 @@ mod test;
 /// ```
 ///
 /// TODO! introduce ValueMap
-pub trait Rule<T>: 'static + Sized + Clone {
+pub trait CoreRule<T>: 'static + Sized + Clone {
     /// custom define returning message type
     type Message;
 
@@ -81,11 +81,11 @@ pub trait Rule<T>: 'static + Sized + Clone {
 }
 
 mod private {
-    use super::Rule;
+    use super::CoreRule;
 
     pub trait Sealed {}
 
-    impl<R> Sealed for R where R: Rule<()> {}
+    impl<R> Sealed for R where R: CoreRule<()> {}
 }
 
 /// Rule extension, it can coupling some rules, such as
@@ -95,23 +95,23 @@ mod private {
 pub trait RuleExt<M>: private::Sealed {
     fn and<R>(self, other: R) -> RuleList<M>
     where
-        R: Rule<(), Message = M>;
+        R: CoreRule<(), Message = M>;
 
     fn custom<F, V>(self, other: F) -> RuleList<M>
     where
         F: for<'a> FnOnce(&'a mut V) -> Result<(), M>,
-        F: Rule<V, Message = M>,
+        F: CoreRule<V, Message = M>,
         V: FromValue + 'static;
 }
 
 impl<R, M> RuleExt<M> for R
 where
-    R: Rule<(), Message = M>,
+    R: CoreRule<(), Message = M>,
     M: 'static,
 {
     fn and<R2>(self, other: R2) -> RuleList<M>
     where
-        R2: Rule<(), Message = M>,
+        R2: CoreRule<(), Message = M>,
     {
         let is_dup = {
             if R::THE_NAME != R2::THE_NAME {
@@ -136,7 +136,7 @@ where
     fn custom<F, V>(self, other: F) -> RuleList<M>
     where
         F: for<'a> FnOnce(&'a mut V) -> Result<(), M>,
-        F: Rule<V, Message = M>,
+        F: CoreRule<V, Message = M>,
         V: FromValue + 'static,
     {
         RuleList {
@@ -201,7 +201,7 @@ impl<M> RuleList<M> {
 
     pub fn and<R>(mut self, other: R) -> Self
     where
-        R: Rule<(), Message = M>,
+        R: CoreRule<(), Message = M>,
         M: 'static,
     {
         let other = ErasedRule::new(other);
@@ -214,7 +214,7 @@ impl<M> RuleList<M> {
     pub fn custom<F, V>(mut self, other: F) -> Self
     where
         F: for<'a> FnOnce(&'a mut V) -> Result<(), M>,
-        F: Rule<V, Message = M>,
+        F: CoreRule<V, Message = M>,
         V: FromValue + 'static,
         M: 'static,
     {
@@ -395,7 +395,7 @@ pub trait IntoRuleList<M> {
 pub fn custom<F, V, M>(f: F) -> RuleList<M>
 where
     F: for<'a> FnOnce(&'a mut V) -> Result<(), M>,
-    F: Rule<V, Message = M>,
+    F: CoreRule<V, Message = M>,
     V: FromValue + 'static,
     M: 'static,
 {
@@ -412,7 +412,7 @@ impl<M> IntoRuleList<M> for RuleList<M> {
 }
 impl<R, M> IntoRuleList<M> for R
 where
-    R: Rule<(), Message = M>,
+    R: CoreRule<(), Message = M>,
     M: 'static,
 {
     fn into_list(self) -> RuleList<M> {
@@ -440,7 +440,7 @@ mod test_regster {
     #[derive(Clone)]
     struct Gt10;
 
-    impl RuleShortcut for Gt10 {
+    impl Rule for Gt10 {
         type Message = u8;
 
         const NAME: &'static str = "gt10";
@@ -485,7 +485,7 @@ mod test_regster {
 }
 
 /// used by convenient implementation custom rules.
-pub trait RuleShortcut: Clone {
+pub trait Rule: Clone {
     /// custom define returning message type
     type Message;
 
@@ -512,9 +512,9 @@ pub trait RuleShortcut: Clone {
     fn call(&mut self, data: &mut Value) -> bool;
 }
 
-impl<T> Rule<()> for T
+impl<T> CoreRule<()> for T
 where
-    T: RuleShortcut + 'static + Clone,
+    T: Rule + 'static + Clone,
 {
     type Message = T::Message;
 
@@ -530,7 +530,7 @@ where
     }
 }
 
-impl<F, V, M> Rule<V> for F
+impl<F, V, M> CoreRule<V> for F
 where
     F: for<'a> FnOnce(&'a mut V) -> Result<(), M> + 'static + Clone,
     V: FromValue,

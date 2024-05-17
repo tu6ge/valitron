@@ -34,7 +34,7 @@
 use core::fmt;
 use std::fmt::Debug;
 
-use crate::{RuleShortcut, Value};
+use crate::{Rule, Value};
 
 #[derive(Clone)]
 pub struct Not<T>(pub T);
@@ -47,7 +47,7 @@ impl<T: Debug> Debug for Not<T> {
 
 crate::__impl_copy!(Not);
 
-impl<T: RuleShortcut> RuleShortcut for Not<T> {
+impl<T: Rule> Rule for Not<T> {
     type Message = T::Message;
 
     const NAME: &'static str = T::NAME;

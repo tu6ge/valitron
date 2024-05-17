@@ -46,14 +46,14 @@
 //! ```
 
 use super::Message;
-use crate::{RuleShortcut, Value};
+use crate::{Rule, Value};
 
 #[derive(Clone, Copy, Debug)]
 pub struct Required;
 
 const NAME: &'static str = "required";
 
-impl RuleShortcut for Required {
+impl Rule for Required {
     type Message = Message;
 
     const NAME: &'static str = NAME;

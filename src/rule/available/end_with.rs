@@ -32,7 +32,7 @@
 
 use std::fmt::{Debug, Display};
 
-use crate::{RuleShortcut, Value};
+use crate::{Rule, Value};
 
 use super::Message;
 
@@ -72,7 +72,7 @@ where
     }
 }
 
-impl RuleShortcut for EndsWith<&str> {
+impl Rule for EndsWith<&str> {
     type Message = Message;
 
     const NAME: &'static str = NAME;
@@ -89,7 +89,7 @@ impl RuleShortcut for EndsWith<&str> {
     }
 }
 
-impl RuleShortcut for EndsWith<String> {
+impl Rule for EndsWith<String> {
     type Message = Message;
 
     const NAME: &'static str = NAME;
@@ -106,7 +106,7 @@ impl RuleShortcut for EndsWith<String> {
     }
 }
 
-impl RuleShortcut for EndsWith<char> {
+impl Rule for EndsWith<char> {
     type Message = Message;
 
     const NAME: &'static str = NAME;

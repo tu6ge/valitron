@@ -1,6 +1,6 @@
 //! usage without "full" feature
 
-use valitron::{RuleShortcut, Validator, Value};
+use valitron::{Rule, Validator, Value};
 
 fn main() {
     let validator = Validator::new()
@@ -33,7 +33,7 @@ impl From<MyMessage> for MyMessage2 {
 #[derive(Clone)]
 struct Gt10;
 
-impl RuleShortcut for Gt10 {
+impl Rule for Gt10 {
     type Message = MyMessage;
 
     const NAME: &'static str = "gt10";
@@ -50,7 +50,7 @@ impl RuleShortcut for Gt10 {
 #[derive(Clone)]
 struct Lt20;
 
-impl RuleShortcut for Lt20 {
+impl Rule for Lt20 {
     type Message = MyMessage2;
 
     const NAME: &'static str = "lt20";

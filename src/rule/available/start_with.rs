@@ -39,7 +39,7 @@
 
 use std::fmt::{Debug, Display};
 
-use crate::{RuleShortcut, Value};
+use crate::{Rule, Value};
 
 use super::Message;
 
@@ -79,7 +79,7 @@ where
     }
 }
 
-impl RuleShortcut for StartWith<&str> {
+impl Rule for StartWith<&str> {
     type Message = Message;
 
     const NAME: &'static str = NAME;
@@ -96,7 +96,7 @@ impl RuleShortcut for StartWith<&str> {
     }
 }
 
-impl RuleShortcut for StartWith<String> {
+impl Rule for StartWith<String> {
     type Message = Message;
 
     const NAME: &'static str = NAME;
@@ -113,7 +113,7 @@ impl RuleShortcut for StartWith<String> {
     }
 }
 
-impl RuleShortcut for StartWith<char> {
+impl Rule for StartWith<char> {
     type Message = Message;
 
     const NAME: &'static str = NAME;

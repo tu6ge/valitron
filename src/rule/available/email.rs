@@ -39,7 +39,7 @@
 //! ```
 
 use super::Message;
-use crate::{RuleShortcut, Value};
+use crate::{Rule, Value};
 
 mod parse;
 
@@ -50,7 +50,7 @@ pub struct Email;
 
 const NAME: &'static str = "email";
 
-impl RuleShortcut for Email {
+impl Rule for Email {
     type Message = Message;
 
     const NAME: &'static str = NAME;
