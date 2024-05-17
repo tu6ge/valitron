@@ -1,7 +1,7 @@
 use serde::Serialize;
 use valitron::{
     available::{Message, Required, StartWith, Trim},
-    RuleExt, Rule, Validator, Value,
+    Rule, RuleExt, Validator, Value,
 };
 
 #[derive(Debug, Serialize)]

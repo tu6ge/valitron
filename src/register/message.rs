@@ -248,7 +248,7 @@ where
 mod tests {
     use std::marker::PhantomData;
 
-    use crate::{RuleExt, Rule};
+    use crate::{Rule, RuleExt};
 
     use super::*;
 
