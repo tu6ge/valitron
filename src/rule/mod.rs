@@ -40,7 +40,7 @@ mod test;
 ///
 /// # Example
 /// ```rust
-/// # use valitron::{CoreRule, ValueMap};
+/// # use valitron::{rule::CoreRule, ValueMap};
 /// #[derive(Clone)]
 /// struct Gt10;
 ///
