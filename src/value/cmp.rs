@@ -12,7 +12,7 @@ macro_rules! primitive_eq {
                 if let Value::$val(n) = other {
                     self == n
                 } else {
-                    false
+                    unreachable!("type mismatch")
                 }
             }
         }
@@ -21,7 +21,7 @@ macro_rules! primitive_eq {
                 if let Value::$val(n) = self {
                     n == other
                 } else {
-                    false
+                    unreachable!("type mismatch")
                 }
             }
         }
@@ -31,7 +31,7 @@ macro_rules! primitive_eq {
                 if let Value::$val(n) = other {
                     self == n
                 } else {
-                    false
+                    unreachable!("type mismatch")
                 }
             }
         }
@@ -40,7 +40,7 @@ macro_rules! primitive_eq {
                 if let Value::$val(n) = self {
                     n == other
                 } else {
-                    false
+                    unreachable!("type mismatch")
                 }
             }
         }
@@ -50,7 +50,7 @@ macro_rules! primitive_eq {
                 if let Value::$val(n) = other {
                     self == n
                 } else {
-                    false
+                    unreachable!("type mismatch")
                 }
             }
         }
@@ -59,7 +59,7 @@ macro_rules! primitive_eq {
                 if let Value::$val(n) = self {
                     n == other
                 } else {
-                    false
+                    unreachable!("type mismatch")
                 }
             }
         }
@@ -160,7 +160,7 @@ impl PartialEq<Value> for f32 {
                 false
             }
         } else {
-            false
+            unreachable!("type mismatch")
         }
     }
 }
@@ -174,7 +174,7 @@ impl PartialEq<f32> for Value {
                 false
             }
         } else {
-            false
+            unreachable!("type mismatch")
         }
     }
 }
@@ -188,7 +188,7 @@ impl PartialEq<&Value> for f32 {
                 false
             }
         } else {
-            false
+            unreachable!("type mismatch")
         }
     }
 }
@@ -202,7 +202,7 @@ impl PartialEq<f32> for &Value {
                 false
             }
         } else {
-            false
+            unreachable!("type mismatch")
         }
     }
 }
@@ -215,7 +215,7 @@ impl PartialEq<&mut Value> for f32 {
                 false
             }
         } else {
-            false
+            unreachable!("type mismatch")
         }
     }
 }
@@ -229,7 +229,7 @@ impl PartialEq<f32> for &mut Value {
                 false
             }
         } else {
-            false
+            unreachable!("type mismatch")
         }
     }
 }
@@ -243,7 +243,7 @@ impl PartialEq<Value> for f64 {
                 false
             }
         } else {
-            false
+            unreachable!("type mismatch")
         }
     }
 }
@@ -257,7 +257,7 @@ impl PartialEq<f64> for Value {
                 false
             }
         } else {
-            false
+            unreachable!("type mismatch")
         }
     }
 }
@@ -271,7 +271,7 @@ impl PartialEq<&Value> for f64 {
                 false
             }
         } else {
-            false
+            unreachable!("type mismatch")
         }
     }
 }
@@ -285,7 +285,7 @@ impl PartialEq<f64> for &Value {
                 false
             }
         } else {
-            false
+            unreachable!("type mismatch")
         }
     }
 }
@@ -299,7 +299,7 @@ impl PartialEq<&mut Value> for f64 {
                 false
             }
         } else {
-            false
+            unreachable!("type mismatch")
         }
     }
 }
@@ -313,7 +313,7 @@ impl PartialEq<f64> for &mut Value {
                 false
             }
         } else {
-            false
+            unreachable!("type mismatch")
         }
     }
 }
@@ -336,4 +336,11 @@ fn all() {
     let value_nan = Value::Float32(Float32(f32::NAN));
     let f_nan = f32::NAN;
     assert!(value_nan != f_nan);
+}
+
+#[test]
+#[should_panic]
+fn type_mismatch() {
+    let value = Value::Uint8(10);
+    assert!(value == 10_i8);
 }
