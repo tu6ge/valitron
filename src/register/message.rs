@@ -17,7 +17,7 @@ type CoreValidator<'v> = InnerValidator<String, HashMap<FieldNames, HashMap<&'v 
 ///
 /// ```rust
 /// # use serde::Serialize;
-/// # use valitron::{custom, RuleExt, RuleShortcut, ValidPhrase};
+/// # use valitron::{custom, RuleExt, Rule, ValidPhrase};
 /// #[derive(Serialize, Debug)]
 /// struct Person {
 ///     introduce: &'static str,
@@ -58,7 +58,7 @@ type CoreValidator<'v> = InnerValidator<String, HashMap<FieldNames, HashMap<&'v 
 /// #[derive(Clone)]
 /// struct Required;
 ///
-/// impl RuleShortcut for Required {
+/// impl Rule for Required {
 ///     type Message = String;
 ///
 ///     fn call(&mut self, data: &mut valitron::Value) -> bool {
@@ -77,7 +77,7 @@ type CoreValidator<'v> = InnerValidator<String, HashMap<FieldNames, HashMap<&'v 
 /// #[derive(Clone)]
 /// struct StartWith(&'static str);
 ///
-/// impl RuleShortcut for StartWith {
+/// impl Rule for StartWith {
 ///     type Message = String;
 ///     
 ///     fn call(&mut self, data: &mut valitron::Value) -> bool {

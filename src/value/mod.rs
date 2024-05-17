@@ -34,10 +34,9 @@ mod float;
 ///
 /// All rust types will be serialized into this, contains nested structures.
 ///
-/// This is [`Rule`], [`RuleShortcut`] implementation's basis.
+/// This is [`Rule`], [`Rule`] implementation's basis.
 ///
 /// [`Rule`]: crate::rule::Rule
-/// [`RuleShortcut`]: crate::rule::RuleShortcut
 #[derive(Debug, PartialEq, Eq, Clone, Ord, PartialOrd)]
 pub enum Value {
     Uint8(u8),

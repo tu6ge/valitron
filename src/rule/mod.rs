@@ -1,11 +1,11 @@
 //! define Rule trait, and build-in rule types
 //! # A custom rule example
 //! ```rust
-//! # use valitron::{Value, RuleShortcut};
+//! # use valitron::{Value, Rule};
 //! #[derive(Clone)]
 //! struct Gt10;
 //!
-//! impl RuleShortcut for Gt10 {
+//! impl Rule for Gt10 {
 //!     type Message = &'static str;
 //!
 //!     const NAME: &'static str = "gt10";

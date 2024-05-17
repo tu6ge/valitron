@@ -77,11 +77,10 @@
 //!
 //! ## Custom Rule
 //!
-//! anything types implemented [`RuleShortcut`] trait can be used as a rule
+//! anything types implemented [`Rule`] trait can be used as a rule
 //!
 //! [`map`]: crate::register::Validator::map
 //! [`Rule`]: crate::Rule
-//! [`RuleShortcut`]: crate::RuleShortcut
 //! [`Message`]: crate::available::Message
 //! [`Required`]: crate::available::required
 //! [`StartWith`]: crate::available::start_with
