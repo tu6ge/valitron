@@ -18,6 +18,12 @@ jobs:
 
       - name: Check fmt
         run: cargo fmt --check
+
+      - name: clippy
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: --all-features -- -D warnings
       
       - name: Show cargo info
         run: cargo version --verbose
