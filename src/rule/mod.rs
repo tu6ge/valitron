@@ -117,10 +117,7 @@ where
             if R::THE_NAME != R2::THE_NAME {
                 false
             } else {
-                match R::THE_NAME {
-                    "custom" => false,
-                    _ => true,
-                }
+                !matches!(R::THE_NAME, "custom")
             }
         };
         RuleList {
@@ -182,10 +179,7 @@ impl<M> RuleList<M> {
                 if exist_rule.name() != name {
                     return false;
                 }
-                match name {
-                    "custom" => false,
-                    _ => true,
-                }
+                !matches!(name, "custom")
             })
             .map(|(index, _)| index)
             .rev()
