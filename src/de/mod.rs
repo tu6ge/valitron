@@ -531,10 +531,10 @@ impl<'de> MapAccess<'de> for MapDeserializer {
     }
 }
 
-struct MapRefDeserializer<'de> {
-    iter: <&'de BTreeMap<Value, Value> as IntoIterator>::IntoIter,
-    value: Option<&'de Value>,
-}
+// struct MapRefDeserializer<'de> {
+//     iter: <&'de BTreeMap<Value, Value> as IntoIterator>::IntoIter,
+//     value: Option<&'de Value>,
+// }
 
 // impl<'de> MapRefDeserializer<'de> {
 //     fn new(map: &'de BTreeMap<Value, Value>) -> Self {
@@ -545,36 +545,36 @@ struct MapRefDeserializer<'de> {
 //     }
 // }
 
-impl<'de> MapAccess<'de> for MapRefDeserializer<'de> {
-    type Error = Error;
+// impl<'de> MapAccess<'de> for MapRefDeserializer<'de> {
+//     type Error = Error;
 
-    fn next_key_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>, Self::Error>
-    where
-        T: DeserializeSeed<'de>,
-    {
-        match self.iter.next() {
-            Some((key, value)) => {
-                self.value = Some(value);
-                seed.deserialize(key.clone()).map(Some)
-            }
-            None => Ok(None),
-        }
-    }
+//     fn next_key_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>, Self::Error>
+//     where
+//         T: DeserializeSeed<'de>,
+//     {
+//         match self.iter.next() {
+//             Some((key, value)) => {
+//                 self.value = Some(value);
+//                 seed.deserialize(key.clone()).map(Some)
+//             }
+//             None => Ok(None),
+//         }
+//     }
 
-    fn next_value_seed<T>(&mut self, seed: T) -> Result<T::Value, Self::Error>
-    where
-        T: DeserializeSeed<'de>,
-    {
-        match self.value.take() {
-            Some(value) => seed.deserialize(value.clone()),
-            None => Err(serde::de::Error::custom("value is missing")),
-        }
-    }
+//     fn next_value_seed<T>(&mut self, seed: T) -> Result<T::Value, Self::Error>
+//     where
+//         T: DeserializeSeed<'de>,
+//     {
+//         match self.value.take() {
+//             Some(value) => seed.deserialize(value.clone()),
+//             None => Err(serde::de::Error::custom("value is missing")),
+//         }
+//     }
 
-    fn size_hint(&self) -> Option<usize> {
-        match self.iter.size_hint() {
-            (lower, Some(upper)) if lower == upper => Some(upper),
-            _ => None,
-        }
-    }
-}
+//     fn size_hint(&self) -> Option<usize> {
+//         match self.iter.size_hint() {
+//             (lower, Some(upper)) if lower == upper => Some(upper),
+//             _ => None,
+//         }
+//     }
+// }

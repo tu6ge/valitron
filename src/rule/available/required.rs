@@ -51,7 +51,7 @@ use crate::{Rule, Value};
 #[derive(Clone, Copy, Debug)]
 pub struct Required;
 
-const NAME: &'static str = "required";
+const NAME: &str = "required";
 
 impl Rule for Required {
     type Message = Message;

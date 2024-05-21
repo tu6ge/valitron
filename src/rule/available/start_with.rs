@@ -56,7 +56,7 @@ crate::__impl_copy!(StartWith);
 
 crate::__impl_deref!(StartWith);
 
-const NAME: &'static str = "start_with";
+const NAME: &str = "start_with";
 
 impl<T> StartWith<T> {
     pub const fn as_ref(&self) -> StartWith<&T> {

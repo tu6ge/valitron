@@ -61,7 +61,7 @@ impl<'a> Rule for Regex<'a> {
         match data {
             crate::Value::String(s) => {
                 let reg = regex::Regex::new(self.0)
-                    .expect(&format!("regex \"{}\" have syntax error", self.0));
+                    .unwrap_or_else(|_| panic!("regex \"{}\" have syntax error", self.0));
                 reg.is_match(s)
             }
             _ => false,

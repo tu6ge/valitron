@@ -48,7 +48,7 @@ impl<T: Debug, Num> Debug for Range<T, Num> {
 
 impl<T: Copy, Num: Clone> Copy for Range<T, Num> {}
 
-const NAME: &'static str = "range";
+const NAME: &str = "range";
 
 impl<T, Num> Range<T, Num> {
     pub fn new(value: T) -> Self {

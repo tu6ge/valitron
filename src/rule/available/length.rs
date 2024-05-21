@@ -70,7 +70,7 @@ crate::__impl_copy!(Length);
 
 crate::__impl_deref!(Length);
 
-const NAME: &'static str = "length";
+const NAME: &str = "length";
 
 impl<T> Length<T> {
     fn message_in(&self) -> Message {

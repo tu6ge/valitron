@@ -27,7 +27,7 @@ use super::Message;
 #[derive(Clone, Copy)]
 pub struct Trim;
 
-const NAME: &'static str = "trim";
+const NAME: &str = "trim";
 
 impl Rule for Trim {
     type Message = Message;
@@ -35,9 +35,8 @@ impl Rule for Trim {
     const NAME: &'static str = NAME;
 
     fn call(&mut self, data: &mut crate::Value) -> bool {
-        match data {
-            Value::String(s) => *s = s.trim().to_string(),
-            _ => (),
+        if let Value::String(s) = data {
+            *s = s.trim().to_string()
         }
 
         true

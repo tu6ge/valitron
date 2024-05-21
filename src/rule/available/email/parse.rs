@@ -60,7 +60,7 @@ impl<'a> Cursor<'a> {
         }
         let (start_usize, char) = self.char.next()?;
 
-        if self.token.len() == 0 {
+        if self.token.is_empty() {
             match char {
                 name_chars!() => {
                     let mut iter = self.char.clone();
@@ -88,7 +88,7 @@ impl<'a> Cursor<'a> {
                 }
                 _ => {
                     self.token.push(EmailToken::IllegalChar);
-                    return Some(EmailToken::IllegalChar);
+                    Some(EmailToken::IllegalChar)
                 }
             }
         } else if self.token.len() == 1 {
@@ -160,7 +160,7 @@ impl<'a> Cursor<'a> {
                     return Some(EmailToken::Ip);
                 }
                 c => {
-                    return if c.is_ascii() == false {
+                    return if !c.is_ascii() {
                         let domain = &self.email_str[self.at_index + 1..];
                         idna::domain_to_ascii(domain).ok().map(|d| {
                             // https://datatracker.ietf.org/doc/html/rfc5321#section-4.5.3.1.1
@@ -183,7 +183,7 @@ impl<'a> Cursor<'a> {
     pub fn parse(&mut self) -> bool {
         loop {
             let token = self.advance();
-            if let None = token {
+            if token.is_none() {
                 break;
             }
             if let Some(EmailToken::IllegalChar) = token {
@@ -216,7 +216,7 @@ impl<'a> Cursor<'a> {
             _ => return false,
         }
 
-        if self.is_idna_domain == false && self.is_ip == false {
+        if !self.is_idna_domain && !self.is_ip {
             // validate the length of each part of the email, BEFORE doing the regex
             // according to RFC5321 the max length of the local part is 64 characters
             // and the max length of the domain part is 255 characters
@@ -228,7 +228,7 @@ impl<'a> Cursor<'a> {
                     EmailToken::DomainPart(ref part) => {
                         domain_chars_count += part.chars().count();
 
-                        if Self::valid_part(part) == false {
+                        if !Self::valid_part(part) {
                             return false;
                         }
                     }
@@ -251,7 +251,7 @@ impl<'a> Cursor<'a> {
         true
     }
 
-    fn valid_part(part: &String) -> bool {
+    fn valid_part(part: &str) -> bool {
         if part.len() > 63 {
             return false;
         }

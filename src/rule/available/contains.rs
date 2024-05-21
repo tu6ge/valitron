@@ -60,7 +60,7 @@ crate::__impl_copy!(Contains);
 
 crate::__impl_deref!(Contains);
 
-const NAME: &'static str = "contains";
+const NAME: &str = "contains";
 
 impl<T> Contains<T> {
     pub const fn as_ref(&self) -> Contains<&T> {

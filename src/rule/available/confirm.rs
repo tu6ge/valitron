@@ -52,7 +52,7 @@ crate::__impl_copy!(Confirm);
 
 crate::__impl_deref!(Confirm);
 
-const NAME: &'static str = "confirm";
+const NAME: &str = "confirm";
 
 impl<T> Confirm<T> {
     pub const fn as_ref(&self) -> Confirm<&T> {

@@ -48,7 +48,7 @@ pub use parse::validate_email;
 #[derive(Clone, Copy, Debug)]
 pub struct Email;
 
-const NAME: &'static str = "email";
+const NAME: &str = "email";
 
 impl Rule for Email {
     type Message = Message;

@@ -49,7 +49,7 @@ crate::__impl_copy!(EndsWith);
 
 crate::__impl_deref!(EndsWith);
 
-const NAME: &'static str = "end_with";
+const NAME: &str = "end_with";
 
 impl<T> EndsWith<T> {
     pub const fn as_ref(&self) -> EndsWith<&T> {
