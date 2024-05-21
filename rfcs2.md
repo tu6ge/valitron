@@ -1,4 +1,4 @@
-a model:
+first model:
 
 ```rust
 
@@ -10,25 +10,33 @@ struct Data {
   weight: f32,
 }
 
-valitron!{
-  Data{
-    name: Required,
-    email: Required.and(Trim),
-    password: custom(handle)
+impl Validator for Data {
+  fn validate(&self) -> Result<(), ValidatorMessage> {
+    let val = Validate::new([
+      be_string("name", &self.name, Required),
+      be_string("email", &self.email. Required.and(Email).bail()),
+      be_u8("age", &self.age, custom(handle1)),
+    ]).bail();
+
+    val.validate()
   }
 }
-message!{
-  Data{
-    name.required => "name is required",
+
+```
+
+second model:
+```rust
+trait Validator {
+  validate(self, rules: impl IntoRuleList<M>) -> Result<(), Vec<M>>;
+}
+
+impl Validator for String {
+  validate(self, rules: impl IntoRuleList<M>) -> Result<(), Vec<Message>>
+  {
+    todo!()
   }
 }
 
-
-// finaly code: 
-
-impl Data {
-   fn validate(&self) -> bool {
-      self.name
-   }
-}
+String::from("abc").validate(Required.and(Email).bail());
+self.title.validate(Required.and(Email).bail());
 ```
