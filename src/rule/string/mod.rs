@@ -2,18 +2,32 @@ use boxed::{ErasedRule, RuleIntoBoxed};
 
 mod boxed;
 
-pub fn string_validate<R: IntoStringRuleList<M>, M>(s: String, rules: R) -> Result<String, Vec<M>> {
+pub fn string_validate<R: IntoStringRuleList<M>, M>(
+    value: String,
+    rules: R,
+) -> Result<String, Vec<M>> {
     let list = rules.into_list();
-    let mut string = s;
+    let mut string = value;
     let results = list.call(&mut string);
 
     if results.is_empty() {
         Ok(string)
-    }else {
+    } else {
         Err(results)
     }
 }
 
+pub fn string_validate_ref<R: IntoStringRuleList<M>, M>(
+    value: &mut String,
+    rules: R,
+) -> Result<(), Vec<M>> {
+    let results = rules.into_list().call(value);
+    if results.is_empty() {
+        Ok(())
+    } else {
+        Err(results)
+    }
+}
 
 pub trait StringRule: Sized + 'static + Clone {
     /// custom define returning message type
@@ -25,7 +39,6 @@ pub trait StringRule: Sized + 'static + Clone {
     const NAME: &'static str;
 
     /// Rule specific implementation, data is current field's value
-    #[must_use]
     fn call(&mut self, data: &mut String) -> Result<(), Self::Message>;
 
     fn into_boxed(self) -> RuleIntoBoxed<Self, Self::Message> {
@@ -175,14 +188,12 @@ impl<M> StringRuleList<M> {
     }
 
     #[must_use]
-    pub(crate) fn call(self, data: &mut String) -> Vec< M> {
+    pub(crate) fn call(self, data: &mut String) -> Vec<M> {
         let StringRuleList { mut list, is_bail } = self;
         let mut msg = Vec::with_capacity(list.len());
 
         for endpoint in list.iter_mut() {
-            let _ = endpoint
-                .call(data)
-                .map_err(|m| msg.push(m));
+            let _ = endpoint.call(data).map_err(|m| msg.push(m));
 
             if is_bail && !msg.is_empty() {
                 msg.shrink_to(1);

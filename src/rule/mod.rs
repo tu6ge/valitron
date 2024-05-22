@@ -32,9 +32,7 @@ use self::boxed::{ErasedRule, RuleIntoBoxed};
 #[cfg(feature = "full")]
 pub mod available;
 mod boxed;
-mod string;
-
-pub use string::string_validate;
+pub mod string;
 
 #[cfg(test)]
 mod test;

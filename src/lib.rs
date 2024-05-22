@@ -103,8 +103,14 @@ pub mod value;
 pub(crate) mod macros;
 
 pub use register::{ValidPhrase, Validatable, Validator};
-pub use rule::{custom, Rule, RuleExt, string_validate};
+pub use rule::{custom, Rule, RuleExt};
 pub use value::{FromValue, Value, ValueMap};
 
 #[cfg(feature = "full")]
 pub use rule::available;
+
+pub mod string {
+    pub use crate::rule::string::custom;
+    pub use crate::rule::string::string_validate as validate;
+    pub use crate::rule::string::string_validate_ref as validate_ref;
+}
