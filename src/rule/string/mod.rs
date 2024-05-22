@@ -2,6 +2,19 @@ use boxed::{ErasedRule, RuleIntoBoxed};
 
 mod boxed;
 
+pub fn string_validate<R: IntoStringRuleList<M>, M>(s: String, rules: R) -> Result<String, Vec<M>> {
+    let list = rules.into_list();
+    let mut string = s;
+    let results = list.call(&mut string);
+
+    if results.is_empty() {
+        Ok(string)
+    }else {
+        Err(results)
+    }
+}
+
+
 pub trait StringRule: Sized + 'static + Clone {
     /// custom define returning message type
     type Message;
@@ -90,7 +103,7 @@ impl<M> Default for StringRuleList<M> {
 }
 
 impl<M> StringRuleList<M> {
-    pub fn remove_duplicate(&mut self, other: &ErasedRule<M>) {
+    fn remove_duplicate(&mut self, other: &ErasedRule<M>) {
         let name = other.name();
 
         let duplicate_rules: Vec<usize> = self
@@ -145,7 +158,7 @@ impl<M> StringRuleList<M> {
         self
     }
 
-    pub(crate) fn set_bail(&mut self) {
+    pub fn set_bail(&mut self) {
         self.is_bail = true;
     }
 
@@ -162,14 +175,14 @@ impl<M> StringRuleList<M> {
     }
 
     #[must_use]
-    pub(crate) fn call(self, data: &mut String) -> Vec<(&'static str, M)> {
+    pub(crate) fn call(self, data: &mut String) -> Vec< M> {
         let StringRuleList { mut list, is_bail } = self;
         let mut msg = Vec::with_capacity(list.len());
 
         for endpoint in list.iter_mut() {
             let _ = endpoint
                 .call(data)
-                .map_err(|m| msg.push((endpoint.name(), m)));
+                .map_err(|m| msg.push(m));
 
             if is_bail && !msg.is_empty() {
                 msg.shrink_to(1);
@@ -182,11 +195,11 @@ impl<M> StringRuleList<M> {
     }
 }
 
-trait IntoStringRuleList<M> {
+pub trait IntoStringRuleList<M> {
     fn into_list(self) -> StringRuleList<M>;
 }
 
-fn custom<F, M>(f: F) -> StringRuleList<M>
+pub fn custom<F, M>(f: F) -> StringRuleList<M>
 where
     F: FnOnce(&mut String) -> Result<(), M> + Clone + 'static,
     M: 'static,

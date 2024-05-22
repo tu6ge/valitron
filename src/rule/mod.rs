@@ -34,6 +34,8 @@ pub mod available;
 mod boxed;
 mod string;
 
+pub use string::string_validate;
+
 #[cfg(test)]
 mod test;
 
