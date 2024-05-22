@@ -136,7 +136,7 @@ impl StringRule for StartWith<&'static str> {
     const NAME: &'static str = NAME;
 
     fn call(&mut self, data: &mut String) -> Result<(), Self::Message> {
-        if data.starts_with(&self.0) {
+        if data.starts_with(self.0) {
             Ok(())
         } else {
             Err(self.message_in())

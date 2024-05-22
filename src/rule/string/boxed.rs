@@ -22,6 +22,7 @@ impl<M> ErasedRule<M> {
 }
 
 pub trait BoxedRule<M> {
+    #[allow(dead_code)]
     fn clone_box(&self) -> Box<dyn BoxedRule<M>>;
 
     fn call(&mut self, data: &mut String) -> Result<(), M>;
