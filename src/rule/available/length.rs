@@ -54,7 +54,7 @@
 
 use std::{fmt::Debug, ops::RangeBounds};
 
-use crate::{Rule, Value};
+use crate::{rule::string::StringRule, Rule, Value};
 
 use super::Message;
 
@@ -109,6 +109,23 @@ where
     }
 }
 
+impl<T> StringRule for Length<T>
+where
+    T: RangeBounds<usize> + Clone + 'static,
+{
+    type Message = Message;
+
+    const NAME: &'static str = NAME;
+
+    fn call(&mut self, data: &mut String) -> Result<(), Self::Message> {
+        if self.0.contains(&data.len()) {
+            Ok(())
+        } else {
+            Err(self.message_in())
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy)]
 pub struct Num(usize);
 
@@ -139,6 +156,20 @@ impl Rule for Length<Num> {
             Value::Array(arr) => self.0 == arr.len(),
             Value::Map(map) => self.0 == map.len(),
             _ => false,
+        }
+    }
+}
+
+impl StringRule for Length<Num> {
+    type Message = Message;
+
+    const NAME: &'static str = NAME;
+
+    fn call(&mut self, data: &mut String) -> Result<(), Self::Message> {
+        if self.0 == data.len() {
+            Ok(())
+        } else {
+            Err(self.message_in())
         }
     }
 }

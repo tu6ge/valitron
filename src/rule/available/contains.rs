@@ -43,7 +43,7 @@
 
 use std::fmt::{Debug, Display};
 
-use crate::{Rule, Value};
+use crate::{rule::string::StringRule, Rule, Value};
 
 use super::Message;
 
@@ -130,6 +130,45 @@ impl Rule for Contains<char> {
         match value {
             Value::String(s) => s.contains(self.0),
             _ => false,
+        }
+    }
+}
+
+impl StringRule for Contains<&'static str> {
+    type Message = Message;
+    const NAME: &'static str = NAME;
+
+    fn call(&mut self, data: &mut String) -> Result<(), Self::Message> {
+        if data.contains(self.0) {
+            Ok(())
+        } else {
+            Err(self.message_in())
+        }
+    }
+}
+
+impl StringRule for Contains<String> {
+    type Message = Message;
+    const NAME: &'static str = NAME;
+
+    fn call(&mut self, data: &mut String) -> Result<(), Self::Message> {
+        if data.contains(&self.0) {
+            Ok(())
+        } else {
+            Err(self.message_in())
+        }
+    }
+}
+
+impl StringRule for Contains<char> {
+    type Message = Message;
+    const NAME: &'static str = NAME;
+
+    fn call(&mut self, data: &mut String) -> Result<(), Self::Message> {
+        if data.contains(self.0) {
+            Ok(())
+        } else {
+            Err(self.message_in())
         }
     }
 }

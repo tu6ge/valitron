@@ -32,6 +32,7 @@ use self::boxed::{ErasedRule, RuleIntoBoxed};
 #[cfg(feature = "full")]
 pub mod available;
 mod boxed;
+mod string;
 
 #[cfg(test)]
 mod test;
