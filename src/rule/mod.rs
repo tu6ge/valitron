@@ -44,7 +44,7 @@ mod test;
 /// #[derive(Clone)]
 /// struct Gt10;
 ///
-/// impl CoreRule<()> for Gt10 {
+/// impl CoreRule<ValueMap, ()> for Gt10 {
 ///     type Message = &'static str;
 ///
 ///     const THE_NAME: &'static str = "gt10";
