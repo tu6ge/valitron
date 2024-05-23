@@ -96,11 +96,17 @@ pub struct Validator<M> {
     map: HashMap<String, Vec<M>>,
 }
 
-impl<M> Validator<M> {
-    pub fn new() -> Self {
+impl<M> Default for Validator<M> {
+    fn default() -> Self {
         Self {
             map: HashMap::new(),
         }
+    }
+}
+
+impl<M> Validator<M> {
+    pub fn new() -> Self {
+        Self::default()
     }
 
     pub fn insert<R, F: Into<String>>(mut self, field: F, value: &mut String, rules: R) -> Self

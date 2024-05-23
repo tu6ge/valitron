@@ -1,7 +1,5 @@
 use std::marker::PhantomData;
 
-use crate::value::ValueMap;
-
 use super::CoreRule;
 
 pub struct ErasedRule<I, M>(pub(super) Box<dyn BoxedRule<I, M>>);
