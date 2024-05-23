@@ -92,26 +92,26 @@ mod private {
 /// ```rust,ignore
 /// Rule1.and(Rule2).and(Rule3)
 /// ```
-pub trait RuleExt<I, M>: private::Sealed<I> {
-    fn and<R>(self, other: R) -> RuleList<I, M>
+pub trait RuleExt<Input, Msg>: private::Sealed<Input> {
+    fn and<R>(self, other: R) -> RuleList<Input, Msg>
     where
-        R: CoreRule<I, (), Message = M>;
+        R: CoreRule<Input, (), Message = Msg>;
 
-    fn custom<F, V>(self, other: F) -> RuleList<I, M>
+    fn custom<F, V>(self, other: F) -> RuleList<Input, Msg>
     where
-        F: for<'a> FnOnce(&'a mut V) -> Result<(), M>,
-        F: CoreRule<I, V, Message = M>,
+        F: for<'a> FnOnce(&'a mut V) -> Result<(), Msg>,
+        F: CoreRule<Input, V, Message = Msg>,
         V: FromValue + 'static;
 }
 
-impl<R, M, I> RuleExt<I, M> for R
+impl<R, Input, Msg> RuleExt<Input, Msg> for R
 where
-    R: CoreRule<I, (), Message = M>,
-    M: 'static,
+    R: CoreRule<Input, (), Message = Msg>,
+    Msg: 'static,
 {
-    fn and<R2>(self, other: R2) -> RuleList<I, M>
+    fn and<R2>(self, other: R2) -> RuleList<Input, Msg>
     where
-        R2: CoreRule<I, (), Message = M>,
+        R2: CoreRule<Input, (), Message = Msg>,
     {
         let is_dup = {
             if R::THE_NAME != R2::THE_NAME {
@@ -124,16 +124,16 @@ where
             list: if is_dup {
                 vec![ErasedRule::new(self)]
             } else {
-                vec![ErasedRule::<I, M>::new(self), ErasedRule::new(other)]
+                vec![ErasedRule::<Input, Msg>::new(self), ErasedRule::new(other)]
             },
             ..Default::default()
         }
     }
 
-    fn custom<F, V>(self, other: F) -> RuleList<I, M>
+    fn custom<F, V>(self, other: F) -> RuleList<Input, Msg>
     where
-        F: for<'a> FnOnce(&'a mut V) -> Result<(), M>,
-        F: CoreRule<I, V, Message = M>,
+        F: for<'a> FnOnce(&'a mut V) -> Result<(), Msg>,
+        F: CoreRule<Input, V, Message = Msg>,
         V: FromValue + 'static,
     {
         RuleList {
@@ -409,12 +409,12 @@ pub trait IntoRuleList<I, M> {
 }
 
 /// load closure rule
-pub fn custom<F, I, V, M>(f: F) -> RuleList<I, M>
+pub fn custom<F, V, Input, Msg>(f: F) -> RuleList<Input, Msg>
 where
-    F: for<'a> FnOnce(&'a mut V) -> Result<(), M>,
-    F: CoreRule<I, V, Message = M>,
+    F: for<'a> FnOnce(&'a mut V) -> Result<(), Msg>,
+    F: CoreRule<Input, V, Message = Msg>,
     V: FromValue + 'static,
-    M: 'static,
+    Msg: 'static,
 {
     RuleList {
         list: vec![ErasedRule::new(f)],
