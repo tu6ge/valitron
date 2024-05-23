@@ -46,7 +46,10 @@
 //! ```
 
 use super::Message;
-use crate::{rule::string::StringRule, Rule, Value};
+use crate::{
+    rule::{CoreRule, Rule},
+    Value,
+};
 
 #[derive(Clone, Copy, Debug)]
 pub struct Required;
@@ -72,10 +75,10 @@ impl Rule for Required {
     }
 }
 
-impl StringRule for Required {
+impl CoreRule<String, ()> for Required {
     type Message = Message;
 
-    const NAME: &'static str = NAME;
+    const THE_NAME: &'static str = NAME;
 
     fn call(&mut self, data: &mut String) -> Result<(), Self::Message> {
         if !data.is_empty() {

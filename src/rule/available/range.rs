@@ -139,11 +139,11 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::{rule::IntoRuleList, RuleExt};
+    use crate::{rule::IntoRuleList, RuleExt, ValueMap};
 
     use super::{super::Required, Range};
 
-    fn register<R: IntoRuleList<M>, M>(_: R) {}
+    fn register<R: IntoRuleList<ValueMap, M>, M>(_: R) {}
 
     #[test]
     fn test_register() {

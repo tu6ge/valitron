@@ -39,7 +39,7 @@
 
 use std::fmt::{Debug, Display};
 
-use crate::{rule::string::StringRule, Rule, Value};
+use crate::{rule::CoreRule, Rule, Value};
 
 use super::Message;
 
@@ -130,10 +130,10 @@ impl Rule for StartWith<char> {
     }
 }
 
-impl StringRule for StartWith<&'static str> {
+impl CoreRule<String, ()> for StartWith<&'static str> {
     type Message = Message;
 
-    const NAME: &'static str = NAME;
+    const THE_NAME: &'static str = NAME;
 
     fn call(&mut self, data: &mut String) -> Result<(), Self::Message> {
         if data.starts_with(self.0) {
@@ -143,10 +143,10 @@ impl StringRule for StartWith<&'static str> {
         }
     }
 }
-impl StringRule for StartWith<String> {
+impl CoreRule<String, ()> for StartWith<String> {
     type Message = Message;
 
-    const NAME: &'static str = NAME;
+    const THE_NAME: &'static str = NAME;
 
     fn call(&mut self, data: &mut String) -> Result<(), Self::Message> {
         if data.starts_with(&self.0) {
@@ -156,10 +156,10 @@ impl StringRule for StartWith<String> {
         }
     }
 }
-impl StringRule for StartWith<char> {
+impl CoreRule<String, ()> for StartWith<char> {
     type Message = Message;
 
-    const NAME: &'static str = NAME;
+    const THE_NAME: &'static str = NAME;
 
     fn call(&mut self, data: &mut String) -> Result<(), Self::Message> {
         if data.starts_with(self.0) {

@@ -34,7 +34,7 @@
 use core::fmt;
 use std::fmt::Debug;
 
-use crate::{rule::string::StringRule, Rule, Value};
+use crate::{rule::CoreRule, Rule, Value};
 
 use super::Message;
 
@@ -63,10 +63,10 @@ impl<T: Rule> Rule for Not<T> {
     }
 }
 
-impl<T: StringRule> StringRule for Not<T> {
+impl<T: CoreRule<String, ()>> CoreRule<String, ()> for Not<T> {
     type Message = Message;
 
-    const NAME: &'static str = T::NAME;
+    const THE_NAME: &'static str = T::THE_NAME;
 
     fn call(&mut self, data: &mut String) -> Result<(), Self::Message> {
         match self.0.call(data) {

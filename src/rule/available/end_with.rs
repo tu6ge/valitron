@@ -32,7 +32,7 @@
 
 use std::fmt::{Debug, Display};
 
-use crate::{rule::string::StringRule, Rule, Value};
+use crate::{rule::CoreRule, Rule, Value};
 
 use super::Message;
 
@@ -123,10 +123,10 @@ impl Rule for EndsWith<char> {
     }
 }
 
-impl StringRule for EndsWith<&'static str> {
+impl CoreRule<String, ()> for EndsWith<&'static str> {
     type Message = Message;
 
-    const NAME: &'static str = NAME;
+    const THE_NAME: &'static str = NAME;
 
     fn call(&mut self, data: &mut String) -> Result<(), Self::Message> {
         if data.ends_with(&self.0) {
@@ -136,10 +136,10 @@ impl StringRule for EndsWith<&'static str> {
         }
     }
 }
-impl StringRule for EndsWith<String> {
+impl CoreRule<String, ()> for EndsWith<String> {
     type Message = Message;
 
-    const NAME: &'static str = NAME;
+    const THE_NAME: &'static str = NAME;
 
     fn call(&mut self, data: &mut String) -> Result<(), Self::Message> {
         if data.ends_with(&self.0) {
@@ -149,10 +149,10 @@ impl StringRule for EndsWith<String> {
         }
     }
 }
-impl StringRule for EndsWith<char> {
+impl CoreRule<String, ()> for EndsWith<char> {
     type Message = Message;
 
-    const NAME: &'static str = NAME;
+    const THE_NAME: &'static str = NAME;
 
     fn call(&mut self, data: &mut String) -> Result<(), Self::Message> {
         if data.ends_with(self.0) {

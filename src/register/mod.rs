@@ -43,6 +43,7 @@ use serde::{Deserialize, Serialize};
 mod field_name;
 mod lexer;
 mod message;
+pub mod string;
 #[cfg(test)]
 mod tests;
 
@@ -104,7 +105,7 @@ pub type ValidatorRefine<M> = InnerValidator<M, ()>;
 
 #[doc(hidden)]
 pub struct InnerValidator<M, List> {
-    rules: HashMap<FieldNames, RuleList<M>>,
+    rules: HashMap<FieldNames, RuleList<ValueMap, M>>,
     message: List,
     is_bail: bool,
 }
@@ -146,7 +147,7 @@ impl<M> Validator<'_, M> {
 
     fn inner_validate(self, value_map: &mut ValueMap) -> ValidatorError<M> {
         fn handle_msg<M>(
-            rules: RuleList<M>,
+            rules: RuleList<ValueMap, M>,
             value_map: &mut ValueMap,
             message: &mut HashMap<MessageKey<'_>, M>,
         ) -> Vec<M> {
@@ -385,7 +386,7 @@ impl<M, List> InnerValidator<M, List> {
     pub fn rule<F, R>(mut self, field: F, rule: R) -> Self
     where
         F: IntoFieldName,
-        R: IntoRuleList<M>,
+        R: IntoRuleList<ValueMap, M>,
     {
         let names = crate::panic_on_err!(field.into_field());
         let mut rules = rule.into_list();
@@ -416,13 +417,13 @@ impl<M, List> InnerValidator<M, List> {
     }
 
     #[inline(always)]
-    fn rule_get(&self, names: &FieldNames) -> Option<&RuleList<M>> {
+    fn rule_get(&self, names: &FieldNames) -> Option<&RuleList<ValueMap, M>> {
         self.rules.get(names)
     }
 
     fn iter_validate<F, T>(self, value_map: &mut ValueMap, handle_msg: F) -> ValidatorError<T>
     where
-        F: Fn(RuleList<M>, &mut ValueMap, &mut List) -> Vec<T>,
+        F: Fn(RuleList<ValueMap, M>, &mut ValueMap, &mut List) -> Vec<T>,
     {
         let mut resp_message = ValidatorError::with_capacity(self.rules.len());
 

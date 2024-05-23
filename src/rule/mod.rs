@@ -32,7 +32,6 @@ use self::boxed::{ErasedRule, RuleIntoBoxed};
 #[cfg(feature = "full")]
 pub mod available;
 mod boxed;
-pub mod string;
 
 #[cfg(test)]
 mod test;
@@ -61,7 +60,7 @@ mod test;
 /// ```
 ///
 /// TODO! introduce ValueMap
-pub trait CoreRule<T>: 'static + Sized + Clone {
+pub trait CoreRule<I, T>: 'static + Sized + Clone {
     /// custom define returning message type
     type Message;
 
@@ -73,7 +72,7 @@ pub trait CoreRule<T>: 'static + Sized + Clone {
     /// Rule specific implementation, data is gived type all field's value, and current field index.
     ///
     /// success returning Ok(()), or else returning message.
-    fn call(&mut self, data: &mut ValueMap) -> Result<(), Self::Message>;
+    fn call(&mut self, data: &mut I) -> Result<(), Self::Message>;
 
     #[doc(hidden)]
     fn into_boxed(self) -> RuleIntoBoxed<Self, Self::Message, T> {
@@ -84,35 +83,35 @@ pub trait CoreRule<T>: 'static + Sized + Clone {
 mod private {
     use super::CoreRule;
 
-    pub trait Sealed {}
+    pub trait Sealed<I> {}
 
-    impl<R> Sealed for R where R: CoreRule<()> {}
+    impl<R, I> Sealed<I> for R where R: CoreRule<I, ()> {}
 }
 
 /// Rule extension, it can coupling some rules, such as
 /// ```rust,ignore
 /// Rule1.and(Rule2).and(Rule3)
 /// ```
-pub trait RuleExt<M>: private::Sealed {
-    fn and<R>(self, other: R) -> RuleList<M>
+pub trait RuleExt<I, M>: private::Sealed<I> {
+    fn and<R>(self, other: R) -> RuleList<I, M>
     where
-        R: CoreRule<(), Message = M>;
+        R: CoreRule<I, (), Message = M>;
 
-    fn custom<F, V>(self, other: F) -> RuleList<M>
+    fn custom<F, V>(self, other: F) -> RuleList<I, M>
     where
         F: for<'a> FnOnce(&'a mut V) -> Result<(), M>,
-        F: CoreRule<V, Message = M>,
+        F: CoreRule<I, V, Message = M>,
         V: FromValue + 'static;
 }
 
-impl<R, M> RuleExt<M> for R
+impl<R, M, I> RuleExt<I, M> for R
 where
-    R: CoreRule<(), Message = M>,
+    R: CoreRule<I, (), Message = M>,
     M: 'static,
 {
-    fn and<R2>(self, other: R2) -> RuleList<M>
+    fn and<R2>(self, other: R2) -> RuleList<I, M>
     where
-        R2: CoreRule<(), Message = M>,
+        R2: CoreRule<I, (), Message = M>,
     {
         let is_dup = {
             if R::THE_NAME != R2::THE_NAME {
@@ -125,16 +124,16 @@ where
             list: if is_dup {
                 vec![ErasedRule::new(self)]
             } else {
-                vec![ErasedRule::<M>::new(self), ErasedRule::new(other)]
+                vec![ErasedRule::<I, M>::new(self), ErasedRule::new(other)]
             },
             ..Default::default()
         }
     }
 
-    fn custom<F, V>(self, other: F) -> RuleList<M>
+    fn custom<F, V>(self, other: F) -> RuleList<I, M>
     where
         F: for<'a> FnOnce(&'a mut V) -> Result<(), M>,
-        F: CoreRule<V, Message = M>,
+        F: CoreRule<I, V, Message = M>,
         V: FromValue + 'static,
     {
         RuleList {
@@ -145,12 +144,12 @@ where
 }
 
 /// Rules collection
-pub struct RuleList<M> {
-    list: Vec<ErasedRule<M>>,
+pub struct RuleList<I, M> {
+    list: Vec<ErasedRule<I, M>>,
     is_bail: bool,
 }
 
-impl<M> Default for RuleList<M> {
+impl<I, M> Default for RuleList<I, M> {
     fn default() -> Self {
         Self {
             list: Vec::new(),
@@ -159,7 +158,7 @@ impl<M> Default for RuleList<M> {
     }
 }
 
-impl<M> Clone for RuleList<M> {
+impl<I, M> Clone for RuleList<I, M> {
     fn clone(&self) -> Self {
         Self {
             list: self.list.clone(),
@@ -168,8 +167,8 @@ impl<M> Clone for RuleList<M> {
     }
 }
 
-impl<M> RuleList<M> {
-    pub fn remove_duplicate(&mut self, other: &ErasedRule<M>) {
+impl<I, M> RuleList<I, M> {
+    pub fn remove_duplicate(&mut self, other: &ErasedRule<I, M>) {
         let name = other.name();
 
         let duplicate_rules: Vec<usize> = self
@@ -196,7 +195,7 @@ impl<M> RuleList<M> {
 
     pub fn and<R>(mut self, other: R) -> Self
     where
-        R: CoreRule<(), Message = M>,
+        R: CoreRule<I, (), Message = M>,
         M: 'static,
     {
         let other = ErasedRule::new(other);
@@ -209,7 +208,7 @@ impl<M> RuleList<M> {
     pub fn custom<F, V>(mut self, other: F) -> Self
     where
         F: for<'a> FnOnce(&'a mut V) -> Result<(), M>,
-        F: CoreRule<V, Message = M>,
+        F: CoreRule<I, V, Message = M>,
         V: FromValue + 'static,
         M: 'static,
     {
@@ -243,7 +242,7 @@ impl<M> RuleList<M> {
         self.list.is_empty()
     }
 
-    pub(crate) fn merge(&mut self, other: &mut RuleList<M>) {
+    pub(crate) fn merge(&mut self, other: &mut RuleList<I, M>) {
         for new_rule in &other.list {
             self.remove_duplicate(new_rule);
         }
@@ -252,6 +251,59 @@ impl<M> RuleList<M> {
         self.is_bail = self.is_bail || other.is_bail;
     }
 
+    fn iter(&self) -> Iter<'_, ErasedRule<I, M>> {
+        self.list.iter()
+    }
+
+    /// check the rule name is existing
+    pub(crate) fn contains(&self, rule: &str) -> bool {
+        self.iter().map(ErasedRule::name).any(|name| name == rule)
+    }
+
+    /// check all rule names is valid or not
+    pub(crate) fn valid_name(&self) -> bool {
+        self.iter().map(ErasedRule::name).all(|name| {
+            let mut chares = name.chars();
+            let first = match chares.next() {
+                Some(ch) => ch,
+                None => return false,
+            };
+
+            if !(first.is_ascii_alphabetic() || first == '_') {
+                return false;
+            }
+
+            loop {
+                match chares.next() {
+                    Some(ch) if ch.is_ascii_alphanumeric() || ch == '_' => (),
+                    None => break true,
+                    _ => break false,
+                }
+            }
+        })
+    }
+
+    #[must_use]
+    pub(crate) fn map<M2>(self, f: fn(M) -> M2) -> RuleList<I, M2>
+    where
+        M: 'static,
+        M2: 'static,
+        I: 'static,
+    {
+        let list = self
+            .list
+            .into_iter()
+            .map(|endpoint| endpoint.map(f))
+            .collect();
+
+        RuleList {
+            list,
+            is_bail: self.is_bail,
+        }
+    }
+}
+
+impl<M> RuleList<ValueMap, M> {
     #[must_use]
     pub(crate) fn call(self, data: &mut ValueMap) -> Vec<(&'static str, M)> {
         let RuleList { mut list, .. } = self;
@@ -330,67 +382,37 @@ impl<M> RuleList<M> {
         msg.shrink_to_fit();
         msg
     }
+}
 
-    fn iter(&self) -> Iter<'_, ErasedRule<M>> {
-        self.list.iter()
-    }
-
-    /// check the rule name is existing
-    pub(crate) fn contains(&self, rule: &str) -> bool {
-        self.iter().map(ErasedRule::name).any(|name| name == rule)
-    }
-
-    /// check all rule names is valid or not
-    pub(crate) fn valid_name(&self) -> bool {
-        self.iter().map(ErasedRule::name).all(|name| {
-            let mut chares = name.chars();
-            let first = match chares.next() {
-                Some(ch) => ch,
-                None => return false,
-            };
-
-            if !(first.is_ascii_alphabetic() || first == '_') {
-                return false;
-            }
-
-            loop {
-                match chares.next() {
-                    Some(ch) if ch.is_ascii_alphanumeric() || ch == '_' => (),
-                    None => break true,
-                    _ => break false,
-                }
-            }
-        })
-    }
-
+impl<M> RuleList<String, M> {
     #[must_use]
-    pub(crate) fn map<M2>(self, f: fn(M) -> M2) -> RuleList<M2>
-    where
-        M: 'static,
-        M2: 'static,
-    {
-        let list = self
-            .list
-            .into_iter()
-            .map(|endpoint| endpoint.map(f))
-            .collect();
+    pub(crate) fn call(self, data: &mut String) -> Vec<M> {
+        let RuleList { mut list, is_bail } = self;
+        let mut msg = Vec::with_capacity(list.len());
 
-        RuleList {
-            list,
-            is_bail: self.is_bail,
+        for endpoint in list.iter_mut() {
+            let _ = endpoint.call(data).map_err(|m| msg.push(m));
+
+            if is_bail && !msg.is_empty() {
+                msg.shrink_to(1);
+                return msg;
+            }
         }
+
+        msg.shrink_to_fit();
+        msg
     }
 }
 
-pub trait IntoRuleList<M> {
-    fn into_list(self) -> RuleList<M>;
+pub trait IntoRuleList<I, M> {
+    fn into_list(self) -> RuleList<I, M>;
 }
 
 /// load closure rule
-pub fn custom<F, V, M>(f: F) -> RuleList<M>
+pub fn custom<F, I, V, M>(f: F) -> RuleList<I, M>
 where
     F: for<'a> FnOnce(&'a mut V) -> Result<(), M>,
-    F: CoreRule<V, Message = M>,
+    F: CoreRule<I, V, Message = M>,
     V: FromValue + 'static,
     M: 'static,
 {
@@ -400,19 +422,32 @@ where
     }
 }
 
-impl<M> IntoRuleList<M> for RuleList<M> {
+impl<I, M> IntoRuleList<I, M> for RuleList<I, M> {
     fn into_list(self) -> Self {
         self
     }
 }
-impl<R, M> IntoRuleList<M> for R
+impl<R, M> IntoRuleList<ValueMap, M> for R
 where
-    R: CoreRule<(), Message = M>,
+    R: CoreRule<ValueMap, (), Message = M>,
     M: 'static,
 {
-    fn into_list(self) -> RuleList<M> {
+    fn into_list(self) -> RuleList<ValueMap, M> {
         RuleList {
-            list: vec![ErasedRule::new(self)],
+            list: vec![ErasedRule::<ValueMap, M>::new(self)],
+            ..Default::default()
+        }
+    }
+}
+
+impl<R, M> IntoRuleList<String, M> for R
+where
+    R: CoreRule<String, (), Message = M>,
+    M: 'static,
+{
+    fn into_list(self) -> RuleList<String, M> {
+        RuleList {
+            list: vec![ErasedRule::<String, M>::new(self)],
             ..Default::default()
         }
     }
@@ -422,8 +457,8 @@ where
 mod test_regster {
     use super::available::*;
     use super::*;
-    fn register<R: IntoRuleList<M>, M>(_: R) {}
-    fn register2<R: IntoRuleList<Message>>(_: R) {}
+    fn register<R: IntoRuleList<ValueMap, M>, M>(_: R) {}
+    fn register2<R: IntoRuleList<ValueMap, Message>>(_: R) {}
 
     fn hander(_val: &mut ValueMap) -> Result<(), Message> {
         Ok(())
@@ -507,7 +542,7 @@ pub trait Rule: Clone {
     fn call(&mut self, data: &mut Value) -> bool;
 }
 
-impl<T> CoreRule<()> for T
+impl<T> CoreRule<ValueMap, ()> for T
 where
     T: Rule + 'static + Clone,
 {
@@ -525,7 +560,7 @@ where
     }
 }
 
-impl<F, V, M> CoreRule<V> for F
+impl<F, V, M> CoreRule<ValueMap, V> for F
 where
     F: for<'a> FnOnce(&'a mut V) -> Result<(), M> + 'static + Clone,
     V: FromValue,

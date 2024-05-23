@@ -35,7 +35,7 @@
 //!     .unwrap();
 //! ```
 
-use crate::{rule::string::StringRule, Rule};
+use crate::{rule::CoreRule, Rule};
 
 use super::Message;
 
@@ -69,10 +69,10 @@ impl<'a> Rule for Regex<'a> {
     }
 }
 
-impl StringRule for Regex<'static> {
+impl CoreRule<String, ()> for Regex<'static> {
     type Message = Message;
 
-    const NAME: &'static str = "regex";
+    const THE_NAME: &'static str = "regex";
 
     fn call(&mut self, data: &mut String) -> Result<(), Self::Message> {
         let reg = regex::Regex::new(self.0)
