@@ -32,6 +32,7 @@ use self::boxed::{ErasedRule, RuleIntoBoxed};
 #[cfg(feature = "full")]
 pub mod available;
 mod boxed;
+pub mod string;
 
 #[cfg(test)]
 mod test;
@@ -145,7 +146,7 @@ where
 
 /// Rules collection
 pub struct RuleList<I, M> {
-    list: Vec<ErasedRule<I, M>>,
+    pub(crate) list: Vec<ErasedRule<I, M>>,
     is_bail: bool,
 }
 
@@ -385,6 +386,52 @@ impl<M> RuleList<ValueMap, M> {
 }
 
 impl<M> RuleList<String, M> {
+    pub(crate) fn from_fn<F>(f: F) -> RuleList<String, M>
+    where
+        F: FnOnce(&mut String) -> Result<(), M> + Clone + 'static,
+        M: 'static,
+    {
+        RuleList {
+            list: vec![ErasedRule::new(f)],
+            ..Default::default()
+        }
+    }
+
+    pub(crate) fn append_fn<S, F>(one: S, fun: F) -> RuleList<String, M>
+    where
+        S: CoreRule<String, (), Message = M>,
+        F: FnOnce(&mut String) -> Result<(), M> + Clone + 'static,
+        M: 'static,
+    {
+        RuleList {
+            list: vec![ErasedRule::new(one), ErasedRule::new(fun)],
+            ..Default::default()
+        }
+    }
+
+    pub(crate) fn from_ext_and<S, S2>(one: S, two: S2) -> RuleList<String, M>
+    where
+        S: CoreRule<String, (), Message = M>,
+        S2: CoreRule<String, (), Message = M>,
+        M: 'static,
+    {
+        let is_dup = {
+            if S::THE_NAME != S2::THE_NAME {
+                false
+            } else {
+                !matches!(S::THE_NAME, "custom")
+            }
+        };
+        RuleList {
+            list: if is_dup {
+                vec![ErasedRule::new(one)]
+            } else {
+                vec![ErasedRule::<String, M>::new(one), ErasedRule::new(two)]
+            },
+            ..Default::default()
+        }
+    }
+
     #[must_use]
     pub(crate) fn call(self, data: &mut String) -> Vec<M> {
         let RuleList { mut list, is_bail } = self;
@@ -411,7 +458,7 @@ pub trait IntoRuleList<I, M> {
 /// load closure rule
 pub fn custom<F, V, Input, Msg>(f: F) -> RuleList<Input, Msg>
 where
-    F: for<'a> FnOnce(&'a mut V) -> Result<(), Msg>,
+    F: FnOnce(&mut V) -> Result<(), Msg>,
     F: CoreRule<Input, V, Message = Msg>,
     V: FromValue + 'static,
     Msg: 'static,
@@ -572,5 +619,17 @@ where
     fn call(&mut self, data: &mut ValueMap) -> Result<(), Self::Message> {
         let val = V::from_value(data).expect("argument type can not be matched");
         self.clone()(val)
+    }
+}
+
+impl<F, M> CoreRule<String, ()> for F
+where
+    F: for<'a> FnOnce(&'a mut String) -> Result<(), M> + 'static + Clone,
+{
+    type Message = M;
+    const THE_NAME: &'static str = "custom";
+
+    fn call(&mut self, data: &mut String) -> Result<(), Self::Message> {
+        self.clone()(data)
     }
 }
