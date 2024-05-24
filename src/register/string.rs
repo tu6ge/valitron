@@ -1,4 +1,7 @@
-//! other validator module
+//! # Second scheme of validator
+//! The focus of this scheme is on string, as most inputs is string or number, and the verification of numbers is relatively simple.
+//! The advantage of this scheme over the first one is that it does not require serialization of all data. 
+//! and you can still use build-in rules.
 //!
 //! this is an example:
 //! ```rust
