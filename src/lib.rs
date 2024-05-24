@@ -45,7 +45,7 @@
 //!     }
 //! }
 //! ```
-//! 
+//!
 //! The second scheme is [string].
 //!
 //! ## Prerequisite
