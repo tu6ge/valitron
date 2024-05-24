@@ -46,6 +46,8 @@
 //! }
 //! ```
 //!
+//! The second scheme is [string].
+//!
 //! ## Prerequisite
 //!
 //! input data needs implementation `serde::Serialize`, and if you want to modify data,
@@ -87,6 +89,7 @@
 //! [`Confirm`]: crate::available::confirm
 //! [`Trim`]: crate::available::trim
 //! [`Range`]: crate::available::range
+//! [string]: crate::register::string
 
 #![cfg_attr(test, allow(unused_imports, dead_code))]
 #![cfg_attr(docsrs, feature(doc_auto_cfg, doc_cfg))]

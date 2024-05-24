@@ -1,15 +1,13 @@
 use std::marker::PhantomData;
 
-use crate::value::ValueMap;
-
 use super::CoreRule;
 
-pub struct ErasedRule<M>(pub(super) Box<dyn BoxedRule<M>>);
+pub struct ErasedRule<I, M>(pub(super) Box<dyn BoxedRule<I, M>>);
 
-impl<M> ErasedRule<M> {
+impl<I, M> ErasedRule<I, M> {
     pub fn new<H, S>(handler: H) -> Self
     where
-        H: CoreRule<S, Message = M>,
+        H: CoreRule<I, S, Message = M>,
         S: 'static,
         M: 'static,
     {
@@ -19,29 +17,30 @@ impl<M> ErasedRule<M> {
     pub fn name(&self) -> &'static str {
         self.0.name()
     }
-    pub fn call(&mut self, data: &mut ValueMap) -> Result<(), M> {
+    pub fn call(&mut self, data: &mut I) -> Result<(), M> {
         self.0.call(data)
     }
 
-    pub fn map<M2>(self, layer: fn(M) -> M2) -> ErasedRule<M2>
+    pub fn map<M2>(self, layer: fn(M) -> M2) -> ErasedRule<I, M2>
     where
         M: 'static,
         M2: 'static,
+        I: 'static,
     {
         ErasedRule(Box::new(Map { inner: self, layer }))
     }
 }
 
-impl<M> Clone for ErasedRule<M> {
+impl<I, M> Clone for ErasedRule<I, M> {
     fn clone(&self) -> Self {
         Self(self.0.clone_box())
     }
 }
 
-pub trait BoxedRule<M> {
-    fn clone_box(&self) -> Box<dyn BoxedRule<M>>;
+pub trait BoxedRule<I, M> {
+    fn clone_box(&self) -> Box<dyn BoxedRule<I, M>>;
 
-    fn call(&mut self, data: &mut ValueMap) -> Result<(), M>;
+    fn call(&mut self, data: &mut I) -> Result<(), M>;
 
     fn name(&self) -> &'static str;
 }
@@ -75,17 +74,17 @@ where
     }
 }
 
-impl<H, M, T> BoxedRule<M> for RuleIntoBoxed<H, M, T>
+impl<H, I, M, T> BoxedRule<I, M> for RuleIntoBoxed<H, M, T>
 where
-    H: CoreRule<T, Message = M> + Clone,
+    H: CoreRule<I, T, Message = M> + Clone,
     T: 'static,
     M: 'static,
 {
-    fn clone_box(&self) -> Box<dyn BoxedRule<M>> {
+    fn clone_box(&self) -> Box<dyn BoxedRule<I, M>> {
         Box::new(self.clone())
     }
 
-    fn call(&mut self, data: &mut ValueMap) -> Result<(), M> {
+    fn call(&mut self, data: &mut I) -> Result<(), M> {
         self.handler.call(data)
     }
 
@@ -94,12 +93,12 @@ where
     }
 }
 
-pub struct Map<M, M2> {
-    inner: ErasedRule<M>,
+pub struct Map<I, M, M2> {
+    inner: ErasedRule<I, M>,
     layer: fn(M) -> M2,
 }
 
-impl<M, M2> Clone for Map<M, M2> {
+impl<I, M, M2> Clone for Map<I, M, M2> {
     fn clone(&self) -> Self {
         Self {
             inner: self.inner.clone(),
@@ -108,16 +107,17 @@ impl<M, M2> Clone for Map<M, M2> {
     }
 }
 
-impl<M, M2> BoxedRule<M2> for Map<M, M2>
+impl<I, M, M2> BoxedRule<I, M2> for Map<I, M, M2>
 where
     M: 'static,
     M2: 'static,
+    I: 'static,
 {
-    fn clone_box(&self) -> Box<dyn BoxedRule<M2>> {
+    fn clone_box(&self) -> Box<dyn BoxedRule<I, M2>> {
         Box::new(self.clone())
     }
 
-    fn call(&mut self, data: &mut ValueMap) -> Result<(), M2> {
+    fn call(&mut self, data: &mut I) -> Result<(), M2> {
         self.inner.call(data).map_err(self.layer)
     }
 

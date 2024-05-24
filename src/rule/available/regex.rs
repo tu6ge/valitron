@@ -35,7 +35,7 @@
 //!     .unwrap();
 //! ```
 
-use crate::Rule;
+use crate::{rule::string::StringRule, Rule};
 
 use super::Message;
 
@@ -66,5 +66,21 @@ impl<'a> Rule for Regex<'a> {
             }
             _ => false,
         }
+    }
+}
+
+impl<'a> StringRule for Regex<'a> {
+    type Message = Message;
+
+    const NAME: &'static str = "regex";
+
+    fn message(&self) -> Self::Message {
+        Message::new(super::MessageKind::Regex)
+    }
+
+    fn call(&mut self, data: &mut String) -> bool {
+        let reg = regex::Regex::new(self.0)
+            .unwrap_or_else(|_| panic!("regex \"{}\" have syntax error", self.0));
+        reg.is_match(data)
     }
 }

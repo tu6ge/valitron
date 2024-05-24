@@ -20,7 +20,7 @@
 //! assert_eq!(new_input.title, "hi");
 //! ```
 
-use crate::{Rule, Value};
+use crate::{rule::string::StringRule, Rule, Value};
 
 use super::Message;
 
@@ -47,11 +47,28 @@ impl Rule for Trim {
     }
 }
 
+impl StringRule for Trim {
+    type Message = Message;
+
+    const NAME: &'static str = NAME;
+
+    fn call(&mut self, data: &mut String) -> bool {
+        *data = data.trim().to_string();
+
+        true
+    }
+
+    fn message(&self) -> Self::Message {
+        Message::new(super::MessageKind::Trim)
+    }
+}
+
 #[test]
 fn test_trim() {
     let mut value = Value::String(" hello ".to_string());
 
-    let _ = Trim.call(&mut value);
+    let mut trim = Trim {};
+    let _ = Rule::call(&mut trim, &mut value);
 
     assert!(matches!(value, Value::String(s) if s == "hello".to_string()));
 }

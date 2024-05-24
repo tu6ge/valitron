@@ -39,7 +39,7 @@
 //! ```
 
 use super::Message;
-use crate::{Rule, Value};
+use crate::{rule::string::StringRule, Rule, Value};
 
 mod parse;
 
@@ -64,5 +64,19 @@ impl Rule for Email {
             Value::String(s) => validate_email(s),
             _ => false,
         }
+    }
+}
+
+impl StringRule for Email {
+    type Message = Message;
+
+    const NAME: &'static str = NAME;
+
+    fn message(&self) -> Self::Message {
+        Message::new(super::MessageKind::Email)
+    }
+
+    fn call(&mut self, value: &mut String) -> bool {
+        validate_email(value)
     }
 }

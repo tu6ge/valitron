@@ -35,7 +35,7 @@ jobs:
 
       - name: Run Test Full Features
         run: |
-          cargo test --features="full"
+          cargo test --all-features
 
   publish:
     needs: [test]

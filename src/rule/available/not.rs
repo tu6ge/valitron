@@ -34,7 +34,7 @@
 use core::fmt;
 use std::fmt::Debug;
 
-use crate::{Rule, Value};
+use crate::{rule::string::StringRule, Rule, Value};
 
 #[derive(Clone)]
 pub struct Not<T>(pub T);
@@ -57,6 +57,20 @@ impl<T: Rule> Rule for Not<T> {
     }
 
     fn call(&mut self, value: &mut Value) -> bool {
+        !self.0.call(value)
+    }
+}
+
+impl<T: StringRule> StringRule for Not<T> {
+    type Message = T::Message;
+
+    const NAME: &'static str = T::NAME;
+
+    fn message(&self) -> Self::Message {
+        self.0.message()
+    }
+
+    fn call(&mut self, value: &mut String) -> bool {
         !self.0.call(value)
     }
 }

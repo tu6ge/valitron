@@ -46,7 +46,10 @@
 //! ```
 
 use super::Message;
-use crate::{Rule, Value};
+use crate::{
+    rule::{string::StringRule, Rule},
+    Value,
+};
 
 #[derive(Clone, Copy, Debug)]
 pub struct Required;
@@ -69,5 +72,19 @@ impl Rule for Required {
             Value::Map(map) => !map.is_empty(),
             _ => true,
         }
+    }
+}
+
+impl StringRule for Required {
+    type Message = Message;
+
+    const NAME: &'static str = NAME;
+
+    fn message(&self) -> Self::Message {
+        Message::new(super::MessageKind::Required)
+    }
+
+    fn call(&mut self, value: &mut String) -> bool {
+        !value.is_empty()
     }
 }

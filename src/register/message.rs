@@ -180,7 +180,7 @@ impl<'v> ValidPhrase<'v> {
     pub fn rule<F, R>(self, field: F, rule: R) -> Self
     where
         F: IntoFieldName,
-        R: IntoRuleList<String>,
+        R: IntoRuleList<ValueMap, String>,
     {
         Self(self.0.rule(field, rule))
     }

@@ -59,6 +59,11 @@ fn age_limit(n: &mut u8) -> Result<(), Message> {
 | `Not(StartsWith("foo"))` | negative rule |
 | `Required.and(Not(StartsWith("foo")))` | negative rule |
 
+## Bench
+| use second scheme| validator(lib) |
+| --- | --- |
+| 192.55 ns | 680.43 ns |
+
 #### License
 
 <sup>
