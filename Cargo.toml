@@ -46,6 +46,10 @@ name = "email"
 harness = false
 required-features = ["full"]
 
+[[bench]]
+name = "full"
+harness = false
+
 [dependencies]
 serde = { version = "^1.0" }
 idna = { version = "0.5", optional = true }
@@ -54,7 +58,7 @@ regex = { version = "1", default-features = false, optional = true }
 [dev-dependencies]
 serde = { version = "^1.0", features = ["derive"] }
 serde_json = "1.0.107"
-validator = "0.18"
+
 criterion = "0.5"
 
 tokio = { version = "1.32.0", features = ["full"] }
@@ -65,4 +69,5 @@ actix-web = { version = "4.4.0" }
 
 rocket = "=0.5.0-rc.3"
 
+validator = { version = "0.18", features = ["derive"] }
 url = "2.5.0"
