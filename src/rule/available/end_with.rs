@@ -32,7 +32,7 @@
 
 use std::fmt::{Debug, Display};
 
-use crate::{rule::CoreRule, Rule, Value};
+use crate::{rule::string::StringRule, Rule, Value};
 
 use super::Message;
 
@@ -123,43 +123,42 @@ impl Rule for EndsWith<char> {
     }
 }
 
-impl CoreRule<String, ()> for EndsWith<&'static str> {
+impl StringRule for EndsWith<&str> {
     type Message = Message;
+    const NAME: &'static str = NAME;
 
-    const THE_NAME: &'static str = NAME;
+    fn message(&self) -> Self::Message {
+        self.message_in()
+    }
 
-    fn call(&mut self, data: &mut String) -> Result<(), Self::Message> {
-        if data.ends_with(&self.0) {
-            Ok(())
-        } else {
-            Err(self.message_in())
-        }
+    fn call(&mut self, data: &mut String) -> bool {
+        data.ends_with(self.0)
     }
 }
-impl CoreRule<String, ()> for EndsWith<String> {
+
+impl StringRule for EndsWith<String> {
     type Message = Message;
+    const NAME: &'static str = NAME;
 
-    const THE_NAME: &'static str = NAME;
+    fn message(&self) -> Self::Message {
+        self.message_in()
+    }
 
-    fn call(&mut self, data: &mut String) -> Result<(), Self::Message> {
-        if data.ends_with(&self.0) {
-            Ok(())
-        } else {
-            Err(self.message_in())
-        }
+    fn call(&mut self, data: &mut String) -> bool {
+        data.ends_with(&self.0)
     }
 }
-impl CoreRule<String, ()> for EndsWith<char> {
+
+impl StringRule for EndsWith<char> {
     type Message = Message;
+    const NAME: &'static str = NAME;
 
-    const THE_NAME: &'static str = NAME;
+    fn message(&self) -> Self::Message {
+        self.message_in()
+    }
 
-    fn call(&mut self, data: &mut String) -> Result<(), Self::Message> {
-        if data.ends_with(self.0) {
-            Ok(())
-        } else {
-            Err(self.message_in())
-        }
+    fn call(&mut self, data: &mut String) -> bool {
+        data.ends_with(self.0)
     }
 }
 

@@ -621,15 +621,3 @@ where
         self.clone()(val)
     }
 }
-
-impl<F, M> CoreRule<String, ()> for F
-where
-    F: for<'a> FnOnce(&'a mut String) -> Result<(), M> + 'static + Clone,
-{
-    type Message = M;
-    const THE_NAME: &'static str = "custom";
-
-    fn call(&mut self, data: &mut String) -> Result<(), Self::Message> {
-        self.clone()(data)
-    }
-}

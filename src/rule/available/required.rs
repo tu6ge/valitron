@@ -47,7 +47,7 @@
 
 use super::Message;
 use crate::{
-    rule::{CoreRule, Rule},
+    rule::{string::StringRule, Rule},
     Value,
 };
 
@@ -75,16 +75,16 @@ impl Rule for Required {
     }
 }
 
-impl CoreRule<String, ()> for Required {
+impl StringRule for Required {
     type Message = Message;
 
-    const THE_NAME: &'static str = NAME;
+    const NAME: &'static str = NAME;
 
-    fn call(&mut self, data: &mut String) -> Result<(), Self::Message> {
-        if !data.is_empty() {
-            Ok(())
-        } else {
-            Err(Message::new(super::MessageKind::Required))
-        }
+    fn message(&self) -> Self::Message {
+        Message::new(super::MessageKind::Required)
+    }
+
+    fn call(&mut self, value: &mut String) -> bool {
+        !value.is_empty()
     }
 }

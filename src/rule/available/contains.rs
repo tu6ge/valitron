@@ -43,7 +43,7 @@
 
 use std::fmt::{Debug, Display};
 
-use crate::{rule::CoreRule, Rule, Value};
+use crate::{rule::string::StringRule, Rule, Value};
 
 use super::Message;
 
@@ -134,42 +134,42 @@ impl Rule for Contains<char> {
     }
 }
 
-impl CoreRule<String, ()> for Contains<&'static str> {
+impl StringRule for Contains<&'static str> {
     type Message = Message;
-    const THE_NAME: &'static str = NAME;
+    const NAME: &'static str = NAME;
 
-    fn call(&mut self, data: &mut String) -> Result<(), Self::Message> {
-        if data.contains(self.0) {
-            Ok(())
-        } else {
-            Err(self.message_in())
-        }
+    fn message(&self) -> Self::Message {
+        self.message_in()
+    }
+
+    fn call(&mut self, data: &mut String) -> bool {
+        data.contains(self.0)
     }
 }
 
-impl CoreRule<String, ()> for Contains<String> {
+impl StringRule for Contains<String> {
     type Message = Message;
-    const THE_NAME: &'static str = NAME;
+    const NAME: &'static str = NAME;
 
-    fn call(&mut self, data: &mut String) -> Result<(), Self::Message> {
-        if data.contains(&self.0) {
-            Ok(())
-        } else {
-            Err(self.message_in())
-        }
+    fn message(&self) -> Self::Message {
+        self.message_in()
+    }
+
+    fn call(&mut self, data: &mut String) -> bool {
+        data.contains(&self.0)
     }
 }
 
-impl CoreRule<String, ()> for Contains<char> {
+impl StringRule for Contains<char> {
     type Message = Message;
-    const THE_NAME: &'static str = NAME;
+    const NAME: &'static str = NAME;
 
-    fn call(&mut self, data: &mut String) -> Result<(), Self::Message> {
-        if data.contains(self.0) {
-            Ok(())
-        } else {
-            Err(self.message_in())
-        }
+    fn message(&self) -> Self::Message {
+        self.message_in()
+    }
+
+    fn call(&mut self, data: &mut String) -> bool {
+        data.contains(self.0)
     }
 }
 

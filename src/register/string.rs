@@ -92,7 +92,6 @@ use super::InnerValidatorError;
 //     list.call(&mut string)
 // }
 
-
 pub type Validator<M> = InnerValidatorError<String, M>;
 
 impl<M> Default for Validator<M> {

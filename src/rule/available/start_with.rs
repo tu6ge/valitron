@@ -39,7 +39,7 @@
 
 use std::fmt::{Debug, Display};
 
-use crate::{rule::CoreRule, Rule, Value};
+use crate::{rule::string::StringRule, Rule, Value};
 
 use super::Message;
 
@@ -130,43 +130,42 @@ impl Rule for StartWith<char> {
     }
 }
 
-impl CoreRule<String, ()> for StartWith<&'static str> {
+impl StringRule for StartWith<&str> {
     type Message = Message;
+    const NAME: &'static str = NAME;
 
-    const THE_NAME: &'static str = NAME;
+    fn message(&self) -> Self::Message {
+        self.message_in()
+    }
 
-    fn call(&mut self, data: &mut String) -> Result<(), Self::Message> {
-        if data.starts_with(self.0) {
-            Ok(())
-        } else {
-            Err(self.message_in())
-        }
+    fn call(&mut self, data: &mut String) -> bool {
+        data.starts_with(self.0)
     }
 }
-impl CoreRule<String, ()> for StartWith<String> {
+
+impl StringRule for StartWith<String> {
     type Message = Message;
+    const NAME: &'static str = NAME;
 
-    const THE_NAME: &'static str = NAME;
+    fn message(&self) -> Self::Message {
+        self.message_in()
+    }
 
-    fn call(&mut self, data: &mut String) -> Result<(), Self::Message> {
-        if data.starts_with(&self.0) {
-            Ok(())
-        } else {
-            Err(self.message_in())
-        }
+    fn call(&mut self, data: &mut String) -> bool {
+        data.starts_with(&self.0)
     }
 }
-impl CoreRule<String, ()> for StartWith<char> {
+
+impl StringRule for StartWith<char> {
     type Message = Message;
+    const NAME: &'static str = NAME;
 
-    const THE_NAME: &'static str = NAME;
+    fn message(&self) -> Self::Message {
+        self.message_in()
+    }
 
-    fn call(&mut self, data: &mut String) -> Result<(), Self::Message> {
-        if data.starts_with(self.0) {
-            Ok(())
-        } else {
-            Err(self.message_in())
-        }
+    fn call(&mut self, data: &mut String) -> bool {
+        data.starts_with(self.0)
     }
 }
 

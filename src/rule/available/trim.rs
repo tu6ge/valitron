@@ -20,7 +20,7 @@
 //! assert_eq!(new_input.title, "hi");
 //! ```
 
-use crate::{rule::CoreRule, Rule, Value};
+use crate::{rule::string::StringRule, Rule, Value};
 
 use super::Message;
 
@@ -47,15 +47,19 @@ impl Rule for Trim {
     }
 }
 
-impl CoreRule<String, ()> for Trim {
+impl StringRule for Trim {
     type Message = Message;
 
-    const THE_NAME: &'static str = NAME;
+    const NAME: &'static str = NAME;
 
-    fn call(&mut self, data: &mut String) -> Result<(), Message> {
+    fn call(&mut self, data: &mut String) -> bool {
         *data = data.trim().to_string();
 
-        Ok(())
+        true
+    }
+
+    fn message(&self) -> Self::Message {
+        Message::new(super::MessageKind::Trim)
     }
 }
 

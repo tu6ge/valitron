@@ -54,7 +54,7 @@
 
 use std::{fmt::Debug, ops::RangeBounds};
 
-use crate::{rule::CoreRule, Rule, Value};
+use crate::{rule::string::StringRule, Rule, Value};
 
 use super::Message;
 
@@ -109,20 +109,19 @@ where
     }
 }
 
-impl<T> CoreRule<String, ()> for Length<T>
+impl<T> StringRule for Length<T>
 where
-    T: RangeBounds<usize> + Clone + 'static,
+    T: RangeBounds<usize> + Clone,
 {
     type Message = Message;
 
-    const THE_NAME: &'static str = NAME;
+    const NAME: &'static str = NAME;
 
-    fn call(&mut self, data: &mut String) -> Result<(), Self::Message> {
-        if self.0.contains(&data.len()) {
-            Ok(())
-        } else {
-            Err(self.message_in())
-        }
+    fn message(&self) -> Self::Message {
+        self.message_in()
+    }
+    fn call(&mut self, data: &mut String) -> bool {
+        self.0.contains(&data.len())
     }
 }
 
@@ -160,17 +159,17 @@ impl Rule for Length<Num> {
     }
 }
 
-impl CoreRule<String, ()> for Length<Num> {
+impl StringRule for Length<Num> {
     type Message = Message;
 
-    const THE_NAME: &'static str = NAME;
+    const NAME: &'static str = NAME;
 
-    fn call(&mut self, data: &mut String) -> Result<(), Self::Message> {
-        if self.0 == data.len() {
-            Ok(())
-        } else {
-            Err(self.message_in())
-        }
+    fn message(&self) -> Self::Message {
+        self.message_in()
+    }
+
+    fn call(&mut self, data: &mut String) -> bool {
+        self.0 == data.len()
     }
 }
 
