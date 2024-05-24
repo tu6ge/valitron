@@ -481,7 +481,7 @@ where
 {
     fn into_list(self) -> RuleList<ValueMap, M> {
         RuleList {
-            list: vec![ErasedRule::<ValueMap, M>::new(self)],
+            list: vec![ErasedRule::new(self)],
             ..Default::default()
         }
     }
@@ -494,7 +494,7 @@ where
 {
     fn into_list(self) -> RuleList<String, M> {
         RuleList {
-            list: vec![ErasedRule::<String, M>::new(self)],
+            list: vec![ErasedRule::new(self)],
             ..Default::default()
         }
     }
