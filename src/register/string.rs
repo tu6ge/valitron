@@ -86,15 +86,12 @@ use crate::rule::IntoRuleList;
 
 use super::InnerValidatorError;
 
-pub fn validate<R: IntoRuleList<String, M>, M>(value: String, rules: R) -> Vec<M> {
-    let list = rules.into_list();
-    let mut string = value;
-    list.call(&mut string)
-}
+// fn validate<R: IntoRuleList<String, M>, M>(value: String, rules: R) -> Vec<M> {
+//     let list = rules.into_list();
+//     let mut string = value;
+//     list.call(&mut string)
+// }
 
-pub fn validate_ref<R: IntoRuleList<String, M>, M>(value: &mut String, rules: R) -> Vec<M> {
-    rules.into_list().call(value)
-}
 
 pub type Validator<M> = InnerValidatorError<String, M>;
 
@@ -111,7 +108,7 @@ impl<M> Validator<M> {
     where
         R: IntoRuleList<String, M>,
     {
-        let res = validate_ref(value, rules);
+        let res = rules.into_list().call(value);
         if !res.is_empty() {
             self.message.insert(field.into(), res);
         }
