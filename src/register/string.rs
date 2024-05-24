@@ -81,6 +81,8 @@ use std::collections::HashMap;
 
 use crate::rule::IntoRuleList;
 
+use super::InnerValidatorError;
+
 pub fn validate<R: IntoRuleList<String, M>, M>(value: String, rules: R) -> Vec<M> {
     let list = rules.into_list();
     let mut string = value;
@@ -91,31 +93,24 @@ pub fn validate_ref<R: IntoRuleList<String, M>, M>(value: &mut String, rules: R)
     rules.into_list().call(value)
 }
 
-#[derive(Debug)]
-pub struct Validator<M> {
-    map: HashMap<String, Vec<M>>,
-}
+type Validator<M> = InnerValidatorError<String, M>;
 
 impl<M> Default for Validator<M> {
     fn default() -> Self {
         Self {
-            map: HashMap::new(),
+            message: HashMap::new(),
         }
     }
 }
 
 impl<M> Validator<M> {
-    pub fn new() -> Self {
-        Self::default()
-    }
-
     pub fn insert<R, F: Into<String>>(mut self, field: F, value: &mut String, rules: R) -> Self
     where
         R: IntoRuleList<String, M>,
     {
         let res = validate_ref(value, rules);
         if !res.is_empty() {
-            self.map.insert(field.into(), res);
+            self.message.insert(field.into(), res);
         }
         self
     }
@@ -127,13 +122,13 @@ impl<M> Validator<M> {
     {
         let res = f();
         if res.is_err() {
-            self.map.insert(field.into(), vec![res.unwrap_err()]);
+            self.message.insert(field.into(), vec![res.unwrap_err()]);
         }
         self
     }
 
     pub fn validate<T>(self, data: T) -> Result<T, Validator<M>> {
-        if self.map.is_empty() {
+        if self.message.is_empty() {
             Ok(data)
         } else {
             Err(self)

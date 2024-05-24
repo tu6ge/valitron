@@ -521,11 +521,13 @@ where
 }
 
 /// store validate error message
-pub struct ValidatorError<M> {
-    message: HashMap<FieldNames, Vec<M>>,
+type ValidatorError<M> = InnerValidatorError<FieldNames, M>;
+
+pub struct InnerValidatorError<F, M> {
+    message: HashMap<F, Vec<M>>,
 }
 
-impl<M: Clone> Clone for ValidatorError<M> {
+impl<F: Clone, M: Clone> Clone for InnerValidatorError<F, M> {
     fn clone(&self) -> Self {
         Self {
             message: self.message.clone(),
@@ -533,15 +535,16 @@ impl<M: Clone> Clone for ValidatorError<M> {
     }
 }
 
-impl<M: PartialEq<M>> PartialEq<Self> for ValidatorError<M> {
+impl<F: Hash + Eq, M: PartialEq> PartialEq for InnerValidatorError<F, M> {
     fn eq(&self, other: &Self) -> bool {
         self.message == other.message
     }
 }
 
-impl<M> std::fmt::Debug for ValidatorError<M>
+impl<M, F> std::fmt::Debug for InnerValidatorError<F, M>
 where
     M: std::fmt::Debug,
+    F: std::fmt::Debug,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("ValidatorError")
@@ -559,9 +562,19 @@ impl<M> Index<&str> for ValidatorError<M> {
             .expect("this field is not found")
     }
 }
+impl<M> Index<&str> for InnerValidatorError<String, M> {
+    type Output = Vec<M>;
 
-impl<M> Serialize for ValidatorError<M>
+    fn index(&self, index: &str) -> &Self::Output {
+        self.message
+            .get(&(index.to_string()))
+            .expect("this field is not found")
+    }
+}
+
+impl<F, M> Serialize for InnerValidatorError<F, M>
 where
+    F: serde::Serialize,
     M: serde::Serialize,
 {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -572,15 +585,23 @@ where
     }
 }
 
-impl<M> Display for ValidatorError<M> {
+impl<F, M> Display for InnerValidatorError<F, M> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         "validate error".fmt(f)
     }
 }
 
-impl<M> Error for ValidatorError<M> where M: std::fmt::Debug {}
+impl<F, M> Error for InnerValidatorError<F, M>
+where
+    M: std::fmt::Debug,
+    F: std::fmt::Debug,
+{
+}
 
-impl<M> ValidatorError<M> {
+impl<F, M> InnerValidatorError<F, M>
+where
+    F: Eq + Hash,
+{
     #[cfg(test)]
     fn new() -> Self {
         Self {
@@ -592,13 +613,6 @@ impl<M> ValidatorError<M> {
             message: HashMap::with_capacity(capacity),
         }
     }
-
-    fn push(&mut self, field_name: FieldNames, message: Vec<M>) {
-        if !message.is_empty() {
-            self.message.insert(field_name, message);
-        }
-    }
-
     fn shrink_to_fit(&mut self) {
         self.message.shrink_to_fit()
     }
@@ -607,38 +621,9 @@ impl<M> ValidatorError<M> {
         self.message.shrink_to(min_capacity)
     }
 
-    pub fn get<K: IntoFieldName>(&self, key: K) -> Option<&Vec<M>> {
-        let k = key.into_field().ok()?;
-        self.message.get(&k)
-    }
-
-    pub fn get_key_value<K: IntoFieldName>(&self, key: K) -> Option<(&FieldNames, &Vec<M>)> {
-        let k = key.into_field().ok()?;
-        self.message.get_key_value(&k)
-    }
-
-    pub fn contains_key<K: IntoFieldName>(&self, key: K) -> bool {
-        match key.into_field() {
-            Ok(k) => self.message.contains_key(&k),
-            Err(_) => false,
-        }
-    }
-
-    pub fn keys(&self) -> Keys<'_, FieldNames, Vec<M>> {
-        self.message.keys()
-    }
-
-    pub fn iter(&self) -> Iter<'_, FieldNames, Vec<M>> {
-        self.message.iter()
-    }
-
-    pub fn iter_mut(&mut self) -> IterMut<'_, FieldNames, Vec<M>> {
-        self.message.iter_mut()
-    }
-
     /// `ValidatorError<M1>` convert to `ValidatorError<M2>`
-    pub fn map<M2>(self, f: fn(M) -> M2) -> ValidatorError<M2> {
-        ValidatorError {
+    pub fn map<M2>(self, f: fn(M) -> M2) -> InnerValidatorError<F, M2> {
+        InnerValidatorError {
             message: self
                 .message
                 .into_iter()
@@ -672,18 +657,54 @@ impl<M> ValidatorError<M> {
         }
     }
 }
+impl<M> ValidatorError<M> {
+    fn push(&mut self, field_name: FieldNames, message: Vec<M>) {
+        if !message.is_empty() {
+            self.message.insert(field_name, message);
+        }
+    }
 
-impl<'a, M> IntoIterator for &'a mut ValidatorError<M> {
-    type Item = (&'a FieldNames, &'a mut Vec<M>);
-    type IntoIter = IterMut<'a, FieldNames, Vec<M>>;
+    pub fn get<K: IntoFieldName>(&self, key: K) -> Option<&Vec<M>> {
+        let k = key.into_field().ok()?;
+        self.message.get(&k)
+    }
+
+    pub fn get_key_value<K: IntoFieldName>(&self, key: K) -> Option<(&FieldNames, &Vec<M>)> {
+        let k = key.into_field().ok()?;
+        self.message.get_key_value(&k)
+    }
+
+    pub fn contains_key<K: IntoFieldName>(&self, key: K) -> bool {
+        match key.into_field() {
+            Ok(k) => self.message.contains_key(&k),
+            Err(_) => false,
+        }
+    }
+
+    pub fn keys(&self) -> Keys<'_, FieldNames, Vec<M>> {
+        self.message.keys()
+    }
+
+    pub fn iter(&self) -> Iter<'_, FieldNames, Vec<M>> {
+        self.message.iter()
+    }
+
+    pub fn iter_mut(&mut self) -> IterMut<'_, FieldNames, Vec<M>> {
+        self.message.iter_mut()
+    }
+}
+
+impl<'a, F, M> IntoIterator for &'a mut InnerValidatorError<F, M> {
+    type Item = (&'a F, &'a mut Vec<M>);
+    type IntoIter = IterMut<'a, F, Vec<M>>;
     fn into_iter(self) -> Self::IntoIter {
         self.message.iter_mut()
     }
 }
 
-impl<M> IntoIterator for ValidatorError<M> {
-    type Item = (FieldNames, Vec<M>);
-    type IntoIter = IntoIter<FieldNames, Vec<M>>;
+impl<F, M> IntoIterator for InnerValidatorError<F, M> {
+    type Item = (F, Vec<M>);
+    type IntoIter = IntoIter<F, Vec<M>>;
     fn into_iter(self) -> Self::IntoIter {
         self.message.into_iter()
     }
