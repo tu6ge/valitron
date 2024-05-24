@@ -567,7 +567,7 @@ impl<M> Index<&str> for InnerValidatorError<String, M> {
 
     fn index(&self, index: &str) -> &Self::Output {
         self.message
-            .get(&(index.to_string()))
+            .get(index)
             .expect("this field is not found")
     }
 }
