@@ -96,7 +96,7 @@ pub fn validate_ref<R: IntoRuleList<String, M>, M>(value: &mut String, rules: R)
     rules.into_list().call(value)
 }
 
-type Validator<M> = InnerValidatorError<String, M>;
+pub type Validator<M> = InnerValidatorError<String, M>;
 
 impl<M> Default for Validator<M> {
     fn default() -> Self {

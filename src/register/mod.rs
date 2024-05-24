@@ -521,7 +521,7 @@ where
 }
 
 /// store validate error message
-type ValidatorError<M> = InnerValidatorError<FieldNames, M>;
+pub type ValidatorError<M> = InnerValidatorError<FieldNames, M>;
 
 pub struct InnerValidatorError<F, M> {
     message: HashMap<F, Vec<M>>,
@@ -600,8 +600,7 @@ impl<F, M> InnerValidatorError<F, M>
 where
     F: Eq + Hash,
 {
-    #[cfg(test)]
-    fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             message: HashMap::new(),
         }
