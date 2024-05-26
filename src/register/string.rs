@@ -79,6 +79,11 @@
 //! }
 //!
 //! ```
+//!
+//! This validator is highly abstract, This means that you can use custom rules,They can also be used together with build-in rules,
+//! This only need to converting the error types they return.
+//!
+//! > custom rule need to implement Clone.
 
 use std::collections::HashMap;
 
