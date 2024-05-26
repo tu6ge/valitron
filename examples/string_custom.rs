@@ -12,6 +12,7 @@ pub fn main() {
         gender: "male".into(),
         password: "Abc123".into(),
         age: 12,
+        weight: 102.5,
     };
 
     let data = Input::new(data).unwrap();
@@ -29,7 +30,7 @@ struct Input {
     gender: String,
     password: String,
     age: i32,
-    //weight: f32,
+    weight: f32,
 }
 
 impl Input {
@@ -70,7 +71,8 @@ diesel::table! {
       email -> Varchar,
       gender -> Varchar,
       password -> Varchar,
-      age -> Integer
+      age -> Integer,
+      weight -> Float,
   }
 }
 
