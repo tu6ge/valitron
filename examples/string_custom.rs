@@ -1,3 +1,4 @@
+use diesel::{Connection, ExpressionMethods, PgConnection, Queryable, Selectable};
 use valitron::{
     available::{Email, Trim},
     register::string::Validator,
@@ -11,21 +12,24 @@ pub fn main() {
         gender: "male".into(),
         password: "Abc123".into(),
         age: 12,
-        weight: 101.2,
     };
 
     let data = Input::new(data).unwrap();
 
     assert_eq!(data.name, "Jone");
+
+    PgConnection::establish("aaa").unwrap();
 }
 
+#[derive(Queryable, Selectable)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
 struct Input {
     name: String,
     email: String,
     gender: String,
     password: String,
-    age: u8,
-    weight: f32,
+    age: i32,
+    //weight: f32,
 }
 
 impl Input {
@@ -54,4 +58,43 @@ impl StringRule for MyRequired<'_> {
     fn message(&self) -> Self::Message {
         format!("{} is not be empty", self.0)
     }
+}
+
+pub fn establish_connection() -> PgConnection {
+    PgConnection::establish("DATABASE_URL").unwrap()
+}
+
+
+diesel::table! {
+  inputs (email) {
+      name -> Varchar,
+      email -> Varchar,
+      gender -> Varchar,
+      password -> Varchar,
+      age -> Integer
+  }
+}
+
+#[derive(Clone)]
+struct UniqueEmail;
+
+impl StringRule for UniqueEmail {
+  type Message = String;
+  const NAME: &'static str = "unique_email";
+  fn call(&mut self, data: &mut String) -> bool {
+    
+      use diesel::prelude::*;
+      use self::inputs::dsl::*;
+      //use self::models::*;
+
+      let conn = &mut establish_connection();
+      
+      let results = inputs.filter(email.eq(data.to_owned())).select(Input::as_select()).load(conn).unwrap();
+
+      results.len() == 0
+  }
+
+  fn message(&self) -> Self::Message {
+      format!("email is existing")
+  }
 }

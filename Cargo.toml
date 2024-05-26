@@ -71,3 +71,5 @@ rocket = "=0.5.0-rc.3"
 
 validator = { version = "0.18", features = ["derive"] }
 url = "2.5.0"
+
+diesel = { version = "2.1.6", features = ["postgres"] }
