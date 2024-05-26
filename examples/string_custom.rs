@@ -64,7 +64,6 @@ pub fn establish_connection() -> PgConnection {
     PgConnection::establish("DATABASE_URL").unwrap()
 }
 
-
 diesel::table! {
   inputs (email) {
       name -> Varchar,
@@ -79,22 +78,25 @@ diesel::table! {
 struct UniqueEmail;
 
 impl StringRule for UniqueEmail {
-  type Message = String;
-  const NAME: &'static str = "unique_email";
-  fn call(&mut self, data: &mut String) -> bool {
-    
-      use diesel::prelude::*;
-      use self::inputs::dsl::*;
-      //use self::models::*;
+    type Message = String;
+    const NAME: &'static str = "unique_email";
+    fn call(&mut self, data: &mut String) -> bool {
+        use self::inputs::dsl::*;
+        use diesel::prelude::*;
+        //use self::models::*;
 
-      let conn = &mut establish_connection();
-      
-      let results = inputs.filter(email.eq(data.to_owned())).select(Input::as_select()).load(conn).unwrap();
+        let conn = &mut establish_connection();
 
-      results.len() == 0
-  }
+        let results = inputs
+            .filter(email.eq(data.to_owned()))
+            .select(Input::as_select())
+            .load(conn)
+            .unwrap();
 
-  fn message(&self) -> Self::Message {
-      format!("email is existing")
-  }
+        results.len() == 0
+    }
+
+    fn message(&self) -> Self::Message {
+        format!("email is existing")
+    }
 }
