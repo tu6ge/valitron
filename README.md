@@ -17,7 +17,7 @@ Inspired by axum
 - Collect validate error messages
 - Support all types data on `#[derive(Serialize, Deserialize)]` ( visit [`serde`](https://serde.rs/) for more info)
 
-## Examples
+## Example 1
 
 ```rust
 fn main() {
@@ -44,6 +44,42 @@ fn age_limit(n: &mut u8) -> Result<(), Message> {
         return Ok(());
     }
     Err("age should be between 25 and 45".into())
+}
+```
+## Example 2
+```rust
+impl Input {
+    fn new(mut input: Input) -> Result<Self, Validator<Message>> {
+        use valitron::register::string::Validator;
+        let valid = Validator::new()
+            .insert("name", &mut input.name, Trim.and(Required))
+            .insert("email", &mut input.email, Trim.and(Required).and(Email))
+            .insert("gender", &mut input.gender, custom(validate_gender))
+            .insert(
+                "password",
+                &mut input.password,
+                Trim.custom(validate_password),
+            )
+            .insert_fn("age", || {
+                if input.age < 10 {
+                    input.age = 10;
+                }
+                if input.age > 18 {
+                    Err(Message::fallback("age is out of range"))
+                } else {
+                    Ok(())
+                }
+            });
+
+        valid.validate(input)
+    }
+}
+fn validate_password(pass: &mut String) -> Result<(), Message> {
+    todo!()
+}
+
+fn validate_gender(gender: &mut String) -> Result<(), Message> {
+    Ok(())
 }
 ```
 
