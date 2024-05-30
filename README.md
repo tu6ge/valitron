@@ -96,7 +96,7 @@ fn validate_gender(gender: &mut String) -> Result<(), Message> {
 | `Required.and(Not(StartsWith("foo")))` | negative rule |
 
 ## Bench
-| [second scheme](https://github.com/tu6ge/valitron/blob/string/examples/string.rs)| validator(lib) |
+| [second scheme](https://github.com/tu6ge/valitron/blob/string/examples/string.rs)| [validator](https://github.com/Keats/validator)(other library) |
 | --- | --- |
 | 192.55 ns | 680.43 ns |
 
