@@ -1,4 +1,4 @@
-use diesel::{Connection, ExpressionMethods, PgConnection, Queryable, Selectable};
+use diesel::{Connection, PgConnection, Queryable, Selectable};
 use valitron::{
     available::{Email, Trim},
     register::string::Validator,
