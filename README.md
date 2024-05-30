@@ -48,9 +48,9 @@ fn age_limit(n: &mut u8) -> Result<(), Message> {
 ```
 ## Example 2
 ```rust
+use valitron::register::string::Validator;
 impl Input {
     fn new(mut input: Input) -> Result<Self, Validator<Message>> {
-        use valitron::register::string::Validator;
         let valid = Validator::new()
             .insert("name", &mut input.name, Trim.and(Required))
             .insert("email", &mut input.email, Trim.and(Required).and(Email))
