@@ -4,38 +4,86 @@ use std::fmt::Display;
 
 use serde::Serialize;
 
+#[cfg(all(feature = "message", feature = "compare"))]
 pub mod compare;
+
+#[cfg(all(feature = "message", feature = "confirm"))]
 pub mod confirm;
+
+#[cfg(all(feature = "message", feature = "contains"))]
 pub mod contains;
+
+#[cfg(all(feature = "message", feature = "email"))]
 pub mod email;
+
+#[cfg(all(feature = "message", feature = "end_with"))]
 pub mod end_with;
+
+#[cfg(all(feature = "message", feature = "length"))]
 pub mod length;
+
+#[cfg(all(feature = "message", feature = "not"))]
 pub mod not;
+
+#[cfg(all(feature = "message", feature = "range"))]
 pub mod range;
+
+#[cfg(all(feature = "message", feature = "regex"))]
 pub mod regex;
+
+#[cfg(all(feature = "message", feature = "required"))]
 pub mod required;
+
+#[cfg(all(feature = "message", feature = "start_with"))]
 pub mod start_with;
+
+#[cfg(all(feature = "message", feature = "trim"))]
 pub mod trim;
 
+#[cfg(feature = "compare")]
 pub use compare::{Egt, Elt, Gt, Lt};
+
+#[cfg(feature = "confirm")]
 pub use confirm::Confirm;
+
+#[cfg(feature = "contains")]
 pub use contains::Contains;
+
+#[cfg(feature = "email")]
 pub use email::Email;
+
+#[cfg(feature = "end_with")]
 pub use end_with::EndsWith;
+
+#[cfg(feature = "length")]
 pub use length::Length;
+
+#[cfg(feature = "not")]
 pub use not::Not;
+
+#[cfg(feature = "range")]
 pub use range::Range;
+
+#[cfg(feature = "regex")]
 pub use regex::Regex;
+
+#[cfg(feature = "required")]
 pub use required::Required;
+
+#[cfg(feature = "start_with")]
 pub use start_with::StartWith;
+
+#[cfg(feature = "trim")]
 pub use trim::Trim;
 
 /// Error message, it is returned when build-in rules validate fail
+#[cfg(any(feature = "full", feature = "message"))]
 #[derive(Debug, Clone, Eq, PartialEq, Serialize)]
 pub struct Message {
     kind: MessageKind,
 }
 
+#[cfg(any(feature = "full", feature = "message"))]
 #[non_exhaustive]
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum MessageKind {
@@ -75,6 +123,7 @@ pub enum MessageKind {
     Fallback(String),
 }
 
+#[cfg(any(feature = "full", feature = "message"))]
 impl Serialize for MessageKind {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -97,6 +146,7 @@ impl Serialize for MessageKind {
     }
 }
 
+#[cfg(any(feature = "full", feature = "message"))]
 impl Message {
     pub fn new(kind: MessageKind) -> Self {
         Message { kind }
@@ -116,11 +166,13 @@ impl Message {
     }
 }
 
+#[cfg(any(feature = "full", feature = "message"))]
 impl From<Message> for String {
     fn from(msg: Message) -> Self {
         msg.to_string()
     }
 }
+#[cfg(any(feature = "full", feature = "message"))]
 impl From<String> for Message {
     fn from(content: String) -> Self {
         Self {
@@ -129,18 +181,21 @@ impl From<String> for Message {
     }
 }
 
+#[cfg(any(feature = "full", feature = "message"))]
 impl From<&str> for Message {
     fn from(content: &str) -> Self {
         content.to_string().into()
     }
 }
 
+#[cfg(any(feature = "full", feature = "message"))]
 impl Display for Message {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         self.kind.fmt(f)
     }
 }
 
+#[cfg(any(feature = "full", feature = "message"))]
 impl Display for MessageKind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -164,6 +219,7 @@ impl Display for MessageKind {
     }
 }
 
+#[cfg(any(feature = "full", feature = "message"))]
 impl PartialEq<Message> for String {
     fn eq(&self, other: &Message) -> bool {
         self == &other.to_string()

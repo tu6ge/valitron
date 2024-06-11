@@ -10,7 +10,35 @@ repository = "https://github.com/tu6ge/valitron"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-full = ["serde/derive", "idna", "regex"]
+default = []
+full = [
+  "message",
+  "compare",
+  "confirm",
+  "contains",
+  "email",
+  "end_with",
+  "length",
+  "not",
+  "range",
+  "regex",
+  "required",
+  "start_with",
+  "trim",
+]
+message = ["serde/derive"]
+compare = []
+confirm = []
+contains = []
+email = ["idna"]
+end_with = []
+length = []
+not = []
+range = []
+regex = ["regex_"]
+required = []
+start_with = []
+trim = []
 
 [package.metadata.docs.rs]
 all-features = true
@@ -53,7 +81,7 @@ harness = false
 [dependencies]
 serde = { version = "^1.0" }
 idna = { version = "0.5", optional = true }
-regex = { version = "1", default-features = false, optional = true }
+regex_ = { package="regex", version = "1", default-features = false, optional = true }
 
 [dev-dependencies]
 serde = { version = "^1.0", features = ["derive"] }

@@ -60,7 +60,7 @@ impl<'a> Rule for Regex<'a> {
     fn call(&mut self, data: &mut crate::Value) -> bool {
         match data {
             crate::Value::String(s) => {
-                let reg = regex::Regex::new(self.0)
+                let reg = regex_::Regex::new(self.0)
                     .unwrap_or_else(|_| panic!("regex \"{}\" have syntax error", self.0));
                 reg.is_match(s)
             }
@@ -79,7 +79,7 @@ impl<'a> StringRule for Regex<'a> {
     }
 
     fn call(&mut self, data: &mut String) -> bool {
-        let reg = regex::Regex::new(self.0)
+        let reg = regex_::Regex::new(self.0)
             .unwrap_or_else(|_| panic!("regex \"{}\" have syntax error", self.0));
         reg.is_match(data)
     }

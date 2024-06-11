@@ -29,7 +29,22 @@ use crate::{
 
 use self::boxed::{ErasedRule, RuleIntoBoxed};
 
-#[cfg(feature = "full")]
+#[cfg(any(
+    feature = "full",
+    feature = "message",
+    feature = "compare",
+    feature = "confirm",
+    feature = "contains",
+    feature = "email",
+    feature = "end_with",
+    feature = "length",
+    feature = "not",
+    feature = "range",
+    feature = "regex",
+    feature = "required",
+    feature = "start_with",
+    feature = "trim"
+))]
 pub mod available;
 mod boxed;
 pub mod string;
