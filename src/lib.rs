@@ -53,13 +53,20 @@
 //! input data needs implementation `serde::Serialize`, and if you want to modify data,
 //! it should be also implementation `serde::Deserialize`
 //!
-//! ## Available Rule
+//! ## Available Rules
 //!
+//! - [`Compare`]
+//! - [`Confirm`]
+//! - [`Contains`]
+//! - [`Email`]
+//! - [`EndWith`]
+//! - [`Length`]
+//! - [`Not`]
+//! - [`Range`]
+//! - [`Regex`]
 //! - [`Required`]
 //! - [`StartWith`]
-//! - [`Confirm`]
 //! - [`Trim`]
-//! - [`Range`]
 //! - customizable
 //!
 //! To get started using all of Valitron's optional rule, add this to your
@@ -85,10 +92,17 @@
 //! [`Rule`]: crate::Rule
 //! [`Message`]: crate::available::Message
 //! [`Required`]: crate::available::required
+//! [`Email`]: crate::available::email
+//! [`Compare`]: crate::available::compare
+//! [`Contains`]: crate::available::contains
 //! [`StartWith`]: crate::available::start_with
+//! [`EndWith`]: crate::available::end_with
 //! [`Confirm`]: crate::available::confirm
 //! [`Trim`]: crate::available::trim
+//! [`Length`]: crate::available::length
+//! [`Not`]: crate::available::not
 //! [`Range`]: crate::available::range
+//! [`Regex`]: crate::available::regex
 //! [string]: crate::register::string
 
 #![cfg_attr(test, allow(unused_imports, dead_code))]
