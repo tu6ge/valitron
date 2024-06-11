@@ -83,6 +83,8 @@ fn validate_gender(gender: &mut String) -> Result<(), Message> {
 }
 ```
 
+[Document](https://docs.rs/valitron)
+
 ## Rules Usage
 
 |Usage| Description|
