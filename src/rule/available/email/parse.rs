@@ -157,22 +157,21 @@ impl<'a> Cursor<'a> {
 
                     return Some(EmailToken::Ip);
                 }
-                c => {
-                    return if !c.is_ascii() {
-                        let domain = &self.email_str[self.at_index + 1..];
-                        idna::domain_to_ascii(domain).ok().map(|d| {
-                            // https://datatracker.ietf.org/doc/html/rfc5321#section-4.5.3.1.1
-                            if d.chars().count() > 255 {
-                                return EmailToken::IllegalChar;
-                            }
-                            self.is_idna_domain = true;
-                            EmailToken::IdnaDomain
-                        })
-                    } else {
-                        // other ascii characters
-                        self.token.push(EmailToken::IllegalChar);
-                        return Some(EmailToken::IllegalChar);
-                    };
+                c if !c.is_ascii() => {
+                    let domain = &self.email_str[self.at_index + 1..];
+                    idna::domain_to_ascii(domain).ok().map(|d| {
+                        // https://datatracker.ietf.org/doc/html/rfc5321#section-4.5.3.1.1
+                        if d.chars().count() > 255 {
+                            return EmailToken::IllegalChar;
+                        }
+                        self.is_idna_domain = true;
+                        EmailToken::IdnaDomain
+                    })
+                }
+                _ => {
+                    // other ascii characters
+                    self.token.push(EmailToken::IllegalChar);
+                    Some(EmailToken::IllegalChar)
                 }
             }
         }
