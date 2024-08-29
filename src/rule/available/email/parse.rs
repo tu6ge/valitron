@@ -107,18 +107,16 @@ impl<'a> Cursor<'a> {
                     let mut current_usize = start_usize;
                     loop {
                         match iter.next() {
-                            Some((last_usize, con)) => match con {
-                                'a'..='z' | 'A'..='Z' | '0'..='9' | '-' => {
-                                    current_usize = last_usize;
-                                    self.char.next();
-                                }
-                                _ => {
-                                    let name = &self.email_str[start_usize..current_usize + 1];
-                                    let token = EmailToken::DomainPart(name.to_string());
-                                    self.token.push(token.clone());
-                                    return Some(token);
-                                }
-                            },
+                            Some((last_usize, 'a'..='z' | 'A'..='Z' | '0'..='9' | '-')) => {
+                                current_usize = last_usize;
+                                self.char.next();
+                            }
+                            Some((last_usize, _)) => {
+                                let name = &self.email_str[start_usize..current_usize + 1];
+                                let token = EmailToken::DomainPart(name.to_string());
+                                self.token.push(token.clone());
+                                return Some(token);
+                            }
                             None => {
                                 let name = &self.email_str[start_usize..current_usize + 1];
                                 let token = EmailToken::DomainPart(name.to_string());
