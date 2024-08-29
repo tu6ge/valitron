@@ -59,8 +59,6 @@ mod test;
 ///     }
 /// }
 /// ```
-///
-/// TODO! introduce ValueMap
 pub trait CoreRule<I, T>: 'static + Sized + Clone {
     /// custom define returning message type
     type Message;
