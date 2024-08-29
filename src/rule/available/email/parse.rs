@@ -111,7 +111,7 @@ impl<'a> Cursor<'a> {
                                 current_usize = last_usize;
                                 self.char.next();
                             }
-                            Some((last_usize, _)) => {
+                            Some((_, _)) => {
                                 let name = &self.email_str[start_usize..current_usize + 1];
                                 let token = EmailToken::DomainPart(name.to_string());
                                 self.token.push(token.clone());
