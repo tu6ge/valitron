@@ -1,11 +1,11 @@
 [package]
-name = "valitron"
-version = "0.5.2"
-edition = "2021"
-license = "MIT OR Apache-2.0"
 description = "Valitron is an ergonomics, functional and configurable validator"
+edition = "2021"
 keywords = ["validator", "serde", "ergonomics"]
+license = "MIT OR Apache-2.0"
+name = "valitron"
 repository = "https://github.com/tu6ge/valitron"
+version = "0.5.2"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -42,34 +42,34 @@ required-features = ["full"]
 name = "url"
 
 [[bench]]
-name = "email"
 harness = false
+name = "email"
 required-features = ["full"]
 
 [[bench]]
-name = "full"
 harness = false
+name = "full"
 
 [dependencies]
-serde = { version = "^1.0" }
-idna = { version = "0.5", optional = true }
-regex = { version = "1", default-features = false, optional = true }
+idna = {version = "0.5", optional = true}
+regex = {version = "1", default-features = false, optional = true}
+serde = {version = "^1.0"}
 
 [dev-dependencies]
-serde = { version = "^1.0", features = ["derive"] }
+serde = {version = "^1.0", features = ["derive"]}
 serde_json = "1.0.107"
 
 criterion = "0.5"
 
-tokio = { version = "1.32.0", features = ["full"] }
-axum = { version = "0.6.20", features = ["tokio", "form"]}
+axum = {version = "0.6.20", features = ["tokio", "form"]}
 thiserror = "1.0.29"
+tokio = {version = "1.32.0", features = ["full"]}
 
-actix-web = { version = "4.4.0" }
+actix-web = {version = "4.4.0"}
 
 rocket = "=0.5.0-rc.3"
 
-validator = { version = "0.18", features = ["derive"] }
 url = "2.5.0"
+validator = {version = "0.18", features = ["derive"]}
 
-diesel = { version = "2.1.6", features = ["postgres"] }
+diesel = {version = "2.1.6", features = ["postgres"]}
