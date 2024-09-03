@@ -36,7 +36,7 @@ pub struct Cursor<'a> {
 
 macro_rules! name_chars {
     () => {
-        'a'..='z' | 'A'..='Z' | '!' | '#' | '$' | '%'
+        'a'..='z' | 'A'..='Z' | '0'..= '9' | '!' | '#' | '$' | '%'
         | '&' | '\'' | '*' | '+' | '-' | '/' | '='
         | '?' | '^' | '_' | '`' | '{' | '}' | '|' | '~'
     };
@@ -276,6 +276,19 @@ mod tests {
         let tokens = cursor.advance().unwrap();
 
         assert_eq!(format!("{tokens:?}"), "Name(\"abc\")");
+
+        let at = cursor.advance().unwrap();
+
+        assert_eq!(at, EmailToken::At);
+
+        // Add regression test for numbers
+        let str = "abc123@def.com";
+
+        let mut cursor = Cursor::new(str);
+
+        let tokens = cursor.advance().unwrap();
+
+        assert_eq!(format!("{tokens:?}"), "Name(\"abc123\")");
 
         let at = cursor.advance().unwrap();
 
