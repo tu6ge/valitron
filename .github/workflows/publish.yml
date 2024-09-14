@@ -2,7 +2,7 @@ name: Test and Publish
 
 on:
   push:
-    branches: 
+    branches:
       - "*"
   pull_request:
     branches:
@@ -12,7 +12,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
-    name: 'test'
+    name: "test"
     steps:
       - uses: actions/checkout@v3
 
@@ -24,7 +24,7 @@ jobs:
         with:
           command: clippy
           args: --all-features -- -D warnings
-      
+
       - name: Show cargo info
         run: cargo version --verbose
 
@@ -42,8 +42,8 @@ jobs:
     if: ${{ github.event_name == 'push' && github.ref_name == 'main'}}
     runs-on: ubuntu-latest
 
-    name: 'publish'
- 
+    name: "publish"
+
     environment: cargo
 
     steps:
@@ -51,24 +51,15 @@ jobs:
         with:
           fetch-depth: 0
 
-      # v0.1.15 目前版本
-      - name: Cache
-        uses: Swatinem/rust-cache@v1
-        with:
-          key: ${{ runner.os }}-build-v0.2.2
-
-      - name: Install publish-action
-        if: steps.cache-publish-action.outputs.cache-hit != 'true'
-        run: |
-          cargo install publish-action --version=0.2.2
-      
-      - name: Run publish-action
-        id: publish-action
-        run: 
-          publish-action
+      - name: Run publish-action of oss
+        uses: tu6ge/publish-action@v0.4.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+        with:
+          DIR: "/"
+          TAG_PREFIX: "v"
 
   # grcov:
   #   name: Coverage and Grcov
@@ -96,7 +87,7 @@ jobs:
   #         CARGO_INCREMENTAL: '0'
   #         RUSTFLAGS: '-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
   #         RUSTDOCFLAGS: '-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
-      
+
   #     - uses: actions-rs/cargo@v1
   #       with:
   #         command: test
