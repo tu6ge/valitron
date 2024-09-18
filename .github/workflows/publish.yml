@@ -52,7 +52,7 @@ jobs:
           fetch-depth: 0
 
       - name: Run publish-action of oss
-        uses: tu6ge/publish-action@v0.4.1
+        uses: tu6ge/publish-action@v0.4.5
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
