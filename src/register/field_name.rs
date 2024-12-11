@@ -194,7 +194,7 @@ impl IntoFieldName for [usize; 1] {
 //         Ok(vec![FieldName::StructVariant(self[0].to_string())])
 //     }
 // }
-impl<'a, T> IntoFieldName for &'a T
+impl<T> IntoFieldName for &'_ T
 where
     T: IntoFieldName + Copy,
 {

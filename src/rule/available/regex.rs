@@ -48,7 +48,7 @@ impl<'a> Regex<'a> {
     }
 }
 
-impl<'a> Rule for Regex<'a> {
+impl Rule for Regex<'_> {
     type Message = Message;
 
     const NAME: &'static str = "regex";
@@ -69,7 +69,7 @@ impl<'a> Rule for Regex<'a> {
     }
 }
 
-impl<'a> StringRule for Regex<'a> {
+impl StringRule for Regex<'_> {
     type Message = Message;
 
     const NAME: &'static str = "regex";
