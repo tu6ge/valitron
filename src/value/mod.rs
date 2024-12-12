@@ -302,30 +302,34 @@ impl FromValue for Value {
 }
 
 macro_rules! primitive_impl {
-    ($val:ident($ty:ty)) => {
-        impl FromValue for $ty {
-            fn from_value(value: &mut ValueMap) -> Option<&mut Self> {
-                if let Some(Value::$val(n)) = value.current_mut() {
-                    Some(n)
-                } else {
-                    None
+    ($($val:ident($ty:ty)),+) => {
+        $(
+            impl FromValue for $ty {
+                fn from_value(value: &mut ValueMap) -> Option<&mut Self> {
+                    if let Some(Value::$val(n)) = value.current_mut() {
+                        Some(n)
+                    } else {
+                        None
+                    }
                 }
             }
-        }
+        )+
     };
 }
 
-primitive_impl!(Uint8(u8));
-primitive_impl!(Int8(i8));
-primitive_impl!(Uint16(u16));
-primitive_impl!(Int16(i16));
-primitive_impl!(Uint32(u32));
-primitive_impl!(Int32(i32));
-primitive_impl!(Uint64(u64));
-primitive_impl!(Int64(i64));
-primitive_impl!(String(String));
-primitive_impl!(Boolean(bool));
-primitive_impl!(Char(char));
+primitive_impl!(
+    Uint8(u8),
+    Int8(i8),
+    Uint16(u16),
+    Int16(i16),
+    Uint32(u32),
+    Int32(i32),
+    Uint64(u64),
+    Int64(i64),
+    String(String),
+    Boolean(bool),
+    Char(char)
+);
 
 impl FromValue for f32 {
     fn from_value(value: &mut ValueMap) -> Option<&mut Self> {

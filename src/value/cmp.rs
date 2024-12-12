@@ -6,150 +6,158 @@ use super::{
 };
 
 macro_rules! primitive_eq {
-    ($val:ident($ty:ty)) => {
-        impl PartialEq<Value> for $ty {
-            fn eq(&self, other: &Value) -> bool {
-                if let Value::$val(n) = other {
-                    self == n
-                } else {
-                    unreachable!("type mismatch")
+    ($($val:ident($ty:ty)),+) => {
+        $(
+            impl PartialEq<Value> for $ty {
+                fn eq(&self, other: &Value) -> bool {
+                    if let Value::$val(n) = other {
+                        self == n
+                    } else {
+                        unreachable!("type mismatch")
+                    }
                 }
             }
-        }
-        impl PartialEq<$ty> for Value {
-            fn eq(&self, other: &$ty) -> bool {
-                if let Value::$val(n) = self {
-                    n == other
-                } else {
-                    unreachable!("type mismatch")
+            impl PartialEq<$ty> for Value {
+                fn eq(&self, other: &$ty) -> bool {
+                    if let Value::$val(n) = self {
+                        n == other
+                    } else {
+                        unreachable!("type mismatch")
+                    }
                 }
             }
-        }
 
-        impl PartialEq<&Value> for $ty {
-            fn eq(&self, other: &&Value) -> bool {
-                if let Value::$val(n) = other {
-                    self == n
-                } else {
-                    unreachable!("type mismatch")
+            impl PartialEq<&Value> for $ty {
+                fn eq(&self, other: &&Value) -> bool {
+                    if let Value::$val(n) = other {
+                        self == n
+                    } else {
+                        unreachable!("type mismatch")
+                    }
                 }
             }
-        }
-        impl PartialEq<$ty> for &Value {
-            fn eq(&self, other: &$ty) -> bool {
-                if let Value::$val(n) = self {
-                    n == other
-                } else {
-                    unreachable!("type mismatch")
+            impl PartialEq<$ty> for &Value {
+                fn eq(&self, other: &$ty) -> bool {
+                    if let Value::$val(n) = self {
+                        n == other
+                    } else {
+                        unreachable!("type mismatch")
+                    }
                 }
             }
-        }
 
-        impl PartialEq<&mut Value> for $ty {
-            fn eq(&self, other: &&mut Value) -> bool {
-                if let Value::$val(n) = other {
-                    self == n
-                } else {
-                    unreachable!("type mismatch")
+            impl PartialEq<&mut Value> for $ty {
+                fn eq(&self, other: &&mut Value) -> bool {
+                    if let Value::$val(n) = other {
+                        self == n
+                    } else {
+                        unreachable!("type mismatch")
+                    }
                 }
             }
-        }
-        impl PartialEq<$ty> for &mut Value {
-            fn eq(&self, other: &$ty) -> bool {
-                if let Value::$val(n) = self {
-                    n == other
-                } else {
-                    unreachable!("type mismatch")
+            impl PartialEq<$ty> for &mut Value {
+                fn eq(&self, other: &$ty) -> bool {
+                    if let Value::$val(n) = self {
+                        n == other
+                    } else {
+                        unreachable!("type mismatch")
+                    }
                 }
             }
-        }
+        )+
     };
 }
 
 macro_rules! primitive_ord {
-    ($val:ident($ty:ty)) => {
-        impl PartialOrd<Value> for $ty {
-            fn partial_cmp(&self, other: &Value) -> Option<Ordering> {
-                if let Value::$val(n) = other {
-                    self.partial_cmp(n)
-                } else {
-                    None
+    ($($val:ident($ty:ty)),+) => {
+        $(
+            impl PartialOrd<Value> for $ty {
+                fn partial_cmp(&self, other: &Value) -> Option<Ordering> {
+                    if let Value::$val(n) = other {
+                        self.partial_cmp(n)
+                    } else {
+                        None
+                    }
                 }
             }
-        }
-        impl PartialOrd<$ty> for Value {
-            fn partial_cmp(&self, other: &$ty) -> Option<Ordering> {
-                if let Value::$val(n) = self {
-                    n.partial_cmp(other)
-                } else {
-                    None
+            impl PartialOrd<$ty> for Value {
+                fn partial_cmp(&self, other: &$ty) -> Option<Ordering> {
+                    if let Value::$val(n) = self {
+                        n.partial_cmp(other)
+                    } else {
+                        None
+                    }
                 }
             }
-        }
 
-        impl PartialOrd<&Value> for $ty {
-            fn partial_cmp(&self, other: &&Value) -> Option<Ordering> {
-                if let Value::$val(n) = other {
-                    self.partial_cmp(n)
-                } else {
-                    None
+            impl PartialOrd<&Value> for $ty {
+                fn partial_cmp(&self, other: &&Value) -> Option<Ordering> {
+                    if let Value::$val(n) = other {
+                        self.partial_cmp(n)
+                    } else {
+                        None
+                    }
                 }
             }
-        }
-        impl PartialOrd<$ty> for &Value {
-            fn partial_cmp(&self, other: &$ty) -> Option<Ordering> {
-                if let Value::$val(n) = self {
-                    n.partial_cmp(other)
-                } else {
-                    None
+            impl PartialOrd<$ty> for &Value {
+                fn partial_cmp(&self, other: &$ty) -> Option<Ordering> {
+                    if let Value::$val(n) = self {
+                        n.partial_cmp(other)
+                    } else {
+                        None
+                    }
                 }
             }
-        }
 
-        impl PartialOrd<&mut Value> for $ty {
-            fn partial_cmp(&self, other: &&mut Value) -> Option<Ordering> {
-                if let Value::$val(n) = other {
-                    self.partial_cmp(n)
-                } else {
-                    None
+            impl PartialOrd<&mut Value> for $ty {
+                fn partial_cmp(&self, other: &&mut Value) -> Option<Ordering> {
+                    if let Value::$val(n) = other {
+                        self.partial_cmp(n)
+                    } else {
+                        None
+                    }
                 }
             }
-        }
-        impl PartialOrd<$ty> for &mut Value {
-            fn partial_cmp(&self, other: &$ty) -> Option<Ordering> {
-                if let Value::$val(n) = self {
-                    n.partial_cmp(other)
-                } else {
-                    None
+            impl PartialOrd<$ty> for &mut Value {
+                fn partial_cmp(&self, other: &$ty) -> Option<Ordering> {
+                    if let Value::$val(n) = self {
+                        n.partial_cmp(other)
+                    } else {
+                        None
+                    }
                 }
             }
-        }
+        )+
     };
 }
 
-primitive_eq!(Uint8(u8));
-primitive_eq!(Int8(i8));
-primitive_eq!(Uint16(u16));
-primitive_eq!(Int16(i16));
-primitive_eq!(Uint32(u32));
-primitive_eq!(Int32(i32));
-primitive_eq!(Uint64(u64));
-primitive_eq!(Int64(i64));
-primitive_eq!(String(String));
-primitive_eq!(Boolean(bool));
-primitive_eq!(Char(char));
+primitive_eq!(
+    Uint8(u8),
+    Int8(i8),
+    Uint16(u16),
+    Int16(i16),
+    Uint32(u32),
+    Int32(i32),
+    Uint64(u64),
+    Int64(i64),
+    String(String),
+    Boolean(bool),
+    Char(char)
+);
 
-primitive_ord!(Uint8(u8));
-primitive_ord!(Int8(i8));
-primitive_ord!(Uint16(u16));
-primitive_ord!(Int16(i16));
-primitive_ord!(Uint32(u32));
-primitive_ord!(Int32(i32));
-primitive_ord!(Uint64(u64));
-primitive_ord!(Int64(i64));
-primitive_ord!(String(String));
-primitive_ord!(Boolean(bool));
-primitive_ord!(Char(char));
+primitive_ord!(
+    Uint8(u8),
+    Int8(i8),
+    Uint16(u16),
+    Int16(i16),
+    Uint32(u32),
+    Int32(i32),
+    Uint64(u64),
+    Int64(i64),
+    String(String),
+    Boolean(bool),
+    Char(char)
+);
 
 impl PartialEq<Value> for f32 {
     fn eq(&self, other: &Value) -> bool {
