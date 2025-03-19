@@ -260,30 +260,107 @@ impl Value {
         )
     }
 
-    pub fn f32(&self) -> Option<&f32> {
+    pub fn as_u8(&self) -> Option<&u8> {
+        match self {
+            Value::Uint8(u) => Some(u),
+            _ => None,
+        }
+    }
+
+    pub fn as_i8(&self) -> Option<&i8> {
+        match self {
+            Value::Int8(u) => Some(u),
+            _ => None,
+        }
+    }
+
+    pub fn as_u16(&self) -> Option<&u16> {
+        match self {
+            Value::Uint16(u) => Some(u),
+            _ => None,
+        }
+    }
+
+    pub fn as_i16(&self) -> Option<&i16> {
+        match self {
+            Value::Int16(u) => Some(u),
+            _ => None,
+        }
+    }
+
+    pub fn as_u32(&self) -> Option<&u32> {
+        match self {
+            Value::Uint32(u) => Some(u),
+            _ => None,
+        }
+    }
+
+    pub fn as_i32(&self) -> Option<&i32> {
+        match self {
+            Value::Int32(u) => Some(u),
+            _ => None,
+        }
+    }
+
+    pub fn as_u64(&self) -> Option<&u64> {
+        match self {
+            Value::Uint64(u) => Some(u),
+            _ => None,
+        }
+    }
+
+    pub fn as_i64(&self) -> Option<&i64> {
+        match self {
+            Value::Int64(u) => Some(u),
+            _ => None,
+        }
+    }
+
+    pub fn as_f32(&self) -> Option<&f32> {
         match self {
             Value::Float32(float::Float32(f)) => Some(f),
             _ => None,
         }
     }
 
-    pub fn f32_mut(&mut self) -> Option<&mut f32> {
+    pub fn as_f32_mut(&mut self) -> Option<&mut f32> {
         match self {
             Value::Float32(float::Float32(f)) => Some(f),
             _ => None,
         }
     }
 
-    pub fn f64(&self) -> Option<&f64> {
+    pub fn as_f64(&self) -> Option<&f64> {
         match self {
             Value::Float64(float::Float64(f)) => Some(f),
             _ => None,
         }
     }
 
-    pub fn f64_mut(&mut self) -> Option<&mut f64> {
+    pub fn as_f64_mut(&mut self) -> Option<&mut f64> {
         match self {
             Value::Float64(float::Float64(f)) => Some(f),
+            _ => None,
+        }
+    }
+
+    pub fn as_string(&self) -> Option<&String> {
+        match self {
+            Value::String(s) => Some(s),
+            _ => None,
+        }
+    }
+
+    pub fn as_boolean(&self) -> Option<&bool> {
+        match self {
+            Value::Boolean(b) => Some(b),
+            _ => None,
+        }
+    }
+
+    pub fn as_char(&self) -> Option<&char> {
+        match self {
+            Value::Char(c) => Some(c),
             _ => None,
         }
     }
