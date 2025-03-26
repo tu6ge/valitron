@@ -181,10 +181,7 @@ impl Value {
             (FieldName::StructVariant(str), Value::StructVariant(_, btree)) => {
                 btree.get(&Value::StructVariantKey(str.to_string()))
             }
-            (FieldName::Option, Value::Option(val)) => match *val.as_ref() {
-                Some(ref v) => Some(v),
-                None => None,
-            },
+            (FieldName::Option, Value::Option(val)) => val.as_ref().as_ref(),
             _ => None,
         }
     }
@@ -222,10 +219,7 @@ impl Value {
             (FieldName::StructVariant(str), Value::StructVariant(_, btree)) => {
                 btree.get_mut(&Value::StructVariantKey(str.to_string()))
             }
-            (FieldName::Option, Value::Option(val)) => match *val.as_mut() {
-                Some(ref mut v) => Some(v),
-                None => None,
-            },
+            (FieldName::Option, Value::Option(val)) => val.as_mut().as_mut(),
             _ => None,
         }
     }
