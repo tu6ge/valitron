@@ -352,9 +352,15 @@ impl<M, List> InnerValidator<M, List> {
     ///                          | <fields> '.' <ident>
     ///                          | <fields> <array_index>
     ///                          | <fields> <struct_variant_index>
+    ///                          | <fields> <option_flag> [<sub_fields>]
+    /// sub_fields             ::= '.' <tuple_index>
+    ///                          | '.' <ident>
+    ///                          | <array_index>
+    ///                          | <struct_variant_index>
     /// tuple_index            ::= <u8>
     /// array_index            ::= '[' <usize> ']'
     /// struct_variant_index   ::= '[' <ident> ']'
+    /// option_flag            ::= ?
     /// ```
     ///
     /// **Rule also support multiple formats:**
