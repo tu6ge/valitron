@@ -16,6 +16,7 @@ pub enum FieldName {
     Literal(String),
     Array(usize),
     Tuple(u8),
+    Option,
 
     /// get `g` on enum A { Color{ r:u8, g:u8, b:u8}}
     StructVariant(String),
@@ -37,6 +38,7 @@ impl Display for FieldName {
             FieldName::Literal(s) => s.fmt(f),
             FieldName::Array(n) => n.fmt(f),
             FieldName::Tuple(n) => n.fmt(f),
+            FieldName::Option => "?".fmt(f),
             FieldName::StructVariant(s) => s.fmt(f),
         }
     }
@@ -63,6 +65,7 @@ fn names_to_string(vec: &[FieldName]) -> String {
                 }
                 string.push_str(&n.to_string());
             }
+            FieldName::Option => string.push('?'),
             FieldName::StructVariant(s) => {
                 string.push('[');
                 string.push_str(s);
@@ -232,6 +235,12 @@ impl<'a> Parser<'a> {
                 self.source = &self.source[token.len..];
                 self.parse_bracket().map(Some)
             }
+            TokenKind::Option => {
+                self.source = &self.source[token.len..];
+                let res = FieldName::Option;
+                self.eat_dot()?;
+                Ok(Some(res))
+            }
             TokenKind::RightBracket => Err(ParserError::BracketRight),
             TokenKind::Index => {
                 let index_str;
@@ -281,7 +290,8 @@ impl<'a> Parser<'a> {
 
                     if !(self.expect(TokenKind::Dot)
                         || self.expect(TokenKind::LeftBracket)
-                        || self.expect(TokenKind::Eof))
+                        || self.expect(TokenKind::Eof)
+                        || self.expect(TokenKind::Option))
                     {
                         return Err(ParserError::ArrayClose);
                     }
@@ -307,7 +317,8 @@ impl<'a> Parser<'a> {
 
                     if !(self.expect(TokenKind::Dot)
                         || self.expect(TokenKind::LeftBracket)
-                        || self.expect(TokenKind::Eof))
+                        || self.expect(TokenKind::Eof)
+                        || self.expect(TokenKind::Option))
                     {
                         return Err(ParserError::ArrayClose);
                     }
@@ -447,14 +458,16 @@ fn test_parse() {
     parse("[5]age").unwrap_err();
     parse(".age").unwrap_err();
 
-    let names = parse("name.age[foo][0].color.0").unwrap();
+    let names = parse("name.age[foo]?[0]?.color.0").unwrap();
     assert_eq!(
         names,
         vec![
             FieldName::Literal("name".into()),
             FieldName::Literal("age".into()),
             FieldName::StructVariant("foo".into()),
+            FieldName::Option,
             FieldName::Array(0),
+            FieldName::Option,
             FieldName::Literal("color".into()),
             FieldName::Tuple(0),
         ]

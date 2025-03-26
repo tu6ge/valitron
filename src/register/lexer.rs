@@ -11,6 +11,9 @@ pub enum TokenKind {
     /// match `.`
     Dot,
 
+    /// match `?`
+    Option,
+
     /// match `[`
     LeftBracket,
 
@@ -74,6 +77,7 @@ impl<'a> Cursor<'a> {
             '.' => (TokenKind::Dot, 1),
             '[' => (TokenKind::LeftBracket, 1),
             ']' => (TokenKind::RightBracket, 1),
+            '?' => (TokenKind::Option, 1),
             'a'..='z' | 'A'..='Z' | '_' => {
                 let mut iter = self.char.clone().peekable();
                 let mut current_usize = start_usize;
@@ -143,10 +147,11 @@ mod test {
         assert!(first.len == 3);
         assert_eq!(vec.advance().kind(), &TokenKind::Eof);
 
-        let mut vec = Cursor::new("abc.d23[cde].ff99.pp[8]");
+        let mut vec = Cursor::new("abc.d23?[cde].ff99.pp[8]");
         assert_eq!(vec.advance().kind(), &TokenKind::Ident);
         assert_eq!(vec.advance().kind(), &TokenKind::Dot);
         assert_eq!(vec.advance().kind(), &TokenKind::Ident);
+        assert_eq!(vec.advance().kind(), &TokenKind::Option);
         assert_eq!(vec.advance().kind(), &TokenKind::LeftBracket);
         assert_eq!(vec.advance().kind(), &TokenKind::Ident);
         assert_eq!(vec.advance().kind(), &TokenKind::RightBracket);

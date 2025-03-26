@@ -85,7 +85,7 @@ let result = data.validate(|d|(d.0, Required));
 let result = data.validate(|d|(d.name, Required | LengthRange(6,12)));
 ```
 
-result 
+result
 
 ```rust
 fn validate(..) -> Result<Self, ValidateError>{
@@ -130,6 +130,7 @@ fn custom_check(value) -> Result<(), String> {
 ```
 
 fifth model
+
 ```rust
 let bar = "abc";
 let validator = Validator::new()
@@ -143,6 +144,9 @@ let validator = Validator::new()
   .rule("address.city", Required)
   .rule("address.0", Required)
   .rule("address[0]", Required)
+  .rule("address?.city", Required) // Option
+  .rule("address?.0", Required)
+  .rule("address?[0]", Required)
   .rule("0.city", Required)
   .rule("[0].city", Required)
   .rule("color[red]", Required) // match struct variant
