@@ -3,7 +3,7 @@ use super::{CoreRule, RuleList};
 pub fn custom<F, M>(f: F) -> RuleList<String, M>
 where
     F: FnOnce(&mut String) -> Result<(), M> + Clone + 'static,
-    M: 'static,
+    M: Send + 'static,
 {
     RuleList::from_fn(f)
 }
@@ -29,7 +29,7 @@ pub trait StringRuleExt<M>: private::Sealed {
 impl<S, M> StringRuleExt<M> for S
 where
     S: CoreRule<String, (), Message = M>,
-    M: 'static,
+    M: Send + 'static,
 {
     fn and<S2>(self, other: S2) -> RuleList<String, M>
     where
@@ -48,7 +48,7 @@ where
 
 pub trait StringRule: Clone {
     /// custom define returning message type
-    type Message;
+    type Message: Send;
 
     /// Named rule type, used to distinguish different rules
     ///
@@ -66,29 +66,41 @@ pub trait StringRule: Clone {
 impl<T> CoreRule<String, ()> for T
 where
     T: StringRule + 'static + Clone,
+    T::Message: Send,
 {
     type Message = T::Message;
 
     const THE_NAME: &'static str = T::NAME;
 
     /// Rule specific implementation, data is gived type all field's value, and current field index.
-    fn call(&mut self, data: &mut String) -> Result<(), Self::Message> {
-        if self.call(data) {
+    fn call(
+        &mut self,
+        data: &mut String,
+    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<(), Self::Message>> + Send>>
+    {
+        let result = if self.call(data) {
             Ok(())
         } else {
             Err(self.message())
-        }
+        };
+        Box::pin(async move { result })
     }
 }
 
 impl<F, M> CoreRule<String, ((), ())> for F
 where
     F: for<'a> FnOnce(&'a mut String) -> Result<(), M> + 'static + Clone,
+    M: Send + 'static,
 {
     type Message = M;
     const THE_NAME: &'static str = "custom";
 
-    fn call(&mut self, data: &mut String) -> Result<(), Self::Message> {
-        self.clone()(data)
+    fn call(
+        &mut self,
+        data: &mut String,
+    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<(), Self::Message>> + Send>>
+    {
+        let result = self.clone()(data);
+        Box::pin(async move { result })
     }
 }

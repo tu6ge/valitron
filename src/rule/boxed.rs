@@ -1,4 +1,4 @@
-use std::marker::PhantomData;
+use std::{future::Future, marker::PhantomData, pin::Pin};
 
 use super::CoreRule;
 
@@ -17,7 +17,7 @@ impl<I, M> ErasedRule<I, M> {
     pub fn name(&self) -> &'static str {
         self.0.name()
     }
-    pub fn call(&mut self, data: &mut I) -> Result<(), M> {
+    pub fn call(&mut self, data: &mut I) -> Pin<Box<dyn Future<Output = Result<(), M>> + Send>> {
         self.0.call(data)
     }
 
@@ -40,7 +40,7 @@ impl<I, M> Clone for ErasedRule<I, M> {
 pub trait BoxedRule<I, M> {
     fn clone_box(&self) -> Box<dyn BoxedRule<I, M>>;
 
-    fn call(&mut self, data: &mut I) -> Result<(), M>;
+    fn call(&mut self, data: &mut I) -> Pin<Box<dyn Future<Output = Result<(), M>> + Send>>;
 
     fn name(&self) -> &'static str;
 }
@@ -84,7 +84,7 @@ where
         Box::new(self.clone())
     }
 
-    fn call(&mut self, data: &mut I) -> Result<(), M> {
+    fn call(&mut self, data: &mut I) -> Pin<Box<dyn Future<Output = Result<(), M>> + Send>> {
         self.handler.call(data)
     }
 
@@ -117,8 +117,10 @@ where
         Box::new(self.clone())
     }
 
-    fn call(&mut self, data: &mut I) -> Result<(), M2> {
-        self.inner.call(data).map_err(self.layer)
+    fn call(&mut self, data: &mut I) -> Pin<Box<dyn Future<Output = Result<(), M2>> + Send>> {
+        let fut = self.inner.call(data);
+        let layer = self.layer;
+        Box::pin(async move { fut.await.map_err(layer) })
     }
 
     fn name(&self) -> &'static str {

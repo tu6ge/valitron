@@ -24,8 +24,10 @@ use std::{
     },
     error::Error,
     fmt::Display,
+    future::Future,
     hash::{Hash, Hasher},
     ops::Index,
+    pin::Pin,
 };
 
 use crate::{
@@ -116,7 +118,7 @@ impl<M> Validator<'_, M> {
     }
 
     /// run validate without modifiable
-    pub fn validate<T>(self, data: T) -> Result<(), ValidatorError<M>>
+    pub async fn validate<T>(self, data: T) -> Result<(), ValidatorError<M>>
     where
         T: Serialize,
     {
@@ -126,11 +128,11 @@ impl<M> Validator<'_, M> {
 
         let mut value_map = ValueMap::new(value);
 
-        self.inner_validate(&mut value_map).ok()
+        self.inner_validate(&mut value_map).await.ok()
     }
 
     /// run validate with modifiable
-    pub fn validate_mut<'de, T>(self, data: T) -> Result<T, ValidatorError<M>>
+    pub async fn validate_mut<'de, T>(self, data: T) -> Result<T, ValidatorError<M>>
     where
         T: Serialize + serde::de::Deserialize<'de>,
     {
@@ -141,18 +143,20 @@ impl<M> Validator<'_, M> {
         let mut value_map = ValueMap::new(value);
 
         self.inner_validate(&mut value_map)
+            .await
             .ok()
             .map(|_| T::deserialize(value_map.value()).unwrap())
     }
 
-    fn inner_validate(self, value_map: &mut ValueMap) -> ValidatorError<M> {
-        fn handle_msg<M>(
+    async fn inner_validate(self, value_map: &mut ValueMap) -> ValidatorError<M> {
+        async fn handle_msg<M>(
             rules: RuleList<ValueMap, M>,
             value_map: &mut ValueMap,
             message: &mut HashMap<MessageKey<'_>, M>,
         ) -> Vec<M> {
             rules
                 .call(value_map)
+                .await
                 .into_iter()
                 .map(|(rule, msg)| {
                     message
@@ -161,7 +165,8 @@ impl<M> Validator<'_, M> {
                 })
                 .collect()
         }
-        self.iter_validate(value_map, handle_msg)
+        //self.iter_validate(value_map, handle_msg).await
+        todo!()
     }
 
     fn exit_message(&self, MessageKey { fields, rule }: &MessageKey) -> bool {
@@ -186,10 +191,10 @@ impl<M> ValidatorRefine<M> {
     }
 
     /// run validate without modifiable
-    pub fn validate<T, M2>(self, data: T) -> Result<(), ValidatorError<M2>>
+    pub async fn validate<T, M2>(self, data: T) -> Result<(), ValidatorError<M2>>
     where
         T: Serialize,
-        M2: IntoMessage,
+        M2: IntoMessage + 'static,
     {
         let value = data.serialize(Serializer).unwrap();
 
@@ -197,14 +202,14 @@ impl<M> ValidatorRefine<M> {
 
         let mut value_map = ValueMap::new(value);
 
-        self.inner_validate(&mut value_map).ok()
+        self.inner_validate(&mut value_map).await.ok()
     }
 
     /// run validate with modifiable
-    pub fn validate_mut<'de, T, M2>(self, data: T) -> Result<T, ValidatorError<M2>>
+    pub async fn validate_mut<'de, T, M2>(self, data: T) -> Result<T, ValidatorError<M2>>
     where
         T: Serialize + serde::de::Deserialize<'de>,
-        M2: IntoMessage,
+        M2: IntoMessage + 'static,
     {
         let value = data.serialize(Serializer).unwrap();
 
@@ -213,16 +218,22 @@ impl<M> ValidatorRefine<M> {
         let mut value_map = ValueMap::new(value);
 
         self.inner_validate(&mut value_map)
+            .await
             .ok()
             .map(|_| T::deserialize(value_map.value()).unwrap())
     }
 
     /// inner creating message by field name and current value.
-    fn inner_validate<M2>(self, value_map: &mut ValueMap) -> ValidatorError<M2>
+    async fn inner_validate<M2>(self, value_map: &mut ValueMap) -> ValidatorError<M2>
     where
-        M2: IntoMessage,
+        M2: IntoMessage + 'static,
     {
-        self.iter_validate(value_map, |rules, data, _| rules.call_gen_message(data))
+        // self.iter_validate(value_map, |rules, data, _| {
+        //     //Box::pin(rules.call_gen_message(data))
+        //     todo!()
+        // })
+        // .await
+        todo!()
     }
 }
 
@@ -427,12 +438,16 @@ impl<M, List> InnerValidator<M, List> {
         self.rules.get(names)
     }
 
-    fn iter_validate<F, T>(self, value_map: &mut ValueMap, handle_msg: F) -> ValidatorError<T>
+    async fn iter_validate<F, Fut, T>(
+        self,
+        value_map: &mut ValueMap,
+        handle_msg: F,
+    ) -> ValidatorError<T>
     where
-        F: Fn(RuleList<ValueMap, M>, &mut ValueMap, &mut List) -> Vec<T>,
+        F: Fn(RuleList<ValueMap, M>, &mut ValueMap, &mut List) -> Fut,
+        Fut: Future<Output = Vec<T>>,
     {
         let mut resp_message = ValidatorError::with_capacity(self.rules.len());
-
         let Self {
             rules,
             mut message,
@@ -446,7 +461,7 @@ impl<M, List> InnerValidator<M, List> {
 
             value_map.index(names);
 
-            let field_msg = handle_msg(rules, value_map, &mut message);
+            let field_msg = handle_msg(rules, value_map, &mut message).await;
 
             names = value_map.take_index();
 
@@ -491,40 +506,40 @@ pub trait Validatable<V, E> {
         Self: Deserialize<'de>;
 }
 
-impl<T, M> Validatable<Validator<'_, M>, ValidatorError<M>> for T
-where
-    T: Serialize,
-    M: 'static,
-{
-    fn validate(&self, validator: Validator<M>) -> Result<(), ValidatorError<M>> {
-        validator.validate(self)
-    }
+// impl<T, M> Validatable<Validator<'_, M>, ValidatorError<M>> for T
+// where
+//     T: Serialize,
+//     M: 'static,
+// {
+//     fn validate(&self, validator: Validator<M>) -> Result<(), ValidatorError<M>> {
+//         validator.validate(self)
+//     }
 
-    fn validate_mut<'de>(self, validator: Validator<M>) -> Result<Self, ValidatorError<M>>
-    where
-        Self: Deserialize<'de>,
-    {
-        validator.validate_mut(self)
-    }
-}
+//     fn validate_mut<'de>(self, validator: Validator<M>) -> Result<Self, ValidatorError<M>>
+//     where
+//         Self: Deserialize<'de>,
+//     {
+//         validator.validate_mut(self)
+//     }
+// }
 
-impl<T, M, M2> Validatable<ValidatorRefine<M>, ValidatorError<M2>> for T
-where
-    T: Serialize,
-    M: 'static,
-    M2: IntoMessage,
-{
-    fn validate(&self, validator: ValidatorRefine<M>) -> Result<(), ValidatorError<M2>> {
-        validator.validate(self)
-    }
+// impl<T, M, M2> Validatable<ValidatorRefine<M>, ValidatorError<M2>> for T
+// where
+//     T: Serialize,
+//     M: 'static,
+//     M2: IntoMessage,
+// {
+//     fn validate(&self, validator: ValidatorRefine<M>) -> Result<(), ValidatorError<M2>> {
+//         validator.validate(self)
+//     }
 
-    fn validate_mut<'de>(self, validator: ValidatorRefine<M>) -> Result<Self, ValidatorError<M2>>
-    where
-        Self: Deserialize<'de>,
-    {
-        validator.validate_mut(self)
-    }
-}
+//     fn validate_mut<'de>(self, validator: ValidatorRefine<M>) -> Result<Self, ValidatorError<M2>>
+//     where
+//         Self: Deserialize<'de>,
+//     {
+//         validator.validate_mut(self)
+//     }
+// }
 
 /// store validate error message
 pub type ValidatorError<M> = InnerValidatorError<FieldNames, M>;

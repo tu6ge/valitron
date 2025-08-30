@@ -103,7 +103,7 @@ impl<'v> ValidPhrase<'v> {
     }
 
     /// validate given data
-    pub fn validate<T>(self, data: T) -> Result<(), ValidatorError<String>>
+    pub async fn validate<T>(self, data: T) -> Result<(), ValidatorError<String>>
     where
         T: Serialize,
     {
@@ -113,11 +113,11 @@ impl<'v> ValidPhrase<'v> {
 
         let mut value_map = ValueMap::new(value);
 
-        self.inner_validate(&mut value_map).ok()
+        self.inner_validate(&mut value_map).await.ok()
     }
 
     /// validate given data and can modify it
-    pub fn validate_mut<'de, T>(self, data: T) -> Result<T, ValidatorError<String>>
+    pub async fn validate_mut<'de, T>(self, data: T) -> Result<T, ValidatorError<String>>
     where
         T: Serialize + serde::de::Deserialize<'de>,
     {
@@ -128,6 +128,7 @@ impl<'v> ValidPhrase<'v> {
         let mut value_map = ValueMap::new(value);
 
         self.inner_validate(&mut value_map)
+            .await
             .ok()
             .map(|_| T::deserialize(value_map.value()).unwrap())
     }
@@ -190,7 +191,7 @@ impl<'v> ValidPhrase<'v> {
         Self(self.0.bail())
     }
 
-    fn inner_validate(self, value_map: &mut ValueMap) -> ValidatorError<String> {
+    async fn inner_validate(self, value_map: &mut ValueMap) -> ValidatorError<String> {
         let mut resp_message = ValidatorError::with_capacity(self.0.rules.len());
 
         let ValidPhrase(InnerValidator {
@@ -210,7 +211,7 @@ impl<'v> ValidPhrase<'v> {
 
             value_map.index(names);
 
-            let field_msg = rules.call_string_message(value_map, msgs);
+            let field_msg = rules.call_string_message(value_map, msgs).await;
 
             names = value_map.take_index();
 
@@ -228,21 +229,21 @@ impl<'v> ValidPhrase<'v> {
     }
 }
 
-impl<'v, T> Validatable<ValidPhrase<'v>, ValidatorError<String>> for T
-where
-    T: Serialize,
-{
-    fn validate(&self, validator: ValidPhrase<'v>) -> Result<(), ValidatorError<String>> {
-        validator.validate(self)
-    }
+// impl<'v, T> Validatable<ValidPhrase<'v>, ValidatorError<String>> for T
+// where
+//     T: Serialize,
+// {
+//     fn validate(&self, validator: ValidPhrase<'v>) -> Result<(), ValidatorError<String>> {
+//         validator.validate(self)
+//     }
 
-    fn validate_mut<'de>(self, validator: ValidPhrase<'v>) -> Result<Self, ValidatorError<String>>
-    where
-        Self: Deserialize<'de>,
-    {
-        validator.validate_mut(self)
-    }
-}
+//     fn validate_mut<'de>(self, validator: ValidPhrase<'v>) -> Result<Self, ValidatorError<String>>
+//     where
+//         Self: Deserialize<'de>,
+//     {
+//         validator.validate_mut(self)
+//     }
+// }
 
 #[cfg(test)]
 mod tests {
@@ -292,15 +293,15 @@ mod tests {
         const NAME: &'static str = "starts_with";
     }
 
-    #[test]
-    fn original() {
+    #[tokio::test]
+    async fn original() {
         let num = (10_i8, 11_i8);
 
         let validator = ValidPhrase::new()
             .rule("0", Required)
             .message([("0.required", "foo_message")]);
 
-        let res = validator.validate(num).unwrap_err();
+        let res = validator.validate(num).await.unwrap_err();
 
         let (filed, msg) = res.into_iter().next().unwrap();
 
@@ -309,25 +310,26 @@ mod tests {
         assert_eq!(msg[0], "foo_message");
     }
 
-    #[test]
-    fn test_trait() {
+    #[tokio::test]
+    async fn test_trait() {
         let num = (10_i8, 11_i8);
 
         let validator = ValidPhrase::new()
             .rule("0", Required)
             .message([("0.required", "foo_message")]);
-        num.validate(validator).unwrap_err();
+        // num.validate(validator).unwrap_err();
+        todo!()
     }
 
-    #[test]
-    fn field() {
+    #[tokio::test]
+    async fn field() {
         let num = (10_i8, 11_i8);
 
         let validator = ValidPhrase::new()
             .rule("0", Required)
             .message([("0.required", "{field} is required")]);
 
-        let res = validator.validate(num).unwrap_err();
+        let res = validator.validate(num).await.unwrap_err();
 
         let (filed, msg) = res.into_iter().next().unwrap();
 
@@ -336,13 +338,13 @@ mod tests {
         assert_eq!(msg[0], "0 is required");
     }
 
-    #[test]
-    fn default_field() {
+    #[tokio::test]
+    async fn default_field() {
         let num = (10_i8, 11_i8);
 
         let validator = ValidPhrase::new().rule("0", Required);
 
-        let res = validator.validate(num).unwrap_err();
+        let res = validator.validate(num).await.unwrap_err();
 
         let (filed, msg) = res.into_iter().next().unwrap();
 
@@ -351,15 +353,15 @@ mod tests {
         assert_eq!(msg[0], "0 is default msg");
     }
 
-    #[test]
-    fn value() {
+    #[tokio::test]
+    async fn value() {
         let num = (10_i8, 11_i8);
 
         let validator = ValidPhrase::new()
             .rule("0", Required)
             .message([("0.required", "{value} is error value, 8 is true value")]);
 
-        let res = validator.validate(num).unwrap_err();
+        let res = validator.validate(num).await.unwrap_err();
 
         let (filed, msg) = res.into_iter().next().unwrap();
 

@@ -20,7 +20,7 @@
 //! }
 //! ```
 
-use std::{collections::HashMap, fmt::Display, slice::Iter};
+use std::{collections::HashMap, fmt::Display, future::Future, pin::Pin, slice::Iter};
 
 use crate::{
     register::IntoMessage,
@@ -71,7 +71,10 @@ pub trait CoreRule<I, T>: 'static + Sized + Clone {
     /// Rule specific implementation, data is gived type all field's value, and current field index.
     ///
     /// success returning Ok(()), or else returning message.
-    fn call(&mut self, data: &mut I) -> Result<(), Self::Message>;
+    fn call(
+        &mut self,
+        data: &mut I,
+    ) -> Pin<Box<dyn Future<Output = Result<(), Self::Message>> + Send>>;
 
     #[doc(hidden)]
     fn into_boxed(self) -> RuleIntoBoxed<Self, Self::Message, T> {
@@ -304,13 +307,14 @@ impl<I, M> RuleList<I, M> {
 
 impl<M> RuleList<ValueMap, M> {
     #[must_use]
-    pub(crate) fn call(self, data: &mut ValueMap) -> Vec<(&'static str, M)> {
+    pub(crate) async fn call(self, data: &mut ValueMap) -> Vec<(&'static str, M)> {
         let RuleList { mut list, .. } = self;
         let mut msg = Vec::with_capacity(list.len());
 
         for endpoint in list.iter_mut() {
             let _ = endpoint
                 .call(data)
+                .await
                 .map_err(|e| msg.push((endpoint.name(), e)));
 
             if self.is_bail && !msg.is_empty() {
@@ -324,7 +328,7 @@ impl<M> RuleList<ValueMap, M> {
     }
 
     #[must_use]
-    pub(crate) fn call_gen_message<M2>(self, data: &mut ValueMap) -> Vec<M2>
+    pub(crate) async fn call_gen_message<M2>(self, data: &mut ValueMap) -> Vec<M2>
     where
         M2: IntoMessage,
     {
@@ -332,7 +336,7 @@ impl<M> RuleList<ValueMap, M> {
         let mut msg = Vec::with_capacity(list.len());
 
         for endpoint in list.iter_mut() {
-            let _ = endpoint.call(data).map_err(|_| {
+            let _ = endpoint.call(data).await.map_err(|_| {
                 let value = data.current().unwrap();
                 msg.push(M2::into_message(endpoint.name(), data.as_index(), value))
             });
@@ -347,7 +351,7 @@ impl<M> RuleList<ValueMap, M> {
         msg
     }
 
-    pub(crate) fn call_string_message<'m>(
+    pub(crate) async fn call_string_message<'m>(
         self,
         data: &mut ValueMap,
         message: &HashMap<&'m str, &'m str>,
@@ -364,7 +368,7 @@ impl<M> RuleList<ValueMap, M> {
         let mut msg = Vec::with_capacity(list.len());
 
         for endpoint in list.iter_mut() {
-            let _ = endpoint.call(data).map_err(|def_msg| {
+            let _ = endpoint.call(data).await.map_err(|def_msg| {
                 let string = def_msg.to_string();
                 let mes = *(message.get(endpoint.name())).unwrap_or(&string.as_str());
                 let value = data.current().unwrap();
@@ -387,7 +391,7 @@ impl<M> RuleList<String, M> {
     pub(crate) fn from_fn<F>(f: F) -> RuleList<String, M>
     where
         F: FnOnce(&mut String) -> Result<(), M> + Clone + 'static,
-        M: 'static,
+        M: Send + 'static,
     {
         RuleList {
             list: vec![ErasedRule::new(f)],
@@ -399,7 +403,7 @@ impl<M> RuleList<String, M> {
     where
         S: CoreRule<String, (), Message = M>,
         F: FnOnce(&mut String) -> Result<(), M> + Clone + 'static,
-        M: 'static,
+        M: Send + 'static,
     {
         RuleList {
             list: vec![ErasedRule::new(one), ErasedRule::new(fun)],
@@ -431,12 +435,12 @@ impl<M> RuleList<String, M> {
     }
 
     #[must_use]
-    pub(crate) fn call(self, data: &mut String) -> Vec<M> {
+    pub(crate) async fn call(self, data: &mut String) -> Vec<M> {
         let RuleList { mut list, is_bail } = self;
         let mut msg = Vec::with_capacity(list.len());
 
         for endpoint in list.iter_mut() {
-            let _ = endpoint.call(data).map_err(|m| msg.push(m));
+            let _ = endpoint.call(data).await.map_err(|m| msg.push(m));
 
             if is_bail && !msg.is_empty() {
                 msg.shrink_to(1);
@@ -590,18 +594,23 @@ pub trait Rule: Clone {
 impl<T> CoreRule<ValueMap, ()> for T
 where
     T: Rule + 'static + Clone,
+    T::Message: Send,
 {
     type Message = T::Message;
 
     const THE_NAME: &'static str = T::NAME;
 
     /// Rule specific implementation, data is gived type all field's value, and current field index.
-    fn call(&mut self, data: &mut ValueMap) -> Result<(), Self::Message> {
-        if self.call_with_relate(data) {
+    fn call(
+        &mut self,
+        data: &mut ValueMap,
+    ) -> Pin<Box<dyn Future<Output = Result<(), Self::Message>> + Send>> {
+        let result = if self.call_with_relate(data) {
             Ok(())
         } else {
             Err(self.message())
-        }
+        };
+        Box::pin(async move { result })
     }
 }
 
@@ -609,13 +618,18 @@ impl<F, V, M> CoreRule<ValueMap, V> for F
 where
     F: for<'a> FnOnce(&'a mut V) -> Result<(), M> + 'static + Clone,
     V: FromValue,
+    M: Send + 'static,
 {
     type Message = M;
 
     const THE_NAME: &'static str = "custom";
 
-    fn call(&mut self, data: &mut ValueMap) -> Result<(), Self::Message> {
+    fn call(
+        &mut self,
+        data: &mut ValueMap,
+    ) -> Pin<Box<dyn Future<Output = Result<(), Self::Message>> + Send>> {
         let val = V::from_value(data).expect("argument type can not be matched");
-        self.clone()(val)
+        let result = self.clone()(val);
+        Box::pin(async move { result })
     }
 }
